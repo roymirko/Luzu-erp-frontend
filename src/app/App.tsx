@@ -52,15 +52,30 @@ function AppContent() {
   };
 
   const handleLogin = async () => {
-    // Login simulado con el usuario de Miguel
-    const result = await login('miguel@luzu.tv');
+    // Intentar login con usuario seed (Gabriela) o fallback a Miguel (hardcoded en mocks pero no en DB)
+    // Primero intentamos con el usuario que sabemos que existe en seeds
+    let result = await login('gaby@luzutv.com.ar');
+
+    if (result.success) {
+      setIsAuthenticated(true);
+      return;
+    }
+
+    // Si falla, intentamos con Miguel (legacy)
+    result = await login('miguel@luzu.tv');
     if (result.success) {
       setIsAuthenticated(true);
     } else {
-      // Fallback por si el usuario no existe en la DB inicial
+      console.warn('Login fallido. Verifica que los datos estén en Supabase o que el .env esté configurado.');
+      // En desarrollo, podríamos permitir entrar pero sin usuario real, 
+      // pero mejor mostrar error o no dejar entrar para depurar.
+      // Dejamos el comportamiento "permisivo" anterior pero con advertencia,
+      // O ajustamos para usar un usuario mock local si la DB falla.
+
+      // Fallback para no bloquear la UI si la DB no responde
       setIsAuthenticated(true);
-      const miguelUser = users.find(u => u.email === 'miguel@luzu.tv');
-      if (miguelUser) setCurrentUser(miguelUser);
+      const mockUser = users.find(u => u.email === 'miguel@luzu.tv' || u.email === 'gaby@luzutv.com.ar');
+      if (mockUser) setCurrentUser(mockUser);
     }
   };
 

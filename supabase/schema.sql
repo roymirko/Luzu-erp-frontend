@@ -78,27 +78,7 @@ create table public.audit_logs (
   user_agent text
 );
 
--- ============================================
--- UPDATED_AT TRIGGER FUNCTION
--- ============================================
-create or replace function public.handle_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
--- Apply triggers
-create trigger handle_updated_at_users
-  before update on public.users
-  for each row
-  execute procedure public.handle_updated_at();
-
-create trigger handle_updated_at_areas
-  before update on public.areas
-  for each row
-  execute procedure public.handle_updated_at();
+-- Triggers removed as requested
 
 -- ============================================
 -- RLS (Row Level Security) - Permissive for initial dev
