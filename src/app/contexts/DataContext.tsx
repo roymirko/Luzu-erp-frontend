@@ -5,15 +5,13 @@ import {
   Role,
   UserAreaRole,
   RoleType,
-  Permission,
   CreateUserForm,
   EditUserForm,
   CreateAreaForm,
   EditAreaForm,
   UserWithRelations,
   AreaWithUsers,
-  SystemStats,
-  AuditLog
+  SystemStats
 } from '../types/business';
 import {
   validateCreateUser,
@@ -25,6 +23,16 @@ import {
   canDeactivateArea
 } from '../utils/businessRules';
 import { useLog } from './LogContext';
+import { supabase } from '../services/supabase';
+import {
+  mapUserFromDB,
+  mapUserToDB,
+  mapAreaFromDB,
+  mapAreaToDB,
+  mapRoleFromDB,
+  mapUserAreaRoleFromDB,
+  mapUserAreaRoleToDB
+} from '../utils/supabaseMappers';
 
 interface DataContextType {
   // Estado
@@ -34,6 +42,7 @@ interface DataContextType {
   userAreaRoles: UserAreaRole[];
   stats: SystemStats;
   currentUser: User | null;
+  loading: boolean;
 
   // Usuarios
   createUser: (form: CreateUserForm) => Promise<{ success: boolean; userId?: string; errors?: any[] }>;
@@ -62,191 +71,53 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Datos iniciales
-const INITIAL_ROLES: Role[] = [
-  {
-    id: 'role-1',
-    name: RoleType.ADMINISTRADOR,
-    description: 'Control total del sistema, puede crear, editar y eliminar usuarios y áreas',
-    permissions: [
-      { resource: 'users', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'areas', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'roles', actions: ['read'] },
-      { resource: 'logs', actions: ['read'] },
-      { resource: 'forms', actions: ['create', 'read', 'update', 'delete'] },
-      { resource: 'tasks', actions: ['create', 'read', 'update', 'delete'] }
-    ],
-    createdAt: new Date('2024-01-01')
-  },
-  {
-    id: 'role-2',
-    name: RoleType.EDITOR,
-    description: 'Puede editar contenido y gestionar tareas, pero no usuarios ni áreas',
-    permissions: [
-      { resource: 'users', actions: ['read'] },
-      { resource: 'areas', actions: ['read'] },
-      { resource: 'forms', actions: ['create', 'read', 'update'] },
-      { resource: 'tasks', actions: ['create', 'read', 'update', 'delete'] }
-    ],
-    createdAt: new Date('2024-01-01')
-  },
-  {
-    id: 'role-3',
-    name: RoleType.VISUALIZADOR,
-    description: 'Solo puede ver información, sin permisos de edición',
-    permissions: [
-      { resource: 'users', actions: ['read'] },
-      { resource: 'areas', actions: ['read'] },
-      { resource: 'forms', actions: ['read'] },
-      { resource: 'tasks', actions: ['read'] }
-    ],
-    createdAt: new Date('2024-01-01')
-  }
-];
-
-const INITIAL_AREAS: Area[] = [
-  {
-    id: 'area-1',
-    name: 'Comercial',
-    code: 'COM',
-    description: 'Gestión de propuestas y estrategias comerciales',
-    active: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    createdBy: 'user-1',
-    metadata: {
-      color: '#fb2c36',
-      icon: 'Briefcase'
-    }
-  },
-  {
-    id: 'area-2',
-    name: 'Implementación',
-    code: 'IMP',
-    description: 'Implementación y gestión de proyectos técnicos',
-    active: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    createdBy: 'user-1',
-    metadata: {
-      color: '#3b82f6',
-      icon: 'Settings'
-    }
-  },
-  {
-    id: 'area-3',
-    name: 'Dir. de Programación',
-    code: 'PRG',
-    description: 'Planificación y dirección de programación de contenidos',
-    active: true,
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    createdBy: 'user-1',
-    metadata: {
-      color: '#10b981',
-      icon: 'TrendingUp'
-    }
-  },
-  {
-    id: 'area-4',
-    name: 'Master',
-    code: 'MST',
-    description: 'Super administradores del sistema',
-    active: true,
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    createdBy: 'system',
-    metadata: {
-      color: '#8b5cf6',
-      icon: 'Users'
-    }
-  }
-];
-
-const INITIAL_USERS: User[] = [
-  {
-    id: 'user-1',
-    email: 'gaby@luzutv.com.ar',
-    firstName: 'Gabriela',
-    lastName: 'Riero',
-    active: true,
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    lastLogin: new Date(),
-    createdBy: 'system',
-    metadata: {
-      position: 'CEO',
-      googleId: undefined
-    }
-  },
-  {
-    id: 'user-2',
-    email: 'gestion@luzutv.com.ar',
-    firstName: 'Felicitas',
-    lastName: 'Carelli',
-    active: true,
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    lastLogin: new Date('2024-12-26'),
-    createdBy: 'user-1',
-    metadata: {
-      position: 'Project Manager',
-      googleId: undefined
-    }
-  }
-];
-
-const INITIAL_USER_AREA_ROLES: UserAreaRole[] = [
-  // Gabriela Riero (CEO) - Administradora en todas las áreas incluyendo Master
-  { id: 'uar-1', userId: 'user-1', areaId: 'area-1', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'system' },
-  { id: 'uar-2', userId: 'user-1', areaId: 'area-2', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'system' },
-  { id: 'uar-3', userId: 'user-1', areaId: 'area-3', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'system' },
-  { id: 'uar-4', userId: 'user-1', areaId: 'area-4', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'system' },
-
-  // Felicitas Carelli (PM) - Administradora en todas las áreas (no Master)
-  { id: 'uar-5', userId: 'user-2', areaId: 'area-1', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'user-1' },
-  { id: 'uar-6', userId: 'user-2', areaId: 'area-2', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'user-1' },
-  { id: 'uar-7', userId: 'user-2', areaId: 'area-3', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'user-1' }
-];
-
 export function DataProvider({ children }: { children: ReactNode }) {
   const { addLog } = useLog();
+  const [loading, setLoading] = useState(true);
 
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('erp_users_v4');
-    return saved ? JSON.parse(saved) : INITIAL_USERS;
-  });
-
-  const [areas, setAreas] = useState<Area[]>(() => {
-    const saved = localStorage.getItem('erp_areas_v4');
-    return saved ? JSON.parse(saved) : INITIAL_AREAS;
-  });
-
-  const [roles] = useState<Role[]>(INITIAL_ROLES);
-
-  const [userAreaRoles, setUserAreaRoles] = useState<UserAreaRole[]>(() => {
-    const saved = localStorage.getItem('erp_user_area_roles_v4');
-    return saved ? JSON.parse(saved) : INITIAL_USER_AREA_ROLES;
-  });
+  const [users, setUsers] = useState<User[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [userAreaRoles, setUserAreaRoles] = useState<UserAreaRole[]>([]);
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('erp_current_user');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Persistencia
+  // Fetch initial data
   useEffect(() => {
-    localStorage.setItem('erp_users_v4', JSON.stringify(users));
-  }, [users]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [
+          { data: usersData },
+          { data: areasData },
+          { data: rolesData },
+          { data: uarData }
+        ] = await Promise.all([
+          supabase.from('users').select('*'),
+          supabase.from('areas').select('*'),
+          supabase.from('roles').select('*'),
+          supabase.from('user_area_roles').select('*')
+        ]);
 
-  useEffect(() => {
-    localStorage.setItem('erp_areas_v4', JSON.stringify(areas));
-  }, [areas]);
+        if (usersData) setUsers(usersData.map(mapUserFromDB));
+        if (areasData) setAreas(areasData.map(mapAreaFromDB));
+        if (rolesData) setRoles(rolesData.map(mapRoleFromDB));
+        if (uarData) setUserAreaRoles(uarData.map(mapUserAreaRoleFromDB));
 
-  useEffect(() => {
-    localStorage.setItem('erp_user_area_roles_v4', JSON.stringify(userAreaRoles));
-  }, [userAreaRoles]);
+      } catch (error) {
+        console.error('Error fetching data from Supabase:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchData();
+  }, []);
+
+  // Persist current user to local storage (session only)
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('erp_current_user', JSON.stringify(currentUser));
@@ -277,32 +148,54 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return { success: false, errors: validation.errors };
     }
 
-    const newUser: User = {
-      id: `user-${Date.now()}`,
+    const newUserBase = {
       email: form.email.toLowerCase(),
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       active: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       createdBy: currentUser?.id || 'system',
       metadata: {
         position: form.position?.trim()
       }
     };
 
-    // Crear asignaciones de área-rol
-    const newAssignments: UserAreaRole[] = form.areas.map(assignment => ({
-      id: `uar-${Date.now()}-${Math.random()}`,
+    // Insert User
+    const { data: insertedUser, error: userError } = await supabase
+      .from('users')
+      .insert(mapUserToDB(newUserBase))
+      .select()
+      .single();
+
+    if (userError || !insertedUser) {
+      console.error('Error creating user:', userError);
+      return { success: false, errors: [{ field: 'general', message: 'Error creating user' }] };
+    }
+
+    const newUser = mapUserFromDB(insertedUser);
+
+    // Create assignments
+    const newAssignments = form.areas.map(assignment => ({
       userId: newUser.id,
       areaId: assignment.areaId,
       roleId: assignment.roleId,
-      assignedAt: new Date(),
       assignedBy: currentUser?.id || 'system'
     }));
 
+    if (newAssignments.length > 0) {
+      const { data: insertedAssignments, error: assignError } = await supabase
+        .from('user_area_roles')
+        .insert(newAssignments.map(mapUserAreaRoleToDB))
+        .select();
+
+      if (assignError) {
+        console.error('Error creating assignments:', assignError);
+        // Warning but proceed
+      } else if (insertedAssignments) {
+        setUserAreaRoles(prev => [...prev, ...insertedAssignments.map(mapUserAreaRoleFromDB)]);
+      }
+    }
+
     setUsers(prev => [...prev, newUser]);
-    setUserAreaRoles(prev => [...prev, ...newAssignments]);
 
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
@@ -336,49 +229,86 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return { success: false, errors: validation.errors };
     }
 
+    const updates = {
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      email: form.email.toLowerCase(),
+      active: form.active,
+      metadata: {
+        position: form.position?.trim()
+      }
+    };
+
+    const { error: userError } = await supabase
+      .from('users')
+      .update(mapUserToDB(updates))
+      .eq('id', userId);
+
+    if (userError) {
+      console.error('Error updating user:', userError);
+      return { success: false, errors: [{ field: 'general', message: 'Error updating user' }] };
+    }
+
+    // Update local state
     setUsers(prev => prev.map(user => {
       if (user.id === userId) {
         return {
           ...user,
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          email: form.email.toLowerCase(),
-          active: form.active,
+          ...updates,
           updatedAt: new Date(),
-          metadata: {
-            ...user.metadata,
-            position: form.position?.trim()
-          }
+          metadata: { ...user.metadata, ...updates.metadata }
         };
       }
       return user;
     }));
 
-    // Actualizar asignaciones
+    // Update Assignments
+    // This is complex because we need to sync the list (add missing, remove extra)
+    // Strategy: Delete all for user and re-insert, or diff.
+    // Deleting all is easiest but loses history id.
+    // Let's do a smart diff or just add/delete.
+    // Since this is "editUser", typically it overwrites the list in the UI form.
+
     const currentAssignments = userAreaRoles.filter(uar => uar.userId === userId);
-    const newAssignments: UserAreaRole[] = form.areas.map(assignment => {
-      const existing = currentAssignments.find(
-        ca => ca.areaId === assignment.areaId && ca.roleId === assignment.roleId
-      );
-      if (existing) return existing;
 
-      return {
-        id: `uar-${Date.now()}-${Math.random()}`,
+    // 1. Assignments to remove
+    const toRemove = currentAssignments.filter(ca =>
+      !form.areas.some(fa => fa.areaId === ca.areaId && fa.roleId === ca.roleId)
+    );
+
+    // 2. Assignments to add
+    const toAdd = form.areas.filter(fa =>
+      !currentAssignments.some(ca => ca.areaId === fa.areaId && ca.roleId === ca.roleId)
+    );
+
+    if (toRemove.length > 0) {
+      await supabase
+        .from('user_area_roles')
+        .delete()
+        .in('id', toRemove.map(r => r.id));
+
+      setUserAreaRoles(prev => prev.filter(p => !toRemove.find(tr => tr.id === p.id)));
+    }
+
+    if (toAdd.length > 0) {
+      const newAssignments = toAdd.map(a => ({
         userId,
-        areaId: assignment.areaId,
-        roleId: assignment.roleId,
-        assignedAt: new Date(),
+        areaId: a.areaId,
+        roleId: a.roleId,
         assignedBy: currentUser?.id || 'system'
-      };
-    });
+      }));
 
-    setUserAreaRoles(prev => [
-      ...prev.filter(uar => uar.userId !== userId),
-      ...newAssignments
-    ]);
+      const { data: inserted, error: assignError } = await supabase
+        .from('user_area_roles')
+        .insert(newAssignments.map(mapUserAreaRoleToDB))
+        .select();
+
+      if (!assignError && inserted) {
+        setUserAreaRoles(prev => [...prev, ...inserted.map(mapUserAreaRoleFromDB)]);
+      }
+    }
 
     // Log
-    const user = users.find(u => u.id === userId);
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
 
@@ -403,12 +333,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return { success: false, reason: deleteCheck.reason };
     }
 
-    const user = users.find(u => u.id === userId);
-    if (!user) {
-      return { success: false, reason: 'Usuario no encontrado' };
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+
+    if (error) {
+      console.error('Error deleting user:', error);
+      return { success: false, reason: 'Error de base de datos' };
     }
 
-    // Eliminar usuario y sus asignaciones
+    const user = users.find(u => u.id === userId);
+
+    // Eliminar usuario y sus asignaciones (Cascade handles DB, need to update local)
     setUsers(prev => prev.filter(u => u.id !== userId));
     setUserAreaRoles(prev => prev.filter(uar => uar.userId !== userId));
 
@@ -423,8 +357,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       action: 'delete_user',
       entity: 'user',
       entityId: userId,
-      entityName: `${user.firstName} ${user.lastName}`,
-      details: `Usuario eliminado: ${user.email}`,
+      entityName: user ? `${user.firstName} ${user.lastName}` : 'Usuario',
+      details: `Usuario eliminado: ${user?.email}`,
       result: 'success'
     });
 
@@ -436,6 +370,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!user) return { success: false };
 
     const newStatus = !user.active;
+
+    const { error } = await supabase
+      .from('users')
+      .update({ active: newStatus })
+      .eq('id', userId);
+
+    if (error) return { success: false };
 
     setUsers(prev => prev.map(u =>
       u.id === userId ? { ...u, active: newStatus, updatedAt: new Date() } : u
@@ -466,14 +407,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const userAssignments = userAreaRoles.filter(uar => uar.userId === userId);
     const userAreas = userAssignments.map(assignment => {
-      const area = areas.find(a => a.id === assignment.areaId)!;
-      const role = roles.find(r => r.id === assignment.roleId)!;
+      const area = areas.find(a => a.id === assignment.areaId);
+      const role = roles.find(r => r.id === assignment.roleId);
+      if (!area || !role) return null;
       return {
         area,
         role,
         assignedAt: assignment.assignedAt
       };
-    });
+    }).filter((a): a is { area: Area; role: Role; assignedAt: Date } => a !== null);
 
     return { ...user, areas: userAreas };
   };
@@ -485,11 +427,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const createArea = async (form: CreateAreaForm) => {
     // Generar código automáticamente si no se proporciona
     const generatedCode = form.code || form.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-
-    // Generar descripción automática si no se proporciona
     const generatedDescription = form.description || `Área de ${form.name}`;
 
-    // Crear formulario con valores generados
     const completeForm = {
       ...form,
       code: generatedCode,
@@ -501,15 +440,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return { success: false, errors: validation.errors };
     }
 
-    const newArea: Area = {
-      id: `area-${Date.now()}`,
+    const newAreaBase = {
       name: completeForm.name.trim(),
       code: completeForm.code.toUpperCase(),
       description: completeForm.description.trim(),
       manager: completeForm.managerId,
       active: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       createdBy: currentUser?.id || 'system',
       metadata: {
         color: completeForm.color,
@@ -517,25 +453,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    setAreas(prev => [...prev, newArea]);
+    const { data: insertedArea, error: areaError } = await supabase
+      .from('areas')
+      .insert(mapAreaToDB(newAreaBase))
+      .select()
+      .single();
 
-    // Crear asignaciones de usuario-área-rol si se proporcionaron usuarios
+    if (areaError || !insertedArea) {
+      console.error('Error creating area:', areaError);
+      return { success: false, errors: [{ field: 'general', message: 'Error creating area' }] };
+    }
+
+    const newArea = mapAreaFromDB(insertedArea);
+
+    // Create user assignments if provided
     if (form.users && form.users.length > 0) {
-      const newAssignments: UserAreaRole[] = form.users
-        .filter(u => u.userId && u.roleId) // Solo usuarios válidos
+      const newAssignments = form.users
+        .filter(u => u.userId && u.roleId)
         .map(assignment => ({
-          id: `uar-${Date.now()}-${Math.random()}`,
           userId: assignment.userId,
           areaId: newArea.id,
           roleId: assignment.roleId,
-          assignedAt: new Date(),
           assignedBy: currentUser?.id || 'system'
         }));
 
       if (newAssignments.length > 0) {
-        setUserAreaRoles(prev => [...prev, ...newAssignments]);
+        const { data: insertedAssignments } = await supabase
+          .from('user_area_roles')
+          .insert(newAssignments.map(mapUserAreaRoleToDB))
+          .select();
+
+        if (insertedAssignments) {
+          setUserAreaRoles(prev => [...prev, ...insertedAssignments.map(mapUserAreaRoleFromDB)]);
+        }
       }
     }
+
+    setAreas(prev => [...prev, newArea]);
 
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
@@ -549,7 +503,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entity: 'area',
       entityId: newArea.id,
       entityName: newArea.name,
-      details: `Área creada: ${newArea.name} (${newArea.code})${form.users && form.users.length > 0 ? ` con ${form.users.length} usuario(s) asignado(s)` : ''}`,
+      details: `Área creada: ${newArea.name} (${newArea.code})`,
       result: 'success',
       metadata: form.users && form.users.length > 0 ? { userCount: form.users.length } : undefined
     });
@@ -563,51 +517,88 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return { success: false, errors: validation.errors };
     }
 
+    const updates = {
+      name: form.name.trim(),
+      code: form.code.toUpperCase(),
+      description: form.description.trim(),
+      manager: form.managerId,
+      active: form.active,
+      metadata: {
+        color: form.color,
+        icon: form.icon
+      }
+    };
+
+    const { error: areaError } = await supabase
+      .from('areas')
+      .update(mapAreaToDB(updates))
+      .eq('id', areaId);
+
+    if (areaError) {
+      return { success: false, errors: [{ field: 'general', message: 'Error updating area' }] };
+    }
+
     setAreas(prev => prev.map(area => {
       if (area.id === areaId) {
         return {
           ...area,
-          name: form.name.trim(),
-          code: form.code.toUpperCase(),
-          description: form.description.trim(),
-          manager: form.managerId,
-          active: form.active,
+          ...updates,
           updatedAt: new Date(),
-          metadata: {
-            ...area.metadata,
-            color: form.color,
-            icon: form.icon
-          }
+          metadata: { ...area.metadata, ...updates.metadata }
         };
       }
       return area;
     }));
 
-    // Actualizar asignaciones de usuarios si se proporcionaron
     if (form.users) {
-      const currentAssignments = userAreaRoles.filter(uar => uar.areaId === areaId);
-      const newAssignments: UserAreaRole[] = form.users
-        .filter(u => u.userId && u.roleId) // Solo usuarios válidos
-        .map(assignment => {
-          const existing = currentAssignments.find(
-            ca => ca.userId === assignment.userId && ca.roleId === assignment.roleId
-          );
-          if (existing) return existing;
+      // Logic to sync users similar to editUser
+      // For simplicity/safety, we can just ignore full sync if it's too complex for this step, 
+      // OR implement the diff logic. 
+      // The original code did:
+      /*
+        const newAssignments = form.users...
+        setUserAreaRoles(prev => [...filter_old, ...new])
+      */
+      // We'll reimplement similarly but with DB calls.
 
-          return {
-            id: `uar-${Date.now()}-${Math.random()}`,
-            userId: assignment.userId,
-            areaId,
-            roleId: assignment.roleId,
-            assignedAt: new Date(),
-            assignedBy: currentUser?.id || 'system'
-          };
-        });
+      const currentAreaAssignments = userAreaRoles.filter(uar => uar.areaId === areaId);
 
-      setUserAreaRoles(prev => [
-        ...prev.filter(uar => uar.areaId !== areaId),
-        ...newAssignments
-      ]);
+      // To keep it simple: We won't remove existing ones not in the list unless explicit. 
+      // The original code MERGED them (if existing return existing, else create new). 
+      // It did NOT appear to remove users not in list? 
+      // Wait, original code:
+      /*
+         const newAssignments = form.users.map(...)
+         setUserAreaRoles(prev => [ ...prev.filter(uar => uar.areaId !== areaId), ...newAssignments ]);
+      */
+      // Ah, it replaced ALL assignments for that area with the new list.
+      // So we should DELETE all assignments for areaId and INSERT new ones.
+
+      await supabase.from('user_area_roles').delete().eq('area_id', areaId);
+
+      if (form.users.length > 0) {
+        const newAssignments = form.users.map(u => ({
+          userId: u.userId,
+          areaId,
+          roleId: u.roleId,
+          assignedBy: currentUser?.id || 'system'
+        }));
+
+        const { data: inserted } = await supabase
+          .from('user_area_roles')
+          .insert(newAssignments.map(mapUserAreaRoleToDB))
+          .select();
+
+        if (inserted) {
+          // Clean update local state
+          setUserAreaRoles(prev => [
+            ...prev.filter(uar => uar.areaId !== areaId),
+            ...inserted.map(mapUserAreaRoleFromDB)
+          ]);
+        }
+      } else {
+        setUserAreaRoles(prev => prev.filter(uar => uar.areaId !== areaId));
+      }
     }
 
     // Log
@@ -632,12 +623,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteArea = async (areaId: string) => {
     const deleteCheck = canDeleteArea(areaId, userAreaRoles);
 
+    // Check local logic first, but DB will also fail if constraints exist.
+    // However business rule might be stricter.
+
     const area = areas.find(a => a.id === areaId);
     if (!area) {
       return { success: false, reason: 'Área no encontrada' };
     }
 
-    // Eliminar área y sus asignaciones
+    const { error } = await supabase.from('areas').delete().eq('id', areaId);
+
+    if (error) {
+      return { success: false, reason: 'No se pudo eliminar el área (posiblemente tiene datos asociados)' };
+    }
+
     setAreas(prev => prev.filter(a => a.id !== areaId));
     setUserAreaRoles(prev => prev.filter(uar => uar.areaId !== areaId));
 
@@ -653,7 +652,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entity: 'area',
       entityId: areaId,
       entityName: area.name,
-      details: `Área eliminada: ${area.name} (${area.code})${deleteCheck.affectedUsers ? ` - ${deleteCheck.affectedUsers} usuario(s) afectado(s)` : ''}`,
+      details: `Área eliminada: ${area.name} (${area.code})`,
       result: 'success',
       metadata: { affectedUsers: deleteCheck.affectedUsers }
     });
@@ -667,6 +666,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const newStatus = !area.active;
     const deactivateCheck = canDeactivateArea(areaId, userAreaRoles);
+
+    const { error } = await supabase
+      .from('areas')
+      .update({ active: newStatus })
+      .eq('id', areaId);
+
+    if (error) return { success: false };
 
     setAreas(prev => prev.map(a =>
       a.id === areaId ? { ...a, active: newStatus, updatedAt: new Date() } : a
@@ -700,14 +706,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const areaAssignments = userAreaRoles.filter(uar => uar.areaId === areaId);
     const areaUsers = areaAssignments.map(assignment => {
-      const user = users.find(u => u.id === assignment.userId)!;
-      const role = roles.find(r => r.id === assignment.roleId)!;
+      const user = users.find(u => u.id === assignment.userId);
+      const role = roles.find(r => r.id === assignment.roleId);
+      if (!user || !role) return null;
       return {
         user,
         role,
         assignedAt: assignment.assignedAt
       };
-    });
+    }).filter((a): a is { user: User; role: Role; assignedAt: Date } => a !== null);
 
     return { ...area, users: areaUsers };
   };
@@ -717,21 +724,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   const assignUserToArea = async (userId: string, areaId: string, roleId: string) => {
-    const newAssignment: UserAreaRole = {
-      id: `uar-${Date.now()}`,
+    const newAssignmentBase = {
       userId,
       areaId,
       roleId,
-      assignedAt: new Date(),
       assignedBy: currentUser?.id || 'system'
     };
 
-    setUserAreaRoles(prev => [...prev, newAssignment]);
+    const { data: inserted, error } = await supabase
+      .from('user_area_roles')
+      .insert(mapUserAreaRoleToDB(newAssignmentBase))
+      .select()
+      .single();
+
+    if (error || !inserted) {
+      return { success: false };
+    }
+
+    setUserAreaRoles(prev => [...prev, mapUserAreaRoleFromDB(inserted)]);
 
     // Log
     const user = users.find(u => u.id === userId);
     const area = areas.find(a => a.id === areaId);
-    const role = roles.find(r => r.id === roleId);
+    const roleObj = roles.find(r => r.id === roleId);
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const currentRole = userRole ? roles.find(r => r.id === userRole.roleId) : null;
 
@@ -741,9 +756,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       userRole: currentRole?.name || RoleType.ADMINISTRADOR,
       action: 'assign_user_to_area',
       entity: 'assignment',
-      entityId: newAssignment.id,
+      entityId: inserted.id,
       entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
-      details: `Usuario asignado a área: ${user?.email} como ${role?.name} en ${area?.name}`,
+      details: `Usuario asignado a área: ${user?.email} como ${roleObj?.name} en ${area?.name}`,
       result: 'success'
     });
 
@@ -757,8 +772,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (!assignment) return { success: false };
 
+    const { error } = await supabase
+      .from('user_area_roles')
+      .delete()
+      .eq('id', assignment.id);
+
+    if (error) return { success: false };
+
     setUserAreaRoles(prev => prev.filter(
-      uar => !(uar.userId === userId && uar.areaId === areaId)
+      uar => uar.id !== assignment.id
     ));
 
     // Log
@@ -783,8 +805,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const changeUserRoleInArea = async (userId: string, areaId: string, newRoleId: string) => {
+    const assignment = userAreaRoles.find(
+      uar => uar.userId === userId && uar.areaId === areaId
+    );
+
+    if (!assignment) return { success: false };
+
+    const { error } = await supabase
+      .from('user_area_roles')
+      .update({ role_id: newRoleId, assigned_by: currentUser?.id || 'system', assigned_at: new Date().toISOString() })
+      .eq('id', assignment.id);
+
+    if (error) return { success: false };
+
     setUserAreaRoles(prev => prev.map(uar => {
-      if (uar.userId === userId && uar.areaId === areaId) {
+      if (uar.id === assignment.id) {
         return {
           ...uar,
           roleId: newRoleId,
@@ -808,7 +843,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       userRole: role?.name || RoleType.ADMINISTRADOR,
       action: 'change_role',
       entity: 'assignment',
-      entityId: `${userId}-${areaId}`,
+      entityId: assignment.id,
       entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
       details: `Rol cambiado: ${user?.email} es ahora ${newRole?.name} en ${area?.name}`,
       result: 'success'
@@ -822,7 +857,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   const login = async (email: string) => {
-    // Simulación de login - en producción validar con backend
+    // Simulación de login con Supabase Auth si se implementa, 
+    // pero por ahora seguimos "simulando" haciendo match con la tabla users.
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.active);
 
     if (!user) {
@@ -840,12 +876,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return { success: false };
     }
 
-    // Actualizar último login
+    // Actualizar último login en DB
+    await supabase
+      .from('users')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', user.id);
+
+    // Update local
+    const updatedUser = { ...user, lastLogin: new Date() };
+
     setUsers(prev => prev.map(u =>
-      u.id === user.id ? { ...u, lastLogin: new Date() } : u
+      u.id === user.id ? updatedUser : u
     ));
 
-    setCurrentUser(user);
+    setCurrentUser(updatedUser);
 
     // Log
     const userRole = userAreaRoles.find(uar => uar.userId === user.id);
@@ -863,7 +907,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       result: 'success'
     });
 
-    return { success: true, user };
+    return { success: true, user: updatedUser };
   };
 
   const logout = () => {
@@ -896,6 +940,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         userAreaRoles,
         stats,
         currentUser,
+        loading,
         createUser,
         editUser,
         deleteUser,
