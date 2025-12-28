@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import svgPaths from "../../imports/svg-fwymm7vmaf";
-const imgListasYoutubeadm1 = "https://placehold.co/300x200?text=YT+1";
-const imgListasYoutubeXm1 = "https://placehold.co/300x200?text=YT+2";
-const imgListasYoutubeSfl1 = "https://placehold.co/300x200?text=YT+3";
-const imgListasYoutubePyf1 = "https://placehold.co/300x200?text=YT+4";
-const imgListasYoutubeNdn1 = "https://placehold.co/300x200?text=YT+5";
-const imgListasYoutubeLn1 = "https://placehold.co/300x200?text=YT+6";
-const imgListasYoutubeFm11 = "https://placehold.co/300x200?text=YT+7";
-const imgListasYoutubeEe1 = "https://placehold.co/300x200?text=YT+8";
-const imgListasYoutubeAvap1 = "https://placehold.co/300x200?text=YT+9";
-const imgListasYoutubeAqn1 = "https://placehold.co/300x200?text=YT+10";
-const imgFondo1 = "https://placehold.co/1920x1080?text=Background";
-const imgMiguelProfile = "https://placehold.co/100x100?text=MU";
+import imgListasYoutubeadm1 from "../../assets/LISTAS-YOUTUBEADM.jpg";
+import imgListasYoutubeXm1 from "../../assets/LISTAS-YOUTUBE-XM.jpg";
+import imgListasYoutubeSfl1 from "../../assets/LISTAS-YOUTUBE-SFL.jpg";
+import imgListasYoutubePyf1 from "../../assets/LISTAS-YOUTUBE-PYF.jpg";
+import imgListasYoutubeNdn1 from "../../assets/LISTAS-YOUTUBE-NDN.jpg";
+import imgListasYoutubeLn1 from "../../assets/LISTAS-YOUTUBE-LN.jpg";
+import imgListasYoutubeFm11 from "../../assets/LISTAS-YOUTUBE-FM-1.jpg";
+import imgListasYoutubeEe1 from "../../assets/LISTAS-YOUTUBE-EE.jpg";
+import imgListasYoutubeAvap1 from "../../assets/LISTAS-YOUTUBE-AVAP.jpg";
+import imgListasYoutubeAqn1 from "../../assets/LISTAS-YOUTUBE-AQN.jpg";
+import imgFondo1 from "../../assets/fondo.png";
+import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
 
 interface LoginProps {
   onLogin: () => void;

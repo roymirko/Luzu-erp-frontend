@@ -17,10 +17,10 @@ import { TablaFormularios } from './components/TablaFormularios';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { Button } from './components/ui/button';
 import { Toaster } from 'sonner';
-const imgLogoLuzu = "https://placehold.co/200x50/fb2c36/ffffff?text=Luzu+TV";
-const imgLogoLuzuSmall = "https://placehold.co/50x50/fb2c36/ffffff?text=L";
-const imgContainer = "https://placehold.co/400x300?text=Container";
-const imgMiguelProfile = "https://placehold.co/100x100?text=MU";
+import imgLogoLuzu from "../assets/logo-luzu-2025 1.png";
+import imgLogoLuzuSmall from "../assets/loguito.png";
+import imgContainer from "../assets/Container.png";
+import imgMiguelProfile from "../assets/Miguel Uccello.jpeg";
 
 // Luzu ERP - Sistema de gestión empresarial
 type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implementacion' | 'programacion' | 'configuraciones' | 'editar-formulario';

@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useTheme } from '../contexts/ThemeContext';
-const imgMiguelProfile = "https://placehold.co/100x100?text=MU";
+import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
 
 interface ProfilePanelProps {
   onClose: () => void;

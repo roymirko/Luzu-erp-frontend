@@ -1,7 +1,7 @@
 import svgPaths from "./svg-63eg2ep2i2";
 import clsx from "clsx";
-import imgLoguito1 from "figma:asset/7eccc02503092207dcbdd57feb9cf1708d960720.png";
-import imgContainer from "figma:asset/e74125f0989485bc995eeda26eccebf3f1ad61ab.png";
+import imgLoguito1 from "../assets/loguito.png";
+import imgContainer from "../assets/Container.png";
 type Wrapper1Props = {
   additionalClassNames?: string;
 };

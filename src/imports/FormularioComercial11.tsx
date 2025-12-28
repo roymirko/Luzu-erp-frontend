@@ -1,7 +1,7 @@
 import svgPaths from "./svg-n4626rep82";
 import clsx from "clsx";
-import imgLogoLuzu20251 from "figma:asset/54ed77c3d489286e6cfd5a7d468259eb4d4c6b1f.png";
-import imgContainer from "figma:asset/e74125f0989485bc995eeda26eccebf3f1ad61ab.png";
+import imgLogoLuzu20251 from "../assets/logo-luzu-2025 1.png";
+import imgContainer from "../assets/Container.png";
 type Stats5Props = {
   additionalClassNames?: string;
 };

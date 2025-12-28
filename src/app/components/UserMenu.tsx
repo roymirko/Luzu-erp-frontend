@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Separator } from './ui/separator';
 import { useTheme } from '../contexts/ThemeContext';
-const imgMiguelProfile = "https://placehold.co/100x100?text=MU";
+import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
 
 interface UserMenuProps {
   onLogout?: () => void;
@@ -76,8 +76,8 @@ export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
           <Button
             variant="ghost"
             className={`w-full justify-start ${isDark
-                ? 'text-gray-300 hover:text-white hover:bg-[#141414]'
-                : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+              ? 'text-gray-300 hover:text-white hover:bg-[#141414]'
+              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
               }`}
             onClick={handleOpenProfile}
           >
@@ -95,10 +95,10 @@ export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
             <button
               onClick={() => setTheme('light')}
               className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors ${theme === 'light'
-                  ? 'bg-[#fb2c36]'
-                  : isDark
-                    ? 'bg-[#141414] hover:bg-gray-800'
-                    : 'bg-gray-100 hover:bg-gray-200'
+                ? 'bg-[#fb2c36]'
+                : isDark
+                  ? 'bg-[#141414] hover:bg-gray-800'
+                  : 'bg-gray-100 hover:bg-gray-200'
                 }`}
             >
               <Sun className={`h-4 w-4 ${theme === 'light' ? 'text-white' : isDark ? 'text-gray-400' : 'text-gray-600'}`} />
@@ -107,10 +107,10 @@ export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
             <button
               onClick={() => setTheme('dark')}
               className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors ${theme === 'dark'
-                  ? 'bg-[#fb2c36]'
-                  : isDark
-                    ? 'bg-[#141414] hover:bg-gray-800'
-                    : 'bg-gray-100 hover:bg-gray-200'
+                ? 'bg-[#fb2c36]'
+                : isDark
+                  ? 'bg-[#141414] hover:bg-gray-800'
+                  : 'bg-gray-100 hover:bg-gray-200'
                 }`}
             >
               <Moon className={`h-4 w-4 ${theme === 'dark' ? 'text-white' : isDark ? 'text-gray-400' : 'text-gray-600'}`} />
