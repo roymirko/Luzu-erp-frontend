@@ -23,23 +23,9 @@ export const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-/**
- * REGLA 2: Validación de Username
- * Debe tener al menos 3 caracteres, solo alfanuméricos y guiones
- */
-export const validateUsername = (username: string): boolean => {
-  const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
-  return usernameRegex.test(username);
-};
 
-/**
- * REGLA 3: Validación de Password
- * Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número
- */
-export const validatePassword = (password: string): boolean => {
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-  return passwordRegex.test(password);
-};
+
+
 
 /**
  * REGLA 4: Validación de Código de Área
@@ -72,18 +58,7 @@ export const isEmailUnique = (
   );
 };
 
-/**
- * REGLA 7: Validar unicidad de username
- */
-export const isUsernameUnique = (
-  username: string,
-  users: User[],
-  excludeUserId?: string
-): boolean => {
-  return !users.some(
-    (user) => user.username.toLowerCase() === username.toLowerCase() && user.id !== excludeUserId
-  );
-};
+
 
 /**
  * REGLA 8: Validar unicidad de código de área

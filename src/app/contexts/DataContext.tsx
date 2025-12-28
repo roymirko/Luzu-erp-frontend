@@ -34,28 +34,28 @@ interface DataContextType {
   userAreaRoles: UserAreaRole[];
   stats: SystemStats;
   currentUser: User | null;
-  
+
   // Usuarios
   createUser: (form: CreateUserForm) => Promise<{ success: boolean; userId?: string; errors?: any[] }>;
   editUser: (userId: string, form: EditUserForm) => Promise<{ success: boolean; errors?: any[] }>;
   deleteUser: (userId: string) => Promise<{ success: boolean; reason?: string }>;
   toggleUserStatus: (userId: string) => Promise<{ success: boolean }>;
   getUserWithRelations: (userId: string) => UserWithRelations | null;
-  
+
   // Áreas
   createArea: (form: CreateAreaForm) => Promise<{ success: boolean; areaId?: string; errors?: any[] }>;
   editArea: (areaId: string, form: EditAreaForm) => Promise<{ success: boolean; errors?: any[] }>;
   deleteArea: (areaId: string) => Promise<{ success: boolean; reason?: string }>;
   toggleAreaStatus: (areaId: string) => Promise<{ success: boolean; warning?: string }>;
   getAreaWithUsers: (areaId: string) => AreaWithUsers | null;
-  
+
   // Asignaciones
   assignUserToArea: (userId: string, areaId: string, roleId: string) => Promise<{ success: boolean }>;
   removeUserFromArea: (userId: string, areaId: string) => Promise<{ success: boolean }>;
   changeUserRoleInArea: (userId: string, areaId: string, newRoleId: string) => Promise<{ success: boolean }>;
-  
+
   // Autenticación simulada
-  login: (email: string, password: string) => Promise<{ success: boolean; user?: User }>;
+  login: (email: string) => Promise<{ success: boolean; user?: User }>;
   logout: () => void;
   setCurrentUser: (user: User | null) => void;
 }
@@ -202,7 +202,7 @@ const INITIAL_USER_AREA_ROLES: UserAreaRole[] = [
   { id: 'uar-2', userId: 'user-1', areaId: 'area-2', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'system' },
   { id: 'uar-3', userId: 'user-1', areaId: 'area-3', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'system' },
   { id: 'uar-4', userId: 'user-1', areaId: 'area-4', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'system' },
-  
+
   // Felicitas Carelli (PM) - Administradora en todas las áreas (no Master)
   { id: 'uar-5', userId: 'user-2', areaId: 'area-1', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'user-1' },
   { id: 'uar-6', userId: 'user-2', areaId: 'area-2', roleId: 'role-1', assignedAt: new Date('2024-01-01'), assignedBy: 'user-1' },
@@ -211,24 +211,24 @@ const INITIAL_USER_AREA_ROLES: UserAreaRole[] = [
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const { addLog } = useLog();
-  
+
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('erp_users_v4');
     return saved ? JSON.parse(saved) : INITIAL_USERS;
   });
-  
+
   const [areas, setAreas] = useState<Area[]>(() => {
     const saved = localStorage.getItem('erp_areas_v4');
     return saved ? JSON.parse(saved) : INITIAL_AREAS;
   });
-  
+
   const [roles] = useState<Role[]>(INITIAL_ROLES);
-  
+
   const [userAreaRoles, setUserAreaRoles] = useState<UserAreaRole[]>(() => {
     const saved = localStorage.getItem('erp_user_area_roles_v4');
     return saved ? JSON.parse(saved) : INITIAL_USER_AREA_ROLES;
   });
-  
+
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('erp_current_user');
     return saved ? JSON.parse(saved) : null;
@@ -307,7 +307,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -361,7 +361,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ca => ca.areaId === assignment.areaId && ca.roleId === assignment.roleId
       );
       if (existing) return existing;
-      
+
       return {
         id: `uar-${Date.now()}-${Math.random()}`,
         userId,
@@ -381,7 +381,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const user = users.find(u => u.id === userId);
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -415,7 +415,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -436,15 +436,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!user) return { success: false };
 
     const newStatus = !user.active;
-    
-    setUsers(prev => prev.map(u => 
+
+    setUsers(prev => prev.map(u =>
       u.id === userId ? { ...u, active: newStatus, updatedAt: new Date() } : u
     ));
 
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -485,17 +485,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const createArea = async (form: CreateAreaForm) => {
     // Generar código automáticamente si no se proporciona
     const generatedCode = form.code || form.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-    
+
     // Generar descripción automática si no se proporciona
     const generatedDescription = form.description || `Área de ${form.name}`;
-    
+
     // Crear formulario con valores generados
     const completeForm = {
       ...form,
       code: generatedCode,
       description: generatedDescription
     };
-    
+
     const validation = validateCreateArea(completeForm, areas);
     if (!validation.valid) {
       return { success: false, errors: validation.errors };
@@ -540,7 +540,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -593,7 +593,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ca => ca.userId === assignment.userId && ca.roleId === assignment.roleId
           );
           if (existing) return existing;
-          
+
           return {
             id: `uar-${Date.now()}-${Math.random()}`,
             userId: assignment.userId,
@@ -613,7 +613,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -631,7 +631,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const deleteArea = async (areaId: string) => {
     const deleteCheck = canDeleteArea(areaId, userAreaRoles);
-    
+
     const area = areas.find(a => a.id === areaId);
     if (!area) {
       return { success: false, reason: 'Área no encontrada' };
@@ -644,7 +644,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -667,15 +667,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const newStatus = !area.active;
     const deactivateCheck = canDeactivateArea(areaId, userAreaRoles);
-    
-    setAreas(prev => prev.map(a => 
+
+    setAreas(prev => prev.map(a =>
       a.id === areaId ? { ...a, active: newStatus, updatedAt: new Date() } : a
     ));
 
     // Log
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -688,9 +688,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       result: 'success'
     });
 
-    return { 
-      success: true, 
-      warning: !newStatus && deactivateCheck.reason ? deactivateCheck.reason : undefined 
+    return {
+      success: true,
+      warning: !newStatus && deactivateCheck.reason ? deactivateCheck.reason : undefined
     };
   };
 
@@ -734,7 +734,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const role = roles.find(r => r.id === roleId);
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const currentRole = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -766,7 +766,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const area = areas.find(a => a.id === areaId);
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -801,7 +801,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newRole = roles.find(r => r.id === newRoleId);
     const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: currentUser?.id || 'system',
       userEmail: currentUser?.email || 'system',
@@ -821,10 +821,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // AUTENTICACIÓN
   // ============================================
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string) => {
     // Simulación de login - en producción validar con backend
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.active);
-    
+
     if (!user) {
       addLog({
         userId: 'unknown',
@@ -841,7 +841,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     // Actualizar último login
-    setUsers(prev => prev.map(u => 
+    setUsers(prev => prev.map(u =>
       u.id === user.id ? { ...u, lastLogin: new Date() } : u
     ));
 
@@ -850,7 +850,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Log
     const userRole = userAreaRoles.find(uar => uar.userId === user.id);
     const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-    
+
     addLog({
       userId: user.id,
       userEmail: user.email,
@@ -870,7 +870,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (currentUser) {
       const userRole = userAreaRoles.find(uar => uar.userId === currentUser.id);
       const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-      
+
       addLog({
         userId: currentUser.id,
         userEmail: currentUser.email,

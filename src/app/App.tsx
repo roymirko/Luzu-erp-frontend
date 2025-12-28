@@ -27,7 +27,7 @@ type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implemen
 
 function AppContent() {
   const { isDark } = useTheme();
-  const { users, currentUser, setCurrentUser } = useData();
+  const { users, currentUser, setCurrentUser, login } = useData();
   const [activeView, setActiveView] = useState<View>('comercial');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -51,12 +51,16 @@ function AppContent() {
     setCurrentUser(null);
   };
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    // Establecer usuario Miguel Uccello como currentUser
-    const miguelUser = users.find(u => u.email === 'miguel@luzu.tv');
-    if (miguelUser) {
-      setCurrentUser(miguelUser);
+  const handleLogin = async () => {
+    // Login simulado con el usuario de Miguel
+    const result = await login('miguel@luzu.tv');
+    if (result.success) {
+      setIsAuthenticated(true);
+    } else {
+      // Fallback por si el usuario no existe en la DB inicial
+      setIsAuthenticated(true);
+      const miguelUser = users.find(u => u.email === 'miguel@luzu.tv');
+      if (miguelUser) setCurrentUser(miguelUser);
     }
   };
 
@@ -134,11 +138,10 @@ function AppContent() {
       case 'comercial':
         return (
           <div className="space-y-6">
-            <div 
+            <div
               onClick={() => setActiveView('formulario')}
-              className={`p-4 border rounded-lg hover:border-[#fb2c36] transition-all cursor-pointer group inline-flex items-center gap-3 ${
-                isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'
-              }`}
+              className={`p-4 border rounded-lg hover:border-[#fb2c36] transition-all cursor-pointer group inline-flex items-center gap-3 ${isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'
+                }`}
             >
               <div className="bg-[#fb2c36]/20 p-2.5 rounded-lg group-hover:bg-[#fb2c36]/30 transition-colors">
                 <Briefcase className="h-5 w-5 text-[#fb2c36]" />
@@ -147,12 +150,11 @@ function AppContent() {
                 <h3 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Nuevo Formulario</h3>
                 <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Crear propuesta comercial</p>
               </div>
-              <ChevronRight className={`h-4 w-4 ml-2 group-hover:text-[#fb2c36] transition-colors ${
-                isDark ? 'text-gray-600' : 'text-gray-400'
-              }`} />
+              <ChevronRight className={`h-4 w-4 ml-2 group-hover:text-[#fb2c36] transition-colors ${isDark ? 'text-gray-600' : 'text-gray-400'
+                }`} />
             </div>
-            
-            <TablaFormularios 
+
+            <TablaFormularios
               onEditFormulario={(id) => {
                 setEditingFormularioId(id);
                 setActiveView('editar-formulario');
@@ -190,28 +192,24 @@ function AppContent() {
   return (
     <div className={`flex h-screen overflow-hidden ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
       {/* Sidebar */}
-      <aside 
-        className={`border-r transition-all duration-300 flex-col ${
-          isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
-        } ${
-          sidebarOpen ? 'w-64' : 'w-0 md:w-[56px]'
-        } ${
-          sidebarOpen ? 'flex fixed md:relative z-50 md:z-auto' : 'hidden md:flex'
-        } h-full`}
+      <aside
+        className={`border-r transition-all duration-300 flex-col ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
+          } ${sidebarOpen ? 'w-64' : 'w-0 md:w-[56px]'
+          } ${sidebarOpen ? 'flex fixed md:relative z-50 md:z-auto' : 'hidden md:flex'
+          } h-full`}
       >
         {/* Logo */}
-        <div className={`border-b px-5 py-3 transition-all duration-300 ${
-          isDark ? 'border-gray-800' : 'border-gray-200'
-        }`}>
-          <div 
-            className="flex items-center justify-center cursor-pointer h-10" 
+        <div className={`border-b px-5 py-3 transition-all duration-300 ${isDark ? 'border-gray-800' : 'border-gray-200'
+          }`}>
+          <div
+            className="flex items-center justify-center cursor-pointer h-10"
             onClick={() => setActiveView('comercial')}
             title="Ir al inicio"
           >
-            <img 
-              src={sidebarOpen ? imgLogoLuzu : imgLogoLuzuSmall} 
-              alt="Luzu TV" 
-              className="h-10 w-auto object-contain transition-all duration-300" 
+            <img
+              src={sidebarOpen ? imgLogoLuzu : imgLogoLuzuSmall}
+              alt="Luzu TV"
+              className="h-10 w-auto object-contain transition-all duration-300"
             />
           </div>
         </div>
@@ -220,22 +218,20 @@ function AppContent() {
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             // Determinar si el item está activo
-            const isActive = activeView === item.id || 
+            const isActive = activeView === item.id ||
               (item.id === 'comercial' && (activeView === 'formulario' || activeView === 'editar-formulario'));
-            
+
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveView(item.id)}
-                className={`w-full flex items-center rounded-lg transition-all duration-200 ${
-                  sidebarOpen ? 'gap-3 px-4 py-3' : 'justify-center p-2.5'
-                } ${
-                  isActive
+                className={`w-full flex items-center rounded-lg transition-all duration-200 ${sidebarOpen ? 'gap-3 px-4 py-3' : 'justify-center p-2.5'
+                  } ${isActive
                     ? 'bg-[#fb2c36] text-white'
-                    : isDark 
+                    : isDark
                       ? 'text-gray-400 hover:bg-[#1e1e1e] hover:text-white'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
                 title={!sidebarOpen ? item.label : undefined}
               >
                 <div className="shrink-0">
@@ -253,15 +249,13 @@ function AppContent() {
         <div className={`p-4 border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
           <button
             onClick={() => setActiveView('formbuilder')}
-            className={`w-full flex items-center rounded-lg transition-all duration-200 ${
-              sidebarOpen ? 'gap-3 px-4 py-3' : 'justify-center p-2.5'
-            } ${
-              activeView === 'formbuilder'
+            className={`w-full flex items-center rounded-lg transition-all duration-200 ${sidebarOpen ? 'gap-3 px-4 py-3' : 'justify-center p-2.5'
+              } ${activeView === 'formbuilder'
                 ? 'bg-[#fb2c36] text-white'
-                : isDark 
+                : isDark
                   ? 'text-gray-400 hover:bg-[#1e1e1e] hover:text-white'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`}
+              }`}
             title={!sidebarOpen ? 'Backoffice' : undefined}
           >
             <div className="shrink-0">
@@ -277,17 +271,16 @@ function AppContent() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Navbar */}
-        <header className={`border-b px-5 py-3 ${
-          isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
-        }`}>
+        <header className={`border-b px-5 py-3 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
+          }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={isDark 
-                  ? 'text-gray-400 hover:text-white hover:bg-[#1e1e1e]' 
+                className={isDark
+                  ? 'text-gray-400 hover:text-white hover:bg-[#1e1e1e]'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }
               >
@@ -301,7 +294,7 @@ function AppContent() {
               <NotificationsPanel />
 
               {/* User */}
-              <UserMenu 
+              <UserMenu
                 onLogout={handleLogout}
                 onOpenProfile={() => setProfilePanelOpen(true)}
               />
@@ -310,9 +303,8 @@ function AppContent() {
         </header>
 
         {/* Breadcrumbs */}
-        <div className={`border-b px-5 py-2.5 ${
-          isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
-        }`}>
+        <div className={`border-b px-5 py-2.5 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
+          }`}>
           <div className="flex items-center gap-2 text-sm">
             {getBreadcrumbs().map((crumb, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -333,9 +325,8 @@ function AppContent() {
         </div>
 
         {/* Content Area */}
-        <main className={`flex-1 overflow-y-auto p-5 ${
-          isDark ? 'bg-[#0a0a0a]' : 'bg-white'
-        }`}>
+        <main className={`flex-1 overflow-y-auto p-5 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'
+          }`}>
           <div className="max-w-[1440px] mx-auto">
             {renderContent()}
           </div>
@@ -344,7 +335,7 @@ function AppContent() {
 
       {/* Profile Panel */}
       {profilePanelOpen && (
-        <ProfilePanel 
+        <ProfilePanel
           onClose={() => setProfilePanelOpen(false)}
         />
       )}

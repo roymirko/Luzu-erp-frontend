@@ -13,7 +13,7 @@ import { Switch } from './ui/switch';
 import { CreateAreaModal } from './CreateAreaModal';
 import { CreateUserModal } from './CreateUserModal';
 import { toast } from 'sonner';
-import { 
+import {
   Users,
   Shield,
   Settings,
@@ -67,22 +67,9 @@ interface Area {
   active: boolean;
 }
 
-const mockUsers: User[] = [
-  { id: '1', name: 'Juan Pérez', email: 'juan.perez@luzutv.com', role: 'Administrador', status: 'active', lastLogin: '2024-12-26 10:30' },
-  { id: '2', name: 'María González', email: 'maria.gonzalez@luzutv.com', role: 'Comercial', status: 'active', lastLogin: '2024-12-26 09:15' },
-  { id: '3', name: 'Carlos Rodríguez', email: 'carlos.rodriguez@luzutv.com', role: 'Dir. Programación', status: 'active', lastLogin: '2024-12-25 18:45' },
-  { id: '4', name: 'Ana Martínez', email: 'ana.martinez@luzutv.com', role: 'Implementación', status: 'inactive', lastLogin: '2024-12-20 14:20' },
-  { id: '5', name: 'Luis Fernández', email: 'luis.fernandez@luzutv.com', role: 'Comercial', status: 'active', lastLogin: '2024-12-26 08:00' },
-];
 
-const initialAreas: Area[] = [
-  { id: '1', name: 'Dirección de Programación', description: 'Gestión y curación de contenidos', responsable: 'Carlos Rodríguez', active: true },
-  { id: '2', name: 'Producción Audiovisual', description: 'Producción de contenido original', responsable: 'María González', active: true },
-  { id: '3', name: 'Marketing y Comunicación', description: 'Estrategia de marca y comunicación', responsable: 'Ana Martínez', active: true },
-  { id: '4', name: 'Tecnología', description: 'Infraestructura y desarrollo', responsable: 'Luis Fernández', active: true },
-  { id: '5', name: 'Administración', description: 'Gestión administrativa y financiera', responsable: 'Juan Pérez', active: true },
-  { id: '6', name: 'Comercial', description: 'Ventas y desarrollo de negocios', responsable: 'María González', active: true },
-];
+
+
 
 // Tab de Gestión de Campos y Opciones
 const FieldOptionsTab = () => {
@@ -96,7 +83,7 @@ const FieldOptionsTab = () => {
   const areas = Array.from(new Set(fieldsConfig.map(f => f.category)));
 
   // Filtrar campos por área seleccionada
-  const filteredFields = selectedArea 
+  const filteredFields = selectedArea
     ? fieldsConfig.filter(f => f.category === selectedArea)
     : [];
 
@@ -109,8 +96,8 @@ const FieldOptionsTab = () => {
       active: true,
     };
 
-    const updatedFields = fieldsConfig.map(field => 
-      field.id === selectedField.id 
+    const updatedFields = fieldsConfig.map(field =>
+      field.id === selectedField.id
         ? { ...field, options: [...field.options, newOption] }
         : field
     );
@@ -124,14 +111,14 @@ const FieldOptionsTab = () => {
   const handleToggleOption = (optionId: string) => {
     if (!selectedField) return;
 
-    const updatedFields = fieldsConfig.map(field => 
-      field.id === selectedField.id 
-        ? { 
-            ...field, 
-            options: field.options.map(opt => 
-              opt.id === optionId ? { ...opt, active: !opt.active } : opt
-            )
-          }
+    const updatedFields = fieldsConfig.map(field =>
+      field.id === selectedField.id
+        ? {
+          ...field,
+          options: field.options.map(opt =>
+            opt.id === optionId ? { ...opt, active: !opt.active } : opt
+          )
+        }
         : field
     );
 
@@ -143,8 +130,8 @@ const FieldOptionsTab = () => {
   const handleDeleteOption = (optionId: string) => {
     if (!selectedField) return;
 
-    const updatedFields = fieldsConfig.map(field => 
-      field.id === selectedField.id 
+    const updatedFields = fieldsConfig.map(field =>
+      field.id === selectedField.id
         ? { ...field, options: field.options.filter(opt => opt.id !== optionId) }
         : field
     );
@@ -195,11 +182,10 @@ const FieldOptionsTab = () => {
                 setSelectedArea(e.target.value);
                 setSelectedField(null);
               }}
-              className={`w-full h-11 px-4 rounded-lg border text-sm ${
-                isDark 
-                  ? 'bg-[#141414] border-gray-700 text-white focus:border-[#fb2c36] focus:ring-1 focus:ring-[#fb2c36]' 
+              className={`w-full h-11 px-4 rounded-lg border text-sm ${isDark
+                  ? 'bg-[#141414] border-gray-700 text-white focus:border-[#fb2c36] focus:ring-1 focus:ring-[#fb2c36]'
                   : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36] focus:ring-1 focus:ring-[#fb2c36]'
-              }`}
+                }`}
             >
               <option value="">Seleccionar área...</option>
               {areas.map((area) => (
@@ -231,13 +217,12 @@ const FieldOptionsTab = () => {
                 <button
                   key={field.id}
                   onClick={() => setSelectedField(field)}
-                  className={`w-full p-2.5 min-h-[44px] flex items-center border rounded-lg text-left transition-all ${
-                    selectedField?.id === field.id
+                  className={`w-full p-2.5 min-h-[44px] flex items-center border rounded-lg text-left transition-all ${selectedField?.id === field.id
                       ? 'border-green-500 bg-green-500/10'
-                      : isDark 
+                      : isDark
                         ? 'border-gray-800 bg-[#141414] hover:border-gray-700'
                         : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {field.label}
@@ -247,168 +232,164 @@ const FieldOptionsTab = () => {
             </CardContent>
           </Card>
 
-      {/* Panel de Edición de Opciones */}
-      <div className="lg:col-span-2">
-        {selectedField ? (
-          <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    <Tag className="h-5 w-5 text-[#fb2c36]" />
-                    {selectedField.label}
-                  </CardTitle>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                    Gestiona las opciones disponibles en los formularios
-                  </p>
-                </div>
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                  {selectedField.type}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Agregar Nueva Opción */}
-              <div className={`p-4 border rounded-lg ${
-                isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
-              }`}>
-                <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Agregar Nueva Opción
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Ej: Nueva Unidad de Negocio"
-                    value={newOptionValue}
-                    onChange={(e) => setNewOptionValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddOption();
-                      }
-                    }}
-                    className={isDark 
-                      ? 'bg-[#0a0a0a] border-gray-700 text-white'
-                      : 'bg-white border-gray-300 text-gray-900'
-                    }
-                  />
-                  <Button 
-                    onClick={handleAddOption}
-                    disabled={!newOptionValue.trim()}
-                    className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar
-                  </Button>
-                </div>
-              </div>
-
-              {/* Lista de Opciones Existentes */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Opciones Existentes ({selectedField.options.length})
-                  </h4>
-                  <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                    {selectedField.options.filter(o => o.active).length} activas
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {selectedField.options.map((option) => (
-                    <div
-                      key={option.id}
-                      className={`p-3 border rounded-lg flex items-center justify-between ${
-                        isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
-                      } ${!option.active ? 'opacity-50' : ''}`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className={`h-8 w-8 rounded flex items-center justify-center ${
-                          option.active 
-                            ? 'bg-[#fb2c36]/20' 
-                            : isDark ? 'bg-gray-800' : 'bg-gray-200'
-                        }`}>
-                          <Tag className={`h-4 w-4 ${
-                            option.active ? 'text-[#fb2c36]' : isDark ? 'text-gray-600' : 'text-gray-400'
-                          }`} />
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                            {option.value}
-                          </p>
-                          <p className={`text-xs ${isDark ? 'text-gray-600' : 'text-gray-500'}`}>
-                            {option.active ? 'Visible en formularios' : 'Oculta en formularios'}
-                          </p>
-                        </div>
-                        <Badge className={option.active 
-                          ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                          : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                        }>
-                          {option.active ? 'Activa' : 'Inactiva'}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1 ml-3">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleToggleOption(option.id)}
-                          className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}
-                        >
-                          {option.active ? (
-                            <XCircle className="h-4 w-4" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteOption(option.id)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+          {/* Panel de Edición de Opciones */}
+          <div className="lg:col-span-2">
+            {selectedField ? (
+              <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <Tag className="h-5 w-5 text-[#fb2c36]" />
+                        {selectedField.label}
+                      </CardTitle>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+                        Gestiona las opciones disponibles en los formularios
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                      {selectedField.type}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Agregar Nueva Opción */}
+                  <div className={`p-4 border rounded-lg ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                    <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Agregar Nueva Opción
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Ej: Nueva Unidad de Negocio"
+                        value={newOptionValue}
+                        onChange={(e) => setNewOptionValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddOption();
+                          }
+                        }}
+                        className={isDark
+                          ? 'bg-[#0a0a0a] border-gray-700 text-white'
+                          : 'bg-white border-gray-300 text-gray-900'
+                        }
+                      />
+                      <Button
+                        onClick={handleAddOption}
+                        disabled={!newOptionValue.trim()}
+                        className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar
+                      </Button>
+                    </div>
+                  </div>
 
-              {/* Botones de Acción */}
-              <div className={`flex justify-end gap-2 pt-4 border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-                <Button 
-                  variant="outline" 
-                  onClick={handleCancel}
-                  className={isDark 
-                    ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                  }
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleSaveChanges}
-                  className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar Cambios
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
-            <CardContent className="p-12">
-              <div className="text-center">
-                <List className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-700' : 'text-gray-400'}`} />
-                <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Selecciona un Campo
-                </h3>
-                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                  Elige un campo de la lista izquierda para gestionar sus opciones
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  {/* Lista de Opciones Existentes */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Opciones Existentes ({selectedField.options.length})
+                      </h4>
+                      <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+                        {selectedField.options.filter(o => o.active).length} activas
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedField.options.map((option) => (
+                        <div
+                          key={option.id}
+                          className={`p-3 border rounded-lg flex items-center justify-between ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
+                            } ${!option.active ? 'opacity-50' : ''}`}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className={`h-8 w-8 rounded flex items-center justify-center ${option.active
+                                ? 'bg-[#fb2c36]/20'
+                                : isDark ? 'bg-gray-800' : 'bg-gray-200'
+                              }`}>
+                              <Tag className={`h-4 w-4 ${option.active ? 'text-[#fb2c36]' : isDark ? 'text-gray-600' : 'text-gray-400'
+                                }`} />
+                            </div>
+                            <div className="flex-1">
+                              <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {option.value}
+                              </p>
+                              <p className={`text-xs ${isDark ? 'text-gray-600' : 'text-gray-500'}`}>
+                                {option.active ? 'Visible en formularios' : 'Oculta en formularios'}
+                              </p>
+                            </div>
+                            <Badge className={option.active
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                            }>
+                              {option.active ? 'Activa' : 'Inactiva'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1 ml-3">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleToggleOption(option.id)}
+                              className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}
+                            >
+                              {option.active ? (
+                                <XCircle className="h-4 w-4" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteOption(option.id)}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Botones de Acción */}
+                  <div className={`flex justify-end gap-2 pt-4 border-t ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <Button
+                      variant="outline"
+                      onClick={handleCancel}
+                      className={isDark
+                        ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleSaveChanges}
+                      className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar Cambios
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
+                <CardContent className="p-12">
+                  <div className="text-center">
+                    <List className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-700' : 'text-gray-400'}`} />
+                    <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Selecciona un Campo
+                    </h3>
+                    <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+                      Elige un campo de la lista izquierda para gestionar sus opciones
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       )}
@@ -450,7 +431,7 @@ const AreasTab = () => {
     active: area.active
   }));
 
-  const areas = allAreas.filter(area => 
+  const areas = allAreas.filter(area =>
     area.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     area.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -477,13 +458,13 @@ const AreasTab = () => {
                   placeholder="Buscar áreas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={isDark 
+                  className={isDark
                     ? 'pl-10 bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
                     : 'pl-10 bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500'
                   }
                 />
               </div>
-              <Button 
+              <Button
                 onClick={handleNewArea}
                 className="bg-[#fb2c36] text-white hover:bg-[#e02731] whitespace-nowrap h-10 px-4 min-w-[160px]"
               >
@@ -544,26 +525,23 @@ const AreasTab = () => {
             {areas.map((area) => (
               <div
                 key={area.id}
-                className={`p-4 border rounded-lg ${
-                  isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
-                } ${!area.active ? 'opacity-60' : ''}`}
+                className={`p-4 border rounded-lg ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
+                  } ${!area.active ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded ${
-                      area.active 
-                        ? 'bg-[#fb2c36]/20' 
+                    <div className={`p-2 rounded ${area.active
+                        ? 'bg-[#fb2c36]/20'
                         : isDark ? 'bg-gray-800' : 'bg-gray-200'
-                    }`}>
-                      <Building2 className={`h-5 w-5 ${
-                        area.active ? 'text-[#fb2c36]' : isDark ? 'text-gray-600' : 'text-gray-400'
-                      }`} />
+                      }`}>
+                      <Building2 className={`h-5 w-5 ${area.active ? 'text-[#fb2c36]' : isDark ? 'text-gray-600' : 'text-gray-400'
+                        }`} />
                     </div>
                     <div>
                       <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {area.name}
                       </h4>
-                      <Badge className={area.active 
+                      <Badge className={area.active
                         ? 'bg-green-500/20 text-green-400 border-green-500/30 text-xs'
                         : 'bg-gray-500/20 text-gray-400 border-gray-500/30 text-xs'
                       }>
@@ -598,7 +576,7 @@ const AreasTab = () => {
       </Card>
 
       {/* Modal de Nueva Área */}
-      <CreateAreaModal 
+      <CreateAreaModal
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         onSuccess={handleModalSuccess}
@@ -639,7 +617,7 @@ const UsersTab = () => {
     lastLogin: user.lastLogin ? new Date(user.lastLogin).toLocaleString('es-AR') : 'Nunca'
   }));
 
-  const mockUsers = allUsers.filter(user =>
+  const filteredUsers = allUsers.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -665,13 +643,13 @@ const UsersTab = () => {
                   placeholder="Buscar usuarios..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={isDark 
+                  className={isDark
                     ? 'pl-10 bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
                     : 'pl-10 bg-gray-50 border-gray-300 text-gray-900 placeholder:text-gray-500'
                   }
                 />
               </div>
-              <Button 
+              <Button
                 onClick={handleNewUser}
                 className="bg-[#fb2c36] text-white hover:bg-[#e02731] whitespace-nowrap h-10 px-4 min-w-[160px]"
               >
@@ -703,7 +681,7 @@ const UsersTab = () => {
                 </div>
                 <div>
                   <p className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {mockUsers.filter(u => u.status === 'active').length}
+                    {filteredUsers.filter(u => u.status === 'active').length}
                   </p>
                   <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Usuarios Activos</p>
                 </div>
@@ -725,12 +703,11 @@ const UsersTab = () => {
 
           {/* Lista de Usuarios */}
           <div className="space-y-2">
-            {mockUsers.map((user) => (
+            {filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className={`p-4 border rounded-lg hover:border-[#fb2c36]/50 transition-colors ${
-                  isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
-                }`}
+                className={`p-4 border rounded-lg hover:border-[#fb2c36]/50 transition-colors ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
+                  }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1">
@@ -740,8 +717,8 @@ const UsersTab = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h4 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.name}</h4>
-                        <Badge className={user.status === 'active' 
-                          ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                        <Badge className={user.status === 'active'
+                          ? 'bg-green-500/20 text-green-400 border-green-500/30'
                           : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
                         }>
                           {user.status === 'active' ? 'Activo' : 'Inactivo'}
@@ -777,7 +754,7 @@ const UsersTab = () => {
       </Card>
 
       {/* Modal de Nuevo Usuario */}
-      <CreateUserModal 
+      <CreateUserModal
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         onSuccess={handleModalSuccess}
@@ -917,12 +894,11 @@ const RolesTab = () => {
               return (
                 <div
                   key={role.id}
-                  className={`border rounded-lg transition-all ${
-                    isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
-                  } ${isExpanded ? 'ring-1 ring-[#fb2c36]/30' : ''}`}
+                  className={`border rounded-lg transition-all ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
+                    } ${isExpanded ? 'ring-1 ring-[#fb2c36]/30' : ''}`}
                 >
                   {/* Header del Rol */}
-                  <div 
+                  <div
                     className="p-6 cursor-pointer hover:bg-opacity-80 transition-all"
                     onClick={() => setSelectedRole(isExpanded ? null : role.id)}
                   >
@@ -933,7 +909,7 @@ const RolesTab = () => {
                             {getRoleIcon(role.name)}
                           </div>
                         </div>
-                        
+
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -946,11 +922,11 @@ const RolesTab = () => {
                           <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'} mb-3`}>
                             {role.description}
                           </p>
-                          
+
                           {/* Mini resumen de permisos */}
                           <div className="flex flex-wrap gap-2">
                             {role.permissions.slice(0, 3).map((perm, idx) => (
-                              <Badge 
+                              <Badge
                                 key={idx}
                                 variant="outline"
                                 className={`text-xs ${isDark ? 'border-gray-700 text-gray-400' : 'border-gray-300 text-gray-600'}`}
@@ -959,7 +935,7 @@ const RolesTab = () => {
                               </Badge>
                             ))}
                             {role.permissions.length > 3 && (
-                              <Badge 
+                              <Badge
                                 variant="outline"
                                 className={`text-xs ${isDark ? 'border-gray-700 text-gray-400' : 'border-gray-300 text-gray-600'}`}
                               >
@@ -992,9 +968,8 @@ const RolesTab = () => {
                           {role.permissions.map((perm, idx) => (
                             <div
                               key={idx}
-                              className={`p-4 rounded-lg border ${
-                                isDark ? 'bg-[#0a0a0a] border-gray-800' : 'bg-white border-gray-200'
-                              }`}
+                              className={`p-4 rounded-lg border ${isDark ? 'bg-[#0a0a0a] border-gray-800' : 'bg-white border-gray-200'
+                                }`}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -1007,13 +982,12 @@ const RolesTab = () => {
                                   <Badge
                                     key={actionIdx}
                                     variant="outline"
-                                    className={`text-xs ${
-                                      action === 'delete' 
+                                    className={`text-xs ${action === 'delete'
                                         ? 'border-red-500/30 text-red-400 bg-red-500/10'
                                         : action === 'create' || action === 'update'
-                                        ? 'border-blue-500/30 text-blue-400 bg-blue-500/10'
-                                        : 'border-green-500/30 text-green-400 bg-green-500/10'
-                                    }`}
+                                          ? 'border-blue-500/30 text-blue-400 bg-blue-500/10'
+                                          : 'border-green-500/30 text-green-400 bg-green-500/10'
+                                      }`}
                                   >
                                     {action === 'create' && '✏️ Crear'}
                                     {action === 'read' && '👁️ Leer'}
@@ -1038,16 +1012,15 @@ const RolesTab = () => {
                               const userAssignments = userAreaRoles.filter(
                                 uar => uar.userId === user.id && uar.roleId === role.id
                               );
-                              const userAreas = userAssignments.map(uar => 
+                              const userAreas = userAssignments.map(uar =>
                                 areas.find(a => a.id === uar.areaId)
                               ).filter(Boolean);
 
                               return (
                                 <div
                                   key={user.id}
-                                  className={`p-4 rounded-lg border ${
-                                    isDark ? 'bg-[#0a0a0a] border-gray-800' : 'bg-white border-gray-200'
-                                  }`}
+                                  className={`p-4 rounded-lg border ${isDark ? 'bg-[#0a0a0a] border-gray-800' : 'bg-white border-gray-200'
+                                    }`}
                                 >
                                   <div className="flex items-start gap-3">
                                     <div className={`p-2 rounded-lg ${roleColor.bg}`}>
@@ -1077,10 +1050,10 @@ const RolesTab = () => {
                                         ))}
                                       </div>
                                     </div>
-                                    <Badge 
+                                    <Badge
                                       variant="outline"
-                                      className={user.active 
-                                        ? 'border-green-500/30 text-green-400 bg-green-500/10' 
+                                      className={user.active
+                                        ? 'border-green-500/30 text-green-400 bg-green-500/10'
                                         : 'border-gray-500/30 text-gray-400 bg-gray-500/10'
                                       }
                                     >
@@ -1092,9 +1065,8 @@ const RolesTab = () => {
                             })}
                           </div>
                         ) : (
-                          <div className={`text-center py-8 border rounded-lg ${
-                            isDark ? 'border-gray-800 bg-[#0a0a0a]' : 'border-gray-200 bg-gray-50'
-                          }`}>
+                          <div className={`text-center py-8 border rounded-lg ${isDark ? 'border-gray-800 bg-[#0a0a0a]' : 'border-gray-200 bg-gray-50'
+                            }`}>
                             <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
                               No hay usuarios asignados con este rol
                             </p>
@@ -1136,11 +1108,11 @@ const AuditTab = () => {
 
   // Filtrar logs
   const filteredLogs = logs.filter(log => {
-    const matchesSearch = 
+    const matchesSearch =
       log.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.entityName?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesAction = filterAction === 'all' || log.action === filterAction;
     const matchesEntity = filterEntity === 'all' || log.entity === filterEntity;
     const matchesResult = filterResult === 'all' || log.result === filterResult;
@@ -1150,7 +1122,7 @@ const AuditTab = () => {
   });
 
   // Ordenar por fecha descendente
-  const sortedLogs = [...filteredLogs].sort((a, b) => 
+  const sortedLogs = [...filteredLogs].sort((a, b) =>
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
@@ -1252,7 +1224,7 @@ const AuditTab = () => {
     link.href = URL.createObjectURL(blob);
     link.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    
+
     toast.success('📥 Logs exportados exitosamente');
   };
 
@@ -1265,8 +1237,8 @@ const AuditTab = () => {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = searchTerm || filterAction !== 'all' || filterEntity !== 'all' || 
-                          filterResult !== 'all' || filterUser !== 'all';
+  const hasActiveFilters = searchTerm || filterAction !== 'all' || filterEntity !== 'all' ||
+    filterResult !== 'all' || filterUser !== 'all';
 
   return (
     <div className="space-y-6">
@@ -1332,17 +1304,17 @@ const AuditTab = () => {
                   Registro de Auditoría
                 </CardTitle>
                 <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                  {filteredLogs.length} {filteredLogs.length === 1 ? 'registro' : 'registros'} 
+                  {filteredLogs.length} {filteredLogs.length === 1 ? 'registro' : 'registros'}
                   {hasActiveFilters && ' (filtrado)'}
                 </p>
               </div>
               <div className="flex gap-2">
                 {hasActiveFilters && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={clearFilters}
-                    className={isDark 
+                    className={isDark
                       ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
                       : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                     }
@@ -1351,11 +1323,11 @@ const AuditTab = () => {
                     Limpiar Filtros
                   </Button>
                 )}
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={handleExport}
-                  className={isDark 
+                  className={isDark
                     ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                   }
@@ -1368,9 +1340,8 @@ const AuditTab = () => {
 
             {/* Búsqueda */}
             <div className="relative">
-              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${
-                isDark ? 'text-gray-500' : 'text-gray-400'
-              }`} />
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'
+                }`} />
               <Input
                 placeholder="Buscar en logs..."
                 value={searchTerm}
@@ -1378,10 +1349,10 @@ const AuditTab = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className={`pl-10 ${isDark 
-                  ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-500' 
+                className={`pl-10 ${isDark
+                  ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-500'
                   : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }`}
+                  }`}
               />
             </div>
 
@@ -1397,11 +1368,10 @@ const AuditTab = () => {
               <select
                 value={filterAction}
                 onChange={(e) => handleFilterChange(setFilterAction)(e.target.value)}
-                className={`text-sm px-3 py-1.5 rounded-md border ${
-                  isDark 
-                    ? 'bg-[#141414] border-gray-800 text-white' 
+                className={`text-sm px-3 py-1.5 rounded-md border ${isDark
+                    ? 'bg-[#141414] border-gray-800 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               >
                 <option value="all">Todas las acciones</option>
                 {uniqueActions.map(action => (
@@ -1412,11 +1382,10 @@ const AuditTab = () => {
               <select
                 value={filterEntity}
                 onChange={(e) => handleFilterChange(setFilterEntity)(e.target.value)}
-                className={`text-sm px-3 py-1.5 rounded-md border ${
-                  isDark 
-                    ? 'bg-[#141414] border-gray-800 text-white' 
+                className={`text-sm px-3 py-1.5 rounded-md border ${isDark
+                    ? 'bg-[#141414] border-gray-800 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               >
                 <option value="all">Todas las entidades</option>
                 {uniqueEntities.map(entity => (
@@ -1427,11 +1396,10 @@ const AuditTab = () => {
               <select
                 value={filterResult}
                 onChange={(e) => handleFilterChange(setFilterResult)(e.target.value)}
-                className={`text-sm px-3 py-1.5 rounded-md border ${
-                  isDark 
-                    ? 'bg-[#141414] border-gray-800 text-white' 
+                className={`text-sm px-3 py-1.5 rounded-md border ${isDark
+                    ? 'bg-[#141414] border-gray-800 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               >
                 <option value="all">Todos los resultados</option>
                 <option value="success">Exitoso</option>
@@ -1442,11 +1410,10 @@ const AuditTab = () => {
               <select
                 value={filterUser}
                 onChange={(e) => handleFilterChange(setFilterUser)(e.target.value)}
-                className={`text-sm px-3 py-1.5 rounded-md border ${
-                  isDark 
-                    ? 'bg-[#141414] border-gray-800 text-white' 
+                className={`text-sm px-3 py-1.5 rounded-md border ${isDark
+                    ? 'bg-[#141414] border-gray-800 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
-                }`}
+                  }`}
               >
                 <option value="all">Todos los usuarios</option>
                 {uniqueUsers.map(user => (
@@ -1462,29 +1429,24 @@ const AuditTab = () => {
             <table className="w-full">
               <thead>
                 <tr className={`border-b ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-                  <th className={`text-left py-3 px-4 text-xs font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <th className={`text-left py-3 px-4 text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                     FECHA
                   </th>
-                  <th className={`text-left py-3 px-4 text-xs font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <th className={`text-left py-3 px-4 text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                     USUARIO
                   </th>
-                  <th className={`text-left py-3 px-4 text-xs font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <th className={`text-left py-3 px-4 text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                     ACCIÓN
                   </th>
-                  <th className={`text-left py-3 px-4 text-xs font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <th className={`text-left py-3 px-4 text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                     DETALLE
                   </th>
-                  <th className={`text-left py-3 px-4 text-xs font-medium ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <th className={`text-left py-3 px-4 text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                     RESULTADO
                   </th>
                 </tr>
@@ -1492,11 +1454,10 @@ const AuditTab = () => {
               <tbody>
                 {paginatedLogs.length > 0 ? (
                   paginatedLogs.map((log) => (
-                    <tr 
+                    <tr
                       key={log.id}
-                      className={`border-b ${
-                        isDark ? 'border-gray-800 hover:bg-[#141414]' : 'border-gray-200 hover:bg-gray-50'
-                      } transition-colors`}
+                      className={`border-b ${isDark ? 'border-gray-800 hover:bg-[#141414]' : 'border-gray-200 hover:bg-gray-50'
+                        } transition-colors`}
                     >
                       <td className={`py-4 px-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                         <div className="flex items-center gap-1.5">
@@ -1507,17 +1468,15 @@ const AuditTab = () => {
                       <td className={`py-4 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         <div>
                           <p className="font-medium">{getUserNameFromEmail(log.userEmail)}</p>
-                          <Badge variant="outline" className={`text-xs mt-1 ${
-                            isDark ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-600'
-                          }`}>
+                          <Badge variant="outline" className={`text-xs mt-1 ${isDark ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-600'
+                            }`}>
                             {log.userRole}
                           </Badge>
                         </div>
                       </td>
                       <td className={`py-4 px-4 text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        <Badge variant="outline" className={`${
-                          isDark ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'
-                        }`}>
+                        <Badge variant="outline" className={`${isDark ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'
+                          }`}>
                           {getActionLabel(log.action)}
                         </Badge>
                       </td>
@@ -1551,9 +1510,8 @@ const AuditTab = () => {
 
           {/* Paginación */}
           {totalPages > 1 && (
-            <div className={`flex items-center justify-between mt-6 pt-4 border-t ${
-              isDark ? 'border-gray-800' : 'border-gray-200'
-            }`}>
+            <div className={`flex items-center justify-between mt-6 pt-4 border-t ${isDark ? 'border-gray-800' : 'border-gray-200'
+              }`}>
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Mostrando {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredLogs.length)} de {filteredLogs.length}
               </p>
@@ -1563,7 +1521,7 @@ const AuditTab = () => {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className={isDark 
+                  className={isDark
                     ? 'border-gray-700 text-gray-300 hover:bg-gray-800 disabled:opacity-50'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50'
                   }
@@ -1582,16 +1540,16 @@ const AuditTab = () => {
                     } else {
                       pageNum = currentPage - 2 + i;
                     }
-                    
+
                     return (
                       <Button
                         key={pageNum}
                         variant={currentPage === pageNum ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={currentPage === pageNum 
+                        className={currentPage === pageNum
                           ? 'bg-[#fb2c36] text-white hover:bg-[#fb2c36]/90'
-                          : isDark 
+                          : isDark
                             ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
                             : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                         }
@@ -1606,7 +1564,7 @@ const AuditTab = () => {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className={isDark 
+                  className={isDark
                     ? 'border-gray-700 text-gray-300 hover:bg-gray-800 disabled:opacity-50'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50'
                   }
@@ -1659,9 +1617,9 @@ const SystemConfigTab = () => {
               <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Nombre de la Empresa
               </label>
-              <Input 
-                defaultValue="Luzu TV" 
-                className={isDark 
+              <Input
+                defaultValue="Luzu TV"
+                className={isDark
                   ? 'bg-[#141414] border-gray-700 text-white'
                   : 'bg-gray-50 border-gray-300 text-gray-900'
                 }
@@ -1672,10 +1630,10 @@ const SystemConfigTab = () => {
               <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Email de Contacto
               </label>
-              <Input 
-                defaultValue="admin@luzutv.com" 
+              <Input
+                defaultValue="admin@luzutv.com"
                 type="email"
-                className={isDark 
+                className={isDark
                   ? 'bg-[#141414] border-gray-700 text-white'
                   : 'bg-gray-50 border-gray-300 text-gray-900'
                 }
@@ -1686,9 +1644,9 @@ const SystemConfigTab = () => {
               <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Zona Horaria
               </label>
-              <Input 
-                defaultValue="America/Argentina/Buenos_Aires (GMT-3)" 
-                className={isDark 
+              <Input
+                defaultValue="America/Argentina/Buenos_Aires (GMT-3)"
+                className={isDark
                   ? 'bg-[#141414] border-gray-700 text-white'
                   : 'bg-gray-50 border-gray-300 text-gray-900'
                 }
@@ -1743,17 +1701,17 @@ const SystemConfigTab = () => {
 
           <div className={`border-t pt-6 ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
             <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleCancel}
-                className={isDark 
+                className={isDark
                   ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
                   : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                 }
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onClick={handleSaveConfig}
                 className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
               >
@@ -1843,43 +1801,43 @@ export function FormBuilder() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={`h-auto p-1 gap-1 ${isDark ? 'bg-[#1e1e1e] border border-gray-800' : 'bg-white border border-gray-200'}`}>
-          <TabsTrigger 
-            value="fields" 
+          <TabsTrigger
+            value="fields"
             className={`px-4 py-2.5 ${isDark ? 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-400 data-[state=inactive]:hover:text-gray-300' : 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900'}`}
           >
             <List className="h-4 w-4 mr-2" />
             Campos y Opciones
           </TabsTrigger>
-          <TabsTrigger 
-            value="areas" 
+          <TabsTrigger
+            value="areas"
             className={`px-4 py-2.5 ${isDark ? 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-400 data-[state=inactive]:hover:text-gray-300' : 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900'}`}
           >
             <Building2 className="h-4 w-4 mr-2" />
             Áreas
           </TabsTrigger>
-          <TabsTrigger 
-            value="users" 
+          <TabsTrigger
+            value="users"
             className={`px-4 py-2.5 ${isDark ? 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-400 data-[state=inactive]:hover:text-gray-300' : 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900'}`}
           >
             <Users className="h-4 w-4 mr-2" />
             Usuarios
           </TabsTrigger>
-          <TabsTrigger 
-            value="roles" 
+          <TabsTrigger
+            value="roles"
             className={`px-4 py-2.5 ${isDark ? 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-400 data-[state=inactive]:hover:text-gray-300' : 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900'}`}
           >
             <Shield className="h-4 w-4 mr-2" />
             Roles
           </TabsTrigger>
-          <TabsTrigger 
-            value="audit" 
+          <TabsTrigger
+            value="audit"
             className={`px-4 py-2.5 ${isDark ? 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-400 data-[state=inactive]:hover:text-gray-300' : 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900'}`}
           >
             <Activity className="h-4 w-4 mr-2" />
             Auditoría
           </TabsTrigger>
-          <TabsTrigger 
-            value="config" 
+          <TabsTrigger
+            value="config"
             className={`px-4 py-2.5 ${isDark ? 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-400 data-[state=inactive]:hover:text-gray-300' : 'data-[state=active]:bg-[#fb2c36] data-[state=active]:text-white data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900'}`}
           >
             <Settings className="h-4 w-4 mr-2" />
