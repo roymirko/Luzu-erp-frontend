@@ -1,4 +1,5 @@
 import { User, Area, Role, UserAreaRole, AuditLog, RoleType, LogAction, LogEntity, LogResult } from '../types/business';
+import { FormularioData } from '../contexts/FormulariosContext';
 
 // HELPERS
 const toDate = (str: string | Date | null | undefined): Date => {
@@ -122,3 +123,85 @@ export const mapLogToDB = (log: Partial<AuditLog>) => {
     if (log.metadata) dbLog.metadata = log.metadata;
     return dbLog;
 };
+
+// FORMS
+// FORMS
+export const mapFormFromDB = (dbForm: any, dbItems: any[] = []): FormularioData => ({
+    id: dbForm.id,
+    fecha: dbForm.fecha,
+    mesServicio: dbForm.mes_servicio,
+    responsable: dbForm.responsable,
+    ordenPublicidad: dbForm.orden_publicidad,
+    totalVenta: dbForm.total_venta,
+    unidadNegocio: dbForm.unidad_negocio,
+    categoriaNegocio: dbForm.categoria_negocio,
+    proyecto: dbForm.proyecto,
+    razonSocial: dbForm.razon_social,
+    categoria: dbForm.categoria,
+    empresaAgencia: dbForm.empresa_agencia,
+    marca: dbForm.marca,
+    nombreCampana: dbForm.nombre_campana,
+    acuerdoPago: dbForm.acuerdo_pago,
+    tipoImporte: dbForm.tipo_importe,
+    observaciones: dbForm.observaciones,
+    importeRows: dbItems.map(mapFormItemFromDB),
+    createdAt: toDate(dbForm.created_at),
+    updatedAt: toDate(dbForm.updated_at),
+    createdBy: dbForm.created_by
+});
+
+export const mapFormToDB = (form: Partial<FormularioData>) => {
+    const dbForm: any = {};
+    if (form.id) dbForm.id = form.id;
+    if (form.fecha) dbForm.fecha = form.fecha;
+    if (form.mesServicio) dbForm.mes_servicio = form.mesServicio;
+    if (form.responsable) dbForm.responsable = form.responsable;
+    if (form.ordenPublicidad) dbForm.orden_publicidad = form.ordenPublicidad;
+    if (form.totalVenta) dbForm.total_venta = form.totalVenta;
+    if (form.unidadNegocio) dbForm.unidad_negocio = form.unidadNegocio;
+    if (form.categoriaNegocio) dbForm.categoria_negocio = form.categoriaNegocio;
+    if (form.proyecto) dbForm.proyecto = form.proyecto;
+    if (form.razonSocial) dbForm.razon_social = form.razonSocial;
+    if (form.categoria) dbForm.categoria = form.categoria;
+    if (form.empresaAgencia) dbForm.empresa_agencia = form.empresaAgencia;
+    if (form.marca) dbForm.marca = form.marca;
+    if (form.nombreCampana) dbForm.nombre_campana = form.nombreCampana;
+    if (form.acuerdoPago) dbForm.acuerdo_pago = form.acuerdoPago;
+    if (form.tipoImporte) dbForm.tipo_importe = form.tipoImporte;
+    if (form.observaciones) dbForm.observaciones = form.observaciones;
+    if (form.createdBy) dbForm.created_by = form.createdBy;
+    if (form.updatedAt) dbForm.updated_at = form.updatedAt.toISOString();
+    // created_at usually handled by default, but if passed we could set it.
+    // For now we assume DB handles created_at on insert.
+    return dbForm;
+};
+
+// FORM ITEMS
+export const mapFormItemFromDB = (dbItem: any): any => ({
+    id: dbItem.id,
+    programa: dbItem.programa,
+    monto: dbItem.monto,
+    ncPrograma: dbItem.nc_programa,
+    ncPorcentaje: dbItem.nc_porcentaje,
+    proveedorFee: dbItem.proveedor_fee,
+    feePrograma: dbItem.fee_programa,
+    feePorcentaje: dbItem.fee_porcentaje,
+    implementacion: dbItem.implementacion,
+    talentos: dbItem.talentos,
+    tecnica: dbItem.tecnica
+});
+
+export const mapFormItemToDB = (item: any, formId: string) => ({
+    // id: item.id, // Usually new or existing, let DB handle generated if needed or pass it.
+    form_id: formId,
+    programa: item.programa,
+    monto: item.monto,
+    nc_programa: item.ncPrograma,
+    nc_porcentaje: item.ncPorcentaje,
+    proveedor_fee: item.proveedorFee,
+    fee_programa: item.feePrograma,
+    fee_porcentaje: item.feePorcentaje,
+    implementacion: item.implementacion,
+    talentos: item.talentos,
+    tecnica: item.tecnica
+});
