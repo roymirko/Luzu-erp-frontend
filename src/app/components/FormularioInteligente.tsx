@@ -503,8 +503,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                       value={mesServicioMes}
                       onChange={(e) => setMesServicioMes(e.target.value)}
                       className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                          ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
                         } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                     >
                       <option value="">Mes</option>
@@ -519,8 +519,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                       value={mesServicioAnio}
                       onChange={(e) => setMesServicioAnio(e.target.value)}
                       className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                          ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
                         } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                     >
                       <option value="">Año</option>
@@ -582,8 +582,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     value={unidadNegocio}
                     onChange={(e) => setUnidadNegocio(e.target.value)}
                     className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
                       } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                   >
                     <option value="">Seleccionar</option>
@@ -606,8 +606,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     onChange={(e) => setCategoriaNegocio(e.target.value)}
                     disabled={isCategoriaNegocioDisabled()}
                     className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
                       } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <option value="">Seleccionar</option>
@@ -631,8 +631,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     onChange={(e) => setProyecto(e.target.value)}
                     disabled={isProyectoDisabled()}
                     className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
                       } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <option value="">Seleccionar</option>
@@ -690,8 +690,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     value={categoria}
                     onChange={(e) => setCategoria(e.target.value)}
                     className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
                       } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                   >
                     <option value="">Seleccionar</option>
@@ -789,8 +789,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
             {/* Alerta de exceso de límite */}
             {excedeLimite && (
               <div className={`mb-4 p-4 rounded-lg border-2 flex items-start gap-3 ${isDark
-                  ? 'bg-red-950/50 border-red-800 text-red-200'
-                  : 'bg-red-50 border-red-300 text-red-800'
+                ? 'bg-red-950/50 border-red-800 text-red-200'
+                : 'bg-red-50 border-red-300 text-red-800'
                 }`}>
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-500" />
                 <div className="flex-1">
@@ -820,8 +820,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                       value={acuerdoPago}
                       onChange={(e) => setAcuerdoPago(e.target.value)}
                       className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                          ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
                         } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                     >
                       <option value="">Seleccionar</option>
@@ -864,8 +864,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               value={row.programa}
                               onChange={(e) => setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, programa: e.target.value } : r))}
                               className={`w-full h-9 pl-2 pr-8 rounded-md border text-sm appearance-none ${isDark
-                                  ? 'bg-[#1e1e1e] border-gray-700 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
+                                ? 'bg-[#1e1e1e] border-gray-700 text-white'
+                                : 'bg-white border-gray-300 text-gray-900'
                                 } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                             >
                               <option value="">Seleccionar</option>
@@ -942,8 +942,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               value={row.proveedorFee}
                               onChange={(e) => setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, proveedorFee: e.target.value } : r))}
                               className={`w-full h-9 pl-2 pr-8 rounded-md border text-sm appearance-none ${isDark
-                                  ? 'bg-[#1e1e1e] border-gray-700 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
+                                ? 'bg-[#1e1e1e] border-gray-700 text-white'
+                                : 'bg-white border-gray-300 text-gray-900'
                                 } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                             >
                               <option value="">Seleccionar</option>
@@ -1102,15 +1102,15 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   <button
                     onClick={() => setTipoImporte('canje')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${tipoImporte === 'canje'
-                        ? 'bg-green-600 border-green-600 text-white'
-                        : isDark
-                          ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
-                          : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                      ? 'bg-green-600 border-green-600 text-white'
+                      : isDark
+                        ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
+                        : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
                       }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tipoImporte === 'canje'
-                        ? 'border-white'
-                        : isDark ? 'border-gray-600' : 'border-gray-400'
+                      ? 'border-white'
+                      : isDark ? 'border-gray-600' : 'border-gray-400'
                       }`}>
                       {tipoImporte === 'canje' && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
@@ -1120,15 +1120,15 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   <button
                     onClick={() => setTipoImporte('factura')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${tipoImporte === 'factura'
-                        ? 'bg-green-600 border-green-600 text-white'
-                        : isDark
-                          ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
-                          : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                      ? 'bg-green-600 border-green-600 text-white'
+                      : isDark
+                        ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
+                        : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
                       }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tipoImporte === 'factura'
-                        ? 'border-white'
-                        : isDark ? 'border-gray-600' : 'border-gray-400'
+                      ? 'border-white'
+                      : isDark ? 'border-gray-600' : 'border-gray-400'
                       }`}>
                       {tipoImporte === 'factura' && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
@@ -1150,8 +1150,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   }}
                   placeholder="Agregar observaciones adicionales..."
                   className={`w-full px-3 py-2 rounded-md border text-sm resize-none ${isDark
-                      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-                      : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+                    ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
                     } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                 />
                 <p className={`text-xs text-right ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
@@ -1225,7 +1225,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
               Cancelar
             </Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 // Validar campos obligatorios
                 const camposFaltantes = validarCamposObligatorios();
 
@@ -1255,28 +1255,34 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   responsable: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '',
                 };
 
+                let result;
                 if (isEditMode && formularioId) {
                   // Modo edición: actualizar formulario existente
-                  updateFormulario(formularioId, {
+                  result = await updateFormulario(formularioId, {
                     ...formularioExistente,
                     ...formularioData,
                   });
-                  toast.success('✅ Formulario actualizado correctamente');
                 } else {
                   // Modo creación: crear nuevo formulario
-                  addFormulario(formularioData);
-                  toast.success('✅ Formulario guardado correctamente');
+                  result = await addFormulario(formularioData);
                 }
 
-                // Redirigir a la interfaz de Comercial
-                if (onFormularioGuardado) {
-                  onFormularioGuardado();
+                if (result.success) {
+                  toast.success(isEditMode ? '✅ Formulario actualizado correctamente' : '✅ Formulario guardado correctamente');
+                  // Redirigir a la interfaz de Comercial
+                  if (onFormularioGuardado) {
+                    onFormularioGuardado();
+                  }
+                } else {
+                  toast.error('❌ Error al guardar', {
+                    description: result.error || 'Hubo un problema al guardar el formulario'
+                  });
                 }
               }}
               disabled={!formularioValido}
               className={`${!formularioValido
-                  ? 'bg-gray-400 cursor-not-allowed opacity-50'
-                  : 'bg-[#0070ff] hover:bg-[#0060dd]'
+                ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                : 'bg-[#0070ff] hover:bg-[#0060dd]'
                 } text-white`}
             >
               {isEditMode ? 'Actualizar' : 'Guardar'}

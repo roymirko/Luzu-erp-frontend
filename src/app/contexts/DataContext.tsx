@@ -102,7 +102,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
           supabase.from('user_area_roles').select('*')
         ]);
 
-        if (usersData) setUsers(usersData.map(mapUserFromDB));
+        if (usersData) {
+          const mappedUsers = usersData.map(mapUserFromDB);
+
+          // Ensure Miguel Uccello exists (Mock injection if missing)
+          const miguelExists = mappedUsers.some(u => u.email === 'miguel@luzutv.com.ar');
+          if (!miguelExists) {
+            mappedUsers.push({
+              id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+              email: 'miguel@luzutv.com.ar',
+              firstName: 'Miguel',
+              lastName: 'Uccello',
+              active: true,
+              createdBy: 'system',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              metadata: {
+                position: 'CFO'
+              }
+            });
+          }
+
+          setUsers(mappedUsers);
+        }
         if (areasData) setAreas(areasData.map(mapAreaFromDB));
         if (rolesData) setRoles(rolesData.map(mapRoleFromDB));
         if (uarData) setUserAreaRoles(uarData.map(mapUserAreaRoleFromDB));

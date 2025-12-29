@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Separator } from './ui/separator';
 import { useTheme } from '../contexts/ThemeContext';
+import { useData } from '../contexts/DataContext';
 import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
 
 interface UserMenuProps {
@@ -15,6 +16,7 @@ interface UserMenuProps {
 export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const { theme, setTheme, isDark } = useTheme();
+  const { currentUser } = useData();
 
   const handleLogout = () => {
     setOpen(false);
@@ -30,19 +32,28 @@ export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
     }
   };
 
+  // Nombre para mostrar
+  const displayName = currentUser ? currentUser.firstName : 'Usuario';
+  const fullName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Usuario Invitado';
+  const email = currentUser ? currentUser.email : '';
+  const role = currentUser?.metadata?.position || 'Usuario';
+  const avatarSrc = currentUser?.avatar || imgMiguelProfile;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
           <div className="text-right hidden sm:block">
             <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-              Hola, <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Miguel</span>
+              Hola, <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{displayName}</span>
             </p>
           </div>
           <div className="relative">
             <Avatar className="h-9 w-9 ring-2 ring-[#fb2c36]/20">
-              <img src={imgMiguelProfile} alt="Usuario" className="object-cover" />
-              <AvatarFallback className="bg-[#fb2c36] text-white">MS</AvatarFallback>
+              <img src={avatarSrc} alt="Usuario" className="object-cover" />
+              <AvatarFallback className="bg-[#fb2c36] text-white">
+                {currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}` : 'US'}
+              </AvatarFallback>
             </Avatar>
           </div>
         </button>
@@ -57,14 +68,16 @@ export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
           <div className="flex items-center gap-3 mb-3">
             <div className="relative">
               <Avatar className="h-12 w-12">
-                <img src={imgMiguelProfile} alt="Usuario" className="object-cover" />
-                <AvatarFallback className="bg-[#fb2c36] text-white">MS</AvatarFallback>
+                <img src={avatarSrc} alt="Usuario" className="object-cover" />
+                <AvatarFallback className="bg-[#fb2c36] text-white">
+                  {currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}` : 'US'}
+                </AvatarFallback>
               </Avatar>
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>Miguel Uccello</p>
-              <p className={`text-xs truncate ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>CFO</p>
-              <p className={`text-xs truncate ${isDark ? 'text-gray-600' : 'text-gray-500'}`}>miguel@luzutv.com.ar</p>
+              <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{fullName}</p>
+              <p className={`text-xs truncate ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>{role}</p>
+              <p className={`text-xs truncate ${isDark ? 'text-gray-600' : 'text-gray-500'}`}>{email}</p>
             </div>
           </div>
         </div>

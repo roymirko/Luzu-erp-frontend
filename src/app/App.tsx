@@ -51,7 +51,16 @@ function AppContent() {
     setCurrentUser(null);
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (email?: string) => {
+    // Si se proporciona un email específico, usarlo
+    if (email) {
+      const result = await login(email);
+      if (result.success) {
+        setIsAuthenticated(true);
+        return;
+      }
+    }
+
     // Intentar login con usuario seed (Gabriela) o fallback a Miguel (hardcoded en mocks pero no en DB)
     // Primero intentamos con el usuario que sabemos que existe en seeds
     let result = await login('gaby@luzutv.com.ar');

@@ -14,7 +14,7 @@ import imgFondo1 from "../../assets/fondo.png";
 import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (email?: string) => void;
 }
 
 const channelImages = [
@@ -155,7 +155,7 @@ export function Login({ onLogin }: LoginProps) {
             <div className="w-full">
               <div
                 className="bg-[#e8f0fe] flex flex-col gap-[12px] pb-0 pt-[12px] px-[40px] cursor-pointer hover:bg-[#d3e3fd] transition-colors"
-                onClick={onLogin}
+                onClick={() => onLogin('miguel@luzutv.com.ar')}
               >
                 <div className="flex gap-[14px] items-center">
                   <div className="bg-white overflow-clip rounded-full size-[32px] shrink-0">
