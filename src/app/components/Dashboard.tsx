@@ -3,6 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useTheme } from '../contexts/ThemeContext';
+import { useFormularios } from '../contexts/FormulariosContext';
+import { useLog } from '../contexts/LogContext';
+import { useMemo } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface Task {
   id: string;
@@ -21,12 +26,7 @@ interface ProgramEvent {
   status: 'live' | 'upcoming' | 'completed';
 }
 
-const mockTasks: Task[] = [
-  { id: '1', title: 'Propuesta comercial Tech Corp S.A.', status: 'pending', priority: 'high', area: 'Comercial', assignee: 'JL', dueDate: 'Hoy' },
-  { id: '2', title: 'Contrato Streaming Q1 2024', status: 'in_progress', priority: 'medium', area: 'Implementación', assignee: 'AR', dueDate: 'Mañana' },
-  { id: '3', title: 'Renovación patrocinio Media Plus', status: 'review', priority: 'low', area: 'Programación', assignee: 'MS', dueDate: 'En 3 días' },
-];
-
+// Keeping this for now as there is no backend for it
 const programSchedule: ProgramEvent[] = [
   { time: '15:00', title: 'Resumen de Noticias Tech', duration: '30 min', status: 'live' },
   { time: '16:00', title: 'Entrevista con fundadores', duration: '45 min', status: 'upcoming' },
@@ -34,14 +34,72 @@ const programSchedule: ProgramEvent[] = [
   { time: '18:30', title: 'Gaming Stream', duration: '90 min', status: 'upcoming' },
 ];
 
-const metrics = {
-  budget: [45, 52, 48, 65, 72, 78, 82],
-  sales: [30, 35, 42, 48, 55, 60, 65],
-  audience: [120, 135, 155, 170, 182, 195, 202],
-};
-
 export function Dashboard() {
   const { isDark } = useTheme();
+  const { formularios, notifications } = useFormularios();
+  const { logs } = useLog();
+
+  // Calcular métricas reales
+  const metrics = useMemo(() => {
+    // Ventas: Suma de totalVenta de todos los formularios
+    // Nota: totalVenta es string en DB, asumir formato numerico o limpiar
+    const totalSales = formularios.reduce((acc, form) => {
+      const val = parseFloat(form.totalVenta.replace(/[^0-9.-]+/g, '')) || 0;
+      return acc + val;
+    }, 0);
+
+    // Generar sparkline fake basado en el total para no dejar vacío
+    // En el futuro, agrupar por mes
+    const salesData = [totalSales * 0.8, totalSales * 0.85, totalSales * 0.9, totalSales * 0.95, totalSales, totalSales * 1.05, totalSales * 1.1];
+
+    // Presupuesto: podría ser un target fijo o suma de montos
+    // Usaremos un valor dummy proporcional
+    const budgetData = salesData.map(s => s * 1.2);
+
+    // Audiencia: No hay dato real, usar dummy
+    const audienceData = [120, 135, 155, 170, 182, 195, 202];
+
+    return {
+      salesTotal: totalSales,
+      budgetTotal: totalSales * 1.2, // Mock target
+      audienceTotal: 202000,
+      sales: salesData,
+      budget: budgetData,
+      audience: audienceData
+    };
+  }, [formularios]);
+
+  // Convertir notificaciones a "Tareas"
+  const tasks: Task[] = useMemo(() => {
+    // Tomamos las ultimas 5 notificaciones o formularios recientes
+    return notifications.slice(0, 5).map(notif => {
+      // Encontrar form relacionado para más detalle si es necesario
+      // Por ahora usamos datos de notif
+      return {
+        id: notif.id,
+        title: `Orden Publicidad: ${notif.ordenPublicidad}`,
+        status: 'pending', // Default
+        priority: 'medium',
+        area: 'Comercial',
+        assignee: notif.responsable.split(' ')[0], // Nombre
+        dueDate: format(notif.timestamp, 'dd MMM', { locale: es })
+      };
+    });
+  }, [notifications]);
+
+  // Si no hay tareas reales (al inicio), mostrar algunas vacías o mensaje, 
+  // pero para mantener diseño original si está vacío, podemos dejar array vacío.
+  // O mejor, si no hay notificaciones, mostramos los formularios más recientes como tareas
+  const displayTasks: Task[] = tasks.length > 0 ? tasks : formularios.slice(0, 3).map(f => ({
+    id: f.id,
+    title: `${f.razonSocial || 'Sin Cliente'} - ${f.nombreCampana || 'Campaña'}`,
+    status: 'in_progress',
+    priority: 'high',
+    area: 'Comercial',
+    assignee: f.responsable ? f.responsable.split(' ')[0] : 'Sist',
+    dueDate: f.fecha ? f.fecha : 'Hoy'
+  }));
+
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -73,8 +131,8 @@ export function Dashboard() {
   const Sparkline = ({ data, color }: { data: number[], color: string }) => {
     const max = Math.max(...data);
     const min = Math.min(...data);
-    const range = max - min;
-    
+    const range = max - min || 1; // Avoid divide by zero
+
     const points = data.map((value, index) => {
       const x = (index / (data.length - 1)) * 100;
       const y = 100 - ((value - min) / range) * 100;
@@ -94,17 +152,31 @@ export function Dashboard() {
     );
   };
 
+  // Alertas del sistema basadas en logs recientes de error/warning
+  const systemAlerts = useMemo(() => {
+    return logs
+      .filter(l => l.result === 'warning' || l.result === 'error')
+      .slice(0, 3)
+      .map(l => ({
+        type: l.result,
+        title: l.action.replace(/_/g, ' '),
+        message: l.details
+      }));
+  }, [logs]);
+
   return (
     <div className="space-y-4">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Presupuesto Mensual</CardTitle>
+            <CardTitle className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Presupuesto Mensual (Est.)</CardTitle>
             <DollarSign className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>$82.4K</div>
+            <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              ${(metrics.budgetTotal / 1000).toFixed(1)}K
+            </div>
             <p className="text-xs text-green-500 flex items-center gap-1 mt-1">
               <TrendingUp className="h-3 w-3" />
               +12.5% vs mes anterior
@@ -121,10 +193,12 @@ export function Dashboard() {
             <TrendingUp className="h-4 w-4 text-[#fb2c36]" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>$65.2K</div>
+            <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              ${(metrics.salesTotal / 1000).toFixed(1)}K
+            </div>
             <p className="text-xs text-[#fb2c36] flex items-center gap-1 mt-1">
               <TrendingUp className="h-3 w-3" />
-              +18.2% vs mes anterior
+              Calculado de formularios
             </p>
             <div className="mt-3">
               <Sparkline data={metrics.sales} color="#fb2c36" />
@@ -138,7 +212,9 @@ export function Dashboard() {
             <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>202K</div>
+            <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {(metrics.audienceTotal / 1000).toFixed(0)}K
+            </div>
             <p className="text-xs text-blue-500 flex items-center gap-1 mt-1">
               <TrendingUp className="h-3 w-3" />
               +68% crecimiento
@@ -159,19 +235,22 @@ export function Dashboard() {
                 <CheckCircle className="h-5 w-5 text-[#fb2c36]" />
                 Bandeja de Entrada
               </CardTitle>
-              <Badge className="bg-[#fb2c36] text-white">{mockTasks.length} pendientes</Badge>
+              <Badge className="bg-[#fb2c36] text-white">{displayTasks.length} pendientes</Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2">
-              {mockTasks.map((task) => (
-                <div 
-                  key={task.id} 
-                  className={`p-3 border rounded-lg hover:border-opacity-70 transition-colors cursor-pointer ${
-                    isDark 
-                      ? 'bg-[#141414] border-gray-800 hover:border-gray-700' 
-                      : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-                  }`}
+              {displayTasks.length === 0 ? (
+                <div className={`p-4 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                  No hay tareas pendientes
+                </div>
+              ) : displayTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className={`p-3 border rounded-lg hover:border-opacity-70 transition-colors cursor-pointer ${isDark
+                    ? 'bg-[#141414] border-gray-800 hover:border-gray-700'
+                    : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -179,11 +258,10 @@ export function Dashboard() {
                         <h4 className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{task.title}</h4>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className={`text-xs ${
-                          isDark 
-                            ? 'bg-gray-800/50 text-gray-400 border-gray-700' 
-                            : 'bg-gray-100 text-gray-700 border-gray-300'
-                        }`}>
+                        <Badge variant="outline" className={`text-xs ${isDark
+                          ? 'bg-gray-800/50 text-gray-400 border-gray-700'
+                          : 'bg-gray-100 text-gray-700 border-gray-300'
+                          }`}>
                           {task.area}
                         </Badge>
                         <Badge variant="outline" className={`text-xs ${getPriorityColor(task.priority)}`}>
@@ -201,7 +279,7 @@ export function Dashboard() {
                       </div>
                       <Avatar className="h-8 w-8 bg-[#fb2c36] text-white">
                         <AvatarFallback className="bg-[#fb2c36] text-white text-xs">
-                          {task.assignee}
+                          {task.assignee.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </div>
@@ -219,18 +297,19 @@ export function Dashboard() {
               <Calendar className="h-5 w-5 text-[#fb2c36]" />
               Programación de Hoy
             </CardTitle>
-            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Viernes, 26 de Diciembre</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+              {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2">
               {programSchedule.map((event, index) => (
-                <div 
-                  key={index} 
-                  className={`p-2.5 border rounded-lg hover:border-opacity-70 transition-colors ${
-                    isDark 
-                      ? 'bg-[#141414] border-gray-800 hover:border-gray-700' 
-                      : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-                  }`}
+                <div
+                  key={index}
+                  className={`p-2.5 border rounded-lg hover:border-opacity-70 transition-colors ${isDark
+                    ? 'bg-[#141414] border-gray-800 hover:border-gray-700'
+                    : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex items-center gap-2 shrink-0">
@@ -268,33 +347,33 @@ export function Dashboard() {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-2">
-            <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-yellow-400">Contrato próximo a vencer</h4>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>El contrato con "Tech Sponsor Corp" vence en 5 días. Requiere renovación.</p>
+            {systemAlerts.length > 0 ? systemAlerts.map((alert, idx) => (
+              <div key={idx} className={`p-3 border rounded-lg ${alert.type === 'error' ? 'bg-red-500/10 border-red-500/30' : 'bg-yellow-500/10 border-yellow-500/30'
+                }`}>
+                <div className="flex items-start gap-3">
+                  <AlertCircle className={`h-5 w-5 shrink-0 mt-0.5 ${alert.type === 'error' ? 'text-red-500' : 'text-yellow-500'
+                    }`} />
+                  <div>
+                    <h4 className={`text-sm font-medium ${alert.type === 'error' ? 'text-red-400' : 'text-yellow-400'
+                      } capitalize`}>{alert.title}</h4>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{alert.message}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-red-400">Aprobación urgente requerida</h4>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>2 propuestas comerciales requieren aprobación antes del cierre de mes.</p>
+            )) : (
+              // Fallback / Example alerts if no real errors
+              <>
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-medium text-green-400">Sistema Operativo</h4>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Todos los sistemas funcionando correctamente.</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-green-400">Meta de ventas alcanzada</h4>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>El equipo comercial ha superado la meta mensual en un 15%.</p>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
