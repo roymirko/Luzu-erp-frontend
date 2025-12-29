@@ -132,7 +132,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
     // Eliminar todo excepto números
     const numericValue = value.replace(/[^0-9]/g, '');
     if (!numericValue) return '';
-    
+
     // Convertir a número y formatear
     const num = parseInt(numericValue, 10);
     return new Intl.NumberFormat('es-AR', {
@@ -163,19 +163,19 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   // Validar si proyecto debe estar bloqueado
   const isProyectoDisabled = () => {
     if (!unidadNegocio) return true;
-    
+
     if (unidadNegocio === 'Media') {
       return categoriaNegocio === 'Media' || !categoriaNegocio;
     }
-    
+
     if (['Experience', 'Productora'].includes(unidadNegocio)) {
       return false;
     }
-    
+
     if (['E-commerce', 'Estructura'].includes(unidadNegocio)) {
       return true;
     }
-    
+
     return true;
   };
 
@@ -313,7 +313,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
       alert('Debe haber al menos un programa');
       return;
     }
-    
+
     if (confirm('¿Está seguro de eliminar este programa?')) {
       setImporteRows(importeRows.filter(row => row.id !== id));
     }
@@ -322,26 +322,26 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   // Cálculos del resumen
   const calcularResumen = () => {
     const totalVentaNum = parseFloat(totalVenta.replace(/[^0-9.-]/g, '')) || 0;
-    
+
     const totalNotaCredito = importeRows.reduce((sum, row) => {
       const nc = parseFloat(row.ncPrograma.replace(/[^0-9.-]/g, '')) || 0;
       return sum + nc;
     }, 0);
-    
+
     const totalFeeFacturado = importeRows.reduce((sum, row) => {
       const fee = parseFloat(row.feePrograma.replace(/[^0-9.-]/g, '')) || 0;
       return sum + fee;
     }, 0);
-    
+
     const totalGastoVenta = importeRows.reduce((sum, row) => {
       const impl = parseFloat(row.implementacion.replace(/[^0-9.-]/g, '')) || 0;
       const tal = parseFloat(row.talentos.replace(/[^0-9.-]/g, '')) || 0;
       const tec = parseFloat(row.tecnica.replace(/[^0-9.-]/g, '')) || 0;
       return sum + impl + tal + tec;
     }, 0);
-    
+
     const utilidadProyecto = totalVentaNum - totalNotaCredito - totalFeeFacturado - totalGastoVenta;
-    
+
     return {
       totalVenta: totalVentaNum,
       totalNotaCredito,
@@ -363,7 +363,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   const currentMonth = now.getMonth() + 1; // getMonth() devuelve 0-11
 
   // Generar años desde el año actual hasta 2030 (solo años futuros o actual)
-  const ANIOS_DISPONIBLES = isEditMode 
+  const ANIOS_DISPONIBLES = isEditMode
     ? Array.from({ length: 11 }, (_, i) => 2020 + i) // En modo edición permitir todos los años
     : Array.from({ length: 2031 - currentYear }, (_, i) => currentYear + i); // En creación solo año actual y futuros
 
@@ -383,7 +383,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   ];
 
   // Filtrar meses disponibles: si el año seleccionado es el actual, solo mostrar meses >= mes actual
-  const MESES_DISPONIBLES = isEditMode 
+  const MESES_DISPONIBLES = isEditMode
     ? MESES // En modo edición permitir todos los meses
     : (mesServicioAnio && parseInt(mesServicioAnio) === currentYear)
       ? MESES.filter(mes => parseInt(mes.value) >= currentMonth)
@@ -403,7 +403,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
     if (!isEditMode && mesServicioAnio && mesServicioMes) {
       const selectedYear = parseInt(mesServicioAnio);
       const selectedMonth = parseInt(mesServicioMes);
-      
+
       // Si el año seleccionado es el actual y el mes es menor al mes actual, resetear
       if (selectedYear === currentYear && selectedMonth < currentMonth) {
         setMesServicioMes('');
@@ -414,18 +414,18 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   // Función para validar todos los campos obligatorios
   const validarCamposObligatorios = () => {
     const camposFaltantes = [];
-    
+
     if (!ordenPublicidad.trim()) camposFaltantes.push('Orden de Publicidad');
     if (!totalVenta.trim()) camposFaltantes.push('Total de Venta');
     if (!mesServicioMes || !mesServicioAnio) camposFaltantes.push('Mes de Servicio');
     if (!unidadNegocio) camposFaltantes.push('Unidad de Negocio');
-    if (!categoriaNegocio) camposFaltantes.push('Categoría de Negocio');
+    // if (!categoriaNegocio) camposFaltantes.push('Categoría de Negocio');
     if (!proyecto) camposFaltantes.push('Proyecto');
     if (!razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');
     if (!empresaAgencia.trim()) camposFaltantes.push('Empresa/Agencia');
     if (!marca.trim()) camposFaltantes.push('Marca');
-    
+
     return camposFaltantes;
   };
 
@@ -450,356 +450,348 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
 
           {/* Sección: Datos Básicos */}
           <div className="space-y-6">
-              {/* Primera fila: Orden de Publicidad, Total de Venta, Mes de Servicio */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Orden de Publicidad */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Orden de Publicidad
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    value={ordenPublicidad}
-                    onChange={(e) => setOrdenPublicidad(e.target.value)}
-                    placeholder="Ej: 202509-0133 VER001"
-                    disabled={isEditMode}
-                    className={isDark 
-                      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed'
-                      : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed'
-                    }
-                  />
-                </div>
-
-                {/* Total de Venta */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Total de Venta
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="text"
-                    value={totalVenta ? formatPesosInput(totalVenta) : ''}
-                    onChange={(e) => {
-                      const value = getNumericValue(e.target.value);
-                      setTotalVenta(value);
-                    }}
-                    placeholder="$ 0"
-                    className={isDark 
-                      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-                      : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-                    }
-                  />
-                </div>
-
-                {/* Mes de Servicio */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Mes de Servicio
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <select
-                        value={mesServicioMes}
-                        onChange={(e) => setMesServicioMes(e.target.value)}
-                        className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${
-                          isDark 
-                            ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                            : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                        } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
-                      >
-                        <option value="">Mes</option>
-                        {MESES_DISPONIBLES.map((mes) => (
-                          <option key={mes.value} value={mes.value}>{mes.label}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                    </div>
-                    <div className="relative flex-1">
-                      <select
-                        value={mesServicioAnio}
-                        onChange={(e) => setMesServicioAnio(e.target.value)}
-                        className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${
-                          isDark 
-                            ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                            : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                        } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
-                      >
-                        <option value="">Año</option>
-                        {ANIOS_DISPONIBLES.map((anio) => (
-                          <option key={anio} value={anio.toString()}>{anio}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                    </div>
-                  </div>
-                </div>
+            {/* Primera fila: Orden de Publicidad, Total de Venta, Mes de Servicio */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              {/* Orden de Publicidad */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Orden de Publicidad
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={ordenPublicidad}
+                  onChange={(e) => setOrdenPublicidad(e.target.value)}
+                  placeholder="Ej: 202509-0133 VER001"
+                  disabled={isEditMode}
+                  className={isDark
+                    ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed'
+                  }
+                />
               </div>
 
-              {/* Campos no editables solo en modo edición */}
-              {isEditMode && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
-                  {/* Responsable */}
-                  <div className="space-y-2">
-                    <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
-                      Responsable
-                    </Label>
-                    <Input
-                      value={formularioExistente?.responsable || ''}
-                      disabled
-                      className={isDark 
-                        ? 'bg-[#0a0a0a] border-gray-800 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed'
-                      }
-                    />
-                  </div>
+              {/* Total de Venta */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Total de Venta
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  type="text"
+                  value={totalVenta ? formatPesosInput(totalVenta) : ''}
+                  onChange={(e) => {
+                    const value = getNumericValue(e.target.value);
+                    setTotalVenta(value);
+                  }}
+                  placeholder="$ 0"
+                  className={isDark
+                    ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+                  }
+                />
+              </div>
 
-                  {/* Fecha de Creación */}
-                  <div className="space-y-2">
-                    <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
-                      Fecha de Creación
-                    </Label>
-                    <Input
-                      value={formularioExistente?.fecha || ''}
-                      disabled
-                      className={isDark 
-                        ? 'bg-[#0a0a0a] border-gray-800 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed'
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Resto de campos en grid de 2 columnas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Unidad de Negocio */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Unidad de Negocio
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative">
+              {/* Mes de Servicio */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Mes de Servicio
+                  <span className="text-red-500">*</span>
+                </Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
                     <select
-                      value={unidadNegocio}
-                      onChange={(e) => setUnidadNegocio(e.target.value)}
-                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${
-                        isDark 
+                      value={mesServicioMes}
+                      onChange={(e) => setMesServicioMes(e.target.value)}
+                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
                           ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
                           : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                     >
-                      <option value="">Seleccionar</option>
-                      {UNIDADES_NEGOCIO.map((unidad) => (
-                        <option key={unidad} value={unidad}>{unidad}</option>
+                      <option value="">Mes</option>
+                      {MESES_DISPONIBLES.map((mes) => (
+                        <option key={mes.value} value={mes.value}>{mes.label}</option>
                       ))}
                     </select>
                     <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                   </div>
-                </div>
-
-                {/* Categoría de Negocio */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Categoría de Negocio
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative">
+                  <div className="relative flex-1">
                     <select
-                      value={categoriaNegocio}
-                      onChange={(e) => setCategoriaNegocio(e.target.value)}
-                      disabled={isCategoriaNegocioDisabled()}
-                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${
-                        isDark 
+                      value={mesServicioAnio}
+                      onChange={(e) => setMesServicioAnio(e.target.value)}
+                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
                           ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
                           : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20 disabled:opacity-50 disabled:cursor-not-allowed`}
+                        } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                     >
-                      <option value="">Seleccionar</option>
-                      {unidadNegocio && CATEGORIAS_NEGOCIO_OPTIONS.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
+                      <option value="">Año</option>
+                      {ANIOS_DISPONIBLES.map((anio) => (
+                        <option key={anio} value={anio.toString()}>{anio}</option>
                       ))}
                     </select>
                     <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                   </div>
-                </div>
-
-                {/* Proyecto */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Proyecto
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative">
-                    <select
-                      value={proyecto}
-                      onChange={(e) => setProyecto(e.target.value)}
-                      disabled={isProyectoDisabled()}
-                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${
-                        isDark 
-                          ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20 disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="proyecto1">Proyecto 1</option>
-                      <option value="proyecto2">Proyecto 2</option>
-                      <option value="proyecto3">Proyecto 3</option>
-                    </select>
-                    <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                  </div>
-                </div>
-
-                {/* Razón Social */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Razón Social
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                      <Input
-                        value={razonSocial}
-                        onChange={(e) => setRazonSocial(e.target.value)}
-                        placeholder="Buscar razón social"
-                        list="razones-sociales"
-                        className={`pl-10 ${isDark 
-                          ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-                          : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-                        }`}
-                      />
-                      <datalist id="razones-sociales">
-                        <option value="OMG Argentina S.A." />
-                        <option value="Unilever Argentina S.A." />
-                        <option value="Coca-Cola FEMSA S.A." />
-                      </datalist>
-                    </div>
-                    <Button
-                      onClick={() => setShowAddRazonSocial(true)}
-                      size="icon"
-                      className="bg-[#0070ff] hover:bg-[#0060dd] text-white shrink-0"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Categoría */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Categoría
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative">
-                    <select
-                      value={categoria}
-                      onChange={(e) => setCategoria(e.target.value)}
-                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${
-                        isDark 
-                          ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                          : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
-                    >
-                      <option value="">Seleccionar</option>
-                      {CATEGORIAS_MARCA.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                  </div>
-                </div>
-
-                {/* Empresa/Agencia */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Empresa/Agencia
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                    <Input
-                      value={empresaAgencia}
-                      onChange={(e) => setEmpresaAgencia(e.target.value)}
-                      placeholder="Buscar empresa"
-                      list="empresas"
-                      className={`pl-10 ${isDark 
-                        ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-                        : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-                      }`}
-                    />
-                    <datalist id="empresas">
-                      <option value="OMG" />
-                      <option value="Unilever" />
-                      <option value="Coca-Cola" />
-                    </datalist>
-                  </div>
-                </div>
-
-                {/* Marca */}
-                <div className="space-y-2">
-                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-                    Marca
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="relative">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                    <Input
-                      value={marca}
-                      onChange={(e) => setMarca(e.target.value)}
-                      placeholder="Buscar marca"
-                      list="marcas"
-                      className={`pl-10 ${isDark 
-                        ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-                        : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-                      }`}
-                    />
-                    <datalist id="marcas">
-                      <option value="Lysoform" />
-                      <option value="Dove" />
-                      <option value="Coca-Cola" />
-                    </datalist>
-                  </div>
-                </div>
-
-                {/* Nombre de Campaña */}
-                <div className="space-y-2">
-                  <Label className={isDark ? 'text-gray-400' : 'text-gray-700'}>
-                    Nombre de Campaña
-                  </Label>
-                  <Input
-                    value={nombreCampana}
-                    onChange={(e) => {
-                      if (e.target.value.length <= MAX_CHARS_CAMPANA) {
-                        setNombreCampana(e.target.value);
-                      }
-                    }}
-                    placeholder="Ej: Campaña Verano 2024"
-                    className={isDark 
-                      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-                      : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-                    }
-                  />
-                  <p className={`text-xs text-right ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                    {nombreCampana.length}/{MAX_CHARS_CAMPANA}
-                  </p>
                 </div>
               </div>
             </div>
+
+            {/* Campos no editables solo en modo edición */}
+            {isEditMode && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800">
+                {/* Responsable */}
+                <div className="space-y-2">
+                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+                    Responsable
+                  </Label>
+                  <Input
+                    value={formularioExistente?.responsable || ''}
+                    disabled
+                    className={isDark
+                      ? 'bg-[#0a0a0a] border-gray-800 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed'
+                    }
+                  />
+                </div>
+
+                {/* Fecha de Creación */}
+                <div className="space-y-2">
+                  <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+                    Fecha de Creación
+                  </Label>
+                  <Input
+                    value={formularioExistente?.fecha || ''}
+                    disabled
+                    className={isDark
+                      ? 'bg-[#0a0a0a] border-gray-800 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 border-gray-300 text-gray-600 cursor-not-allowed'
+                    }
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Resto de campos en grid de 2 columnas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Unidad de Negocio */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Unidad de Negocio
+                  <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <select
+                    value={unidadNegocio}
+                    onChange={(e) => setUnidadNegocio(e.target.value)}
+                    className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                  >
+                    <option value="">Seleccionar</option>
+                    {UNIDADES_NEGOCIO.map((unidad) => (
+                      <option key={unidad} value={unidad}>{unidad}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+              </div>
+
+              {/* Categoría de Negocio */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Categoría de Negocio
+                </Label>
+                <div className="relative">
+                  <select
+                    value={categoriaNegocio}
+                    onChange={(e) => setCategoriaNegocio(e.target.value)}
+                    disabled={isCategoriaNegocioDisabled()}
+                    className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20 disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <option value="">Seleccionar</option>
+                    {unidadNegocio && CATEGORIAS_NEGOCIO_OPTIONS.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+              </div>
+
+              {/* Proyecto */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Proyecto
+                  <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <select
+                    value={proyecto}
+                    onChange={(e) => setProyecto(e.target.value)}
+                    disabled={isProyectoDisabled()}
+                    className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20 disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="proyecto1">Proyecto 1</option>
+                    <option value="proyecto2">Proyecto 2</option>
+                    <option value="proyecto3">Proyecto 3</option>
+                  </select>
+                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+              </div>
+
+              {/* Razón Social */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Razón Social
+                  <span className="text-red-500">*</span>
+                </Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                    <Input
+                      value={razonSocial}
+                      onChange={(e) => setRazonSocial(e.target.value)}
+                      placeholder="Buscar razón social"
+                      list="razones-sociales"
+                      className={`pl-10 ${isDark
+                        ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+                        }`}
+                    />
+                    <datalist id="razones-sociales">
+                      <option value="OMG Argentina S.A." />
+                      <option value="Unilever Argentina S.A." />
+                      <option value="Coca-Cola FEMSA S.A." />
+                    </datalist>
+                  </div>
+                  <Button
+                    onClick={() => setShowAddRazonSocial(true)}
+                    size="icon"
+                    className="bg-[#0070ff] hover:bg-[#0060dd] text-white shrink-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Categoría */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Categoría
+                  <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                  >
+                    <option value="">Seleccionar</option>
+                    {CATEGORIAS_MARCA.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                </div>
+              </div>
+
+              {/* Empresa/Agencia */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Empresa/Agencia
+                  <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <Input
+                    value={empresaAgencia}
+                    onChange={(e) => setEmpresaAgencia(e.target.value)}
+                    placeholder="Buscar empresa"
+                    list="empresas"
+                    className={`pl-10 ${isDark
+                      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+                      }`}
+                  />
+                  <datalist id="empresas">
+                    <option value="OMG" />
+                    <option value="Unilever" />
+                    <option value="Coca-Cola" />
+                  </datalist>
+                </div>
+              </div>
+
+              {/* Marca */}
+              <div className="space-y-2">
+                <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+                  Marca
+                  <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                  <Input
+                    value={marca}
+                    onChange={(e) => setMarca(e.target.value)}
+                    placeholder="Buscar marca"
+                    list="marcas"
+                    className={`pl-10 ${isDark
+                      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+                      }`}
+                  />
+                  <datalist id="marcas">
+                    <option value="Lysoform" />
+                    <option value="Dove" />
+                    <option value="Coca-Cola" />
+                  </datalist>
+                </div>
+              </div>
+
+              {/* Nombre de Campaña */}
+              <div className="space-y-2">
+                <Label className={isDark ? 'text-gray-400' : 'text-gray-700'}>
+                  Nombre de Campaña
+                </Label>
+                <Input
+                  value={nombreCampana}
+                  onChange={(e) => {
+                    if (e.target.value.length <= MAX_CHARS_CAMPANA) {
+                      setNombreCampana(e.target.value);
+                    }
+                  }}
+                  placeholder="Ej: Campaña Verano 2024"
+                  className={isDark
+                    ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+                  }
+                />
+                <p className={`text-xs text-right ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+                  {nombreCampana.length}/{MAX_CHARS_CAMPANA}
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Sección: Carga de Importes */}
           <div className="space-y-4">
             <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
               Carga de Importes
             </h2>
-            
+
             {/* Alerta de exceso de límite */}
             {excedeLimite && (
-              <div className={`mb-4 p-4 rounded-lg border-2 flex items-start gap-3 ${
-                isDark 
-                  ? 'bg-red-950/50 border-red-800 text-red-200' 
+              <div className={`mb-4 p-4 rounded-lg border-2 flex items-start gap-3 ${isDark
+                  ? 'bg-red-950/50 border-red-800 text-red-200'
                   : 'bg-red-50 border-red-300 text-red-800'
-              }`}>
+                }`}>
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-500" />
                 <div className="flex-1">
                   <p className="font-semibold mb-1">
@@ -827,11 +819,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     <select
                       value={acuerdoPago}
                       onChange={(e) => setAcuerdoPago(e.target.value)}
-                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${
-                        isDark 
+                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
                           ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
                           : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                      } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                     >
                       <option value="">Seleccionar</option>
                       {ACUERDOS_PAGO.map((acuerdo) => (
@@ -872,11 +863,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                             <select
                               value={row.programa}
                               onChange={(e) => setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, programa: e.target.value } : r))}
-                              className={`w-full h-9 pl-2 pr-8 rounded-md border text-sm appearance-none ${
-                                isDark 
+                              className={`w-full h-9 pl-2 pr-8 rounded-md border text-sm appearance-none ${isDark
                                   ? 'bg-[#1e1e1e] border-gray-700 text-white'
                                   : 'bg-white border-gray-300 text-gray-900'
-                              } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                                } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                             >
                               <option value="">Seleccionar</option>
                               {PROGRAMAS_LUZU.map((programa) => (
@@ -901,10 +891,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               }
                             }}
                             placeholder="$ 0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
 
@@ -918,10 +908,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               handleNcProgramaChange(row.id, value);
                             }}
                             placeholder="$ 0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
 
@@ -935,10 +925,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               handleNcPorcentajeChange(row.id, value);
                             }}
                             placeholder="0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
                       </div>
@@ -951,11 +941,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                             <select
                               value={row.proveedorFee}
                               onChange={(e) => setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, proveedorFee: e.target.value } : r))}
-                              className={`w-full h-9 pl-2 pr-8 rounded-md border text-sm appearance-none ${
-                                isDark 
+                              className={`w-full h-9 pl-2 pr-8 rounded-md border text-sm appearance-none ${isDark
                                   ? 'bg-[#1e1e1e] border-gray-700 text-white'
                                   : 'bg-white border-gray-300 text-gray-900'
-                              } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                                } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                             >
                               <option value="">Seleccionar</option>
                               <option value="proveedor1">Proveedor 1</option>
@@ -976,10 +965,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               handleFeeProgramaChange(row.id, value);
                             }}
                             placeholder="$ 0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
 
@@ -993,10 +982,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               handleFeePorcentajeChange(row.id, value);
                             }}
                             placeholder="0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
                       </div>
@@ -1012,7 +1001,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               const value = getNumericValue(e.target.value);
                               const totalVentaNum = parseFloat(totalVenta) || 0;
                               const montoPrograma = parseFloat(row.monto) || 0;
-                              
+
                               if (value > totalVentaNum) {
                                 alert('El monto de Implementación no puede superar el Total de Venta');
                                 return;
@@ -1021,14 +1010,14 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                                 alert('El monto de Implementación no puede superar el monto asignado al programa');
                                 return;
                               }
-                              
+
                               setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, implementacion: value } : r));
                             }}
                             placeholder="$ 0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
 
@@ -1041,7 +1030,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               const value = getNumericValue(e.target.value);
                               const totalVentaNum = parseFloat(totalVenta) || 0;
                               const montoPrograma = parseFloat(row.monto) || 0;
-                              
+
                               if (value > totalVentaNum) {
                                 alert('El monto de Talentos no puede superar el Total de Venta');
                                 return;
@@ -1050,14 +1039,14 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                                 alert('El monto de Talentos no puede superar el monto asignado al programa');
                                 return;
                               }
-                              
+
                               setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, talentos: value } : r));
                             }}
                             placeholder="$ 0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
 
@@ -1070,7 +1059,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               const value = getNumericValue(e.target.value);
                               const totalVentaNum = parseFloat(totalVenta) || 0;
                               const montoPrograma = parseFloat(row.monto) || 0;
-                              
+
                               if (value > totalVentaNum) {
                                 alert('El monto de Técnica no puede superar el Total de Venta');
                                 return;
@@ -1079,14 +1068,14 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                                 alert('El monto de Técnica no puede superar el monto asignado al programa');
                                 return;
                               }
-                              
+
                               setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, tecnica: value } : r));
                             }}
                             placeholder="$ 0"
-                            className={`h-9 text-sm ${isDark 
+                            className={`h-9 text-sm ${isDark
                               ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                               : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                            }`}
+                              }`}
                           />
                         </div>
                       </div>
@@ -1112,19 +1101,17 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 <div className="flex flex-wrap gap-4">
                   <button
                     onClick={() => setTipoImporte('canje')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                      tipoImporte === 'canje'
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${tipoImporte === 'canje'
                         ? 'bg-green-600 border-green-600 text-white'
                         : isDark
                           ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
                           : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
-                    }`}
+                      }`}
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      tipoImporte === 'canje'
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tipoImporte === 'canje'
                         ? 'border-white'
                         : isDark ? 'border-gray-600' : 'border-gray-400'
-                    }`}>
+                      }`}>
                       {tipoImporte === 'canje' && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
                     <span className="text-sm font-medium">Canje</span>
@@ -1132,19 +1119,17 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
 
                   <button
                     onClick={() => setTipoImporte('factura')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                      tipoImporte === 'factura'
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${tipoImporte === 'factura'
                         ? 'bg-green-600 border-green-600 text-white'
                         : isDark
                           ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
                           : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
-                    }`}
+                      }`}
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      tipoImporte === 'factura'
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tipoImporte === 'factura'
                         ? 'border-white'
                         : isDark ? 'border-gray-600' : 'border-gray-400'
-                    }`}>
+                      }`}>
                       {tipoImporte === 'factura' && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
                     <span className="text-sm font-medium">Factura</span>
@@ -1164,11 +1149,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     }
                   }}
                   placeholder="Agregar observaciones adicionales..."
-                  className={`w-full px-3 py-2 rounded-md border text-sm resize-none ${
-                    isDark 
+                  className={`w-full px-3 py-2 rounded-md border text-sm resize-none ${isDark
                       ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
                       : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-                  } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                    } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
                 />
                 <p className={`text-xs text-right ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
                   {observaciones.length}/{MAX_CHARS_OBSERVACIONES}
@@ -1233,7 +1217,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pb-6">
             <Button
               variant="outline"
-              className={isDark 
+              className={isDark
                 ? 'border-gray-700 text-gray-400 hover:bg-[#1e1e1e] hover:text-white'
                 : 'border-gray-300 text-gray-700 hover:bg-gray-50'
               }
@@ -1244,7 +1228,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
               onClick={() => {
                 // Validar campos obligatorios
                 const camposFaltantes = validarCamposObligatorios();
-                
+
                 if (camposFaltantes.length > 0) {
                   toast.error('❌ Campos obligatorios incompletos', {
                     description: `Por favor completa: ${camposFaltantes.join(', ')}`
@@ -1290,11 +1274,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 }
               }}
               disabled={!formularioValido}
-              className={`${
-                !formularioValido 
-                  ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+              className={`${!formularioValido
+                  ? 'bg-gray-400 cursor-not-allowed opacity-50'
                   : 'bg-[#0070ff] hover:bg-[#0060dd]'
-              } text-white`}
+                } text-white`}
             >
               {isEditMode ? 'Actualizar' : 'Guardar'}
             </Button>
@@ -1322,7 +1305,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 value={newRazonSocial}
                 onChange={(e) => setNewRazonSocial(e.target.value)}
                 placeholder="Ingrese la razón social"
-                className={isDark 
+                className={isDark
                   ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
                   : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
                 }
@@ -1336,7 +1319,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 value={newCuit}
                 onChange={(e) => setNewCuit(e.target.value)}
                 placeholder="XX-XXXXXXXX-X"
-                className={isDark 
+                className={isDark
                   ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
                   : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
                 }
@@ -1350,7 +1333,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 value={newDireccion}
                 onChange={(e) => setNewDireccion(e.target.value)}
                 placeholder="Ingrese la dirección"
-                className={isDark 
+                className={isDark
                   ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
                   : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
                 }
@@ -1364,7 +1347,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 value={newEmpresaAgencia}
                 onChange={(e) => setNewEmpresaAgencia(e.target.value)}
                 placeholder="Ingrese la empresa o agencia"
-                className={isDark 
+                className={isDark
                   ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
                   : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
                 }
@@ -1381,7 +1364,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 setNewDireccion('');
                 setNewEmpresaAgencia('');
               }}
-              className={isDark 
+              className={isDark
                 ? 'border-gray-700 text-gray-400 hover:bg-[#141414]'
                 : 'border-gray-300 text-gray-700'
               }
