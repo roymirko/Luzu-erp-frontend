@@ -354,7 +354,7 @@ export function Dashboard() {
                   <AlertCircle className={`h-5 w-5 shrink-0 mt-0.5 ${alert.type === 'error' ? 'text-red-500' : 'text-yellow-500'
                     }`} />
                   <div>
-                    <h4 className={`text-sm font-medium ${alert.type === 'error' ? 'text-red-400' : 'text-yellow-400'
+                    <h4 className={`text-sm font-medium ${alert.type === 'error' ? (isDark ? 'text-red-400' : 'text-red-700') : (isDark ? 'text-yellow-400' : 'text-yellow-700')
                       } capitalize`}>{alert.title}</h4>
                     <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{alert.message}</p>
                   </div>
@@ -367,7 +367,7 @@ export function Dashboard() {
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-green-400">Sistema Operativo</h4>
+                      <h4 className={`text-sm font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>Sistema Operativo</h4>
                       <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Todos los sistemas funcionando correctamente.</p>
                     </div>
                   </div>

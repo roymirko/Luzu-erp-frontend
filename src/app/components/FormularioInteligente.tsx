@@ -435,7 +435,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
 
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 bg-white">
+    <div className={`min-h-screen py-4 sm:py-6 ${isDark ? 'bg-transparent' : 'bg-white'}`}>
       <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="space-y-6 sm:space-y-8">
           {/* Título */}
@@ -837,7 +837,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
               {/* Programas */}
               <div className="space-y-4">
                 {importeRows.map((row, index) => (
-                  <div key={row.id} className="border rounded-lg p-4 sm:p-6 bg-[#E6EBFF] border-[#ABBCFF]">
+                  <div key={row.id} className={`border rounded-lg p-4 sm:p-6 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-[#E6EBFF] border-[#ABBCFF]'}`}>
                     <div className="flex items-center justify-between mb-4">
                       <h4 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         Programa {index + 1}
@@ -1002,11 +1002,11 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               const totalVentaNum = parseFloat(totalVenta) || 0;
                               const montoPrograma = parseFloat(row.monto) || 0;
 
-                              if (value > totalVentaNum) {
+                              if (parseFloat(value) > totalVentaNum) {
                                 alert('El monto de Implementación no puede superar el Total de Venta');
                                 return;
                               }
-                              if (montoPrograma > 0 && value > montoPrograma) {
+                              if (montoPrograma > 0 && parseFloat(value) > montoPrograma) {
                                 alert('El monto de Implementación no puede superar el monto asignado al programa');
                                 return;
                               }
@@ -1031,11 +1031,11 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               const totalVentaNum = parseFloat(totalVenta) || 0;
                               const montoPrograma = parseFloat(row.monto) || 0;
 
-                              if (value > totalVentaNum) {
+                              if (parseFloat(value) > totalVentaNum) {
                                 alert('El monto de Talentos no puede superar el Total de Venta');
                                 return;
                               }
-                              if (montoPrograma > 0 && value > montoPrograma) {
+                              if (montoPrograma > 0 && parseFloat(value) > montoPrograma) {
                                 alert('El monto de Talentos no puede superar el monto asignado al programa');
                                 return;
                               }
@@ -1060,11 +1060,11 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                               const totalVentaNum = parseFloat(totalVenta) || 0;
                               const montoPrograma = parseFloat(row.monto) || 0;
 
-                              if (value > totalVentaNum) {
+                              if (parseFloat(value) > totalVentaNum) {
                                 alert('El monto de Técnica no puede superar el Total de Venta');
                                 return;
                               }
-                              if (montoPrograma > 0 && value > montoPrograma) {
+                              if (montoPrograma > 0 && parseFloat(value) > montoPrograma) {
                                 alert('El monto de Técnica no puede superar el monto asignado al programa');
                                 return;
                               }
@@ -1261,6 +1261,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   result = await updateFormulario(formularioId, {
                     ...formularioExistente,
                     ...formularioData,
+                    id: formularioId,
+                    fecha: formularioExistente?.fecha || new Date().toISOString(),
                   });
                 } else {
                   // Modo creación: crear nuevo formulario
@@ -1275,7 +1277,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   }
                 } else {
                   toast.error('❌ Error al guardar', {
-                    description: result.error || 'Hubo un problema al guardar el formulario'
+                    description: (result as any).error || 'Hubo un problema al guardar el formulario'
                   });
                 }
               }}
