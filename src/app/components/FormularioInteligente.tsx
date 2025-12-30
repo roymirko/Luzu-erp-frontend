@@ -500,22 +500,6 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <select
-                      value={mesServicioMes}
-                      onChange={(e) => setMesServicioMes(e.target.value)}
-                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-                        } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
-                    >
-                      <option value="">Mes</option>
-                      {MESES_DISPONIBLES.map((mes) => (
-                        <option key={mes.value} value={mes.value}>{mes.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                  </div>
-                  <div className="relative flex-1">
-                    <select
                       value={mesServicioAnio}
                       onChange={(e) => setMesServicioAnio(e.target.value)}
                       className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
@@ -526,6 +510,22 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                       <option value="">Año</option>
                       {ANIOS_DISPONIBLES.map((anio) => (
                         <option key={anio} value={anio.toString()}>{anio}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                  </div>
+                  <div className="relative flex-1">
+                    <select
+                      value={mesServicioMes}
+                      onChange={(e) => setMesServicioMes(e.target.value)}
+                      className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
+                        ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                        } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+                    >
+                      <option value="">Mes</option>
+                      {MESES_DISPONIBLES.map((mes) => (
+                        <option key={mes.value} value={mes.value}>{mes.label}</option>
                       ))}
                     </select>
                     <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
