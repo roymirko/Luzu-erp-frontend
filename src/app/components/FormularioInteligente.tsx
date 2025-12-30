@@ -787,26 +787,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
             </h2>
 
             {/* Alerta de exceso de límite */}
-            {excedeLimite && (
-              <div className={`mb-4 p-4 rounded-lg border-2 flex items-start gap-3 ${isDark
-                ? 'bg-red-950/50 border-red-800 text-red-200'
-                : 'bg-red-50 border-red-300 text-red-800'
-                }`}>
-                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-500" />
-                <div className="flex-1">
-                  <p className="font-semibold mb-1">
-                    El total de programas supera el presupuesto estimado
-                  </p>
-                  <p className="text-sm opacity-90">
-                    Total de programas: <span className="font-bold">{formatPesos(totalProgramas.toString())}</span>
-                    {' | '}
-                    Presupuesto: <span className="font-bold">{formatPesos(presupuestoEstimado.toString())}</span>
-                    {' | '}
-                    Excedente: <span className="font-bold">{formatPesos((totalProgramas - presupuestoEstimado).toString())}</span>
-                  </p>
-                </div>
-              </div>
-            )}
+
 
             <div className="space-y-6">
               {/* Acuerdo de Pago */}
@@ -833,6 +814,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   </div>
                 </div>
               </div>
+
+
 
               {/* Programas */}
               <div className="space-y-4">
@@ -1093,6 +1076,28 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     Agregar Programa
                   </Button>
                 </div>
+
+                {/* Alerta de exceso de límite (Bottom) */}
+                {excedeLimite && (
+                  <div className={`p-4 rounded-lg border-2 flex items-start gap-3 ${isDark
+                    ? 'bg-red-950/50 border-red-800 text-red-200'
+                    : 'bg-red-50 border-red-300 text-red-800'
+                    }`}>
+                    <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-500" />
+                    <div className="flex-1">
+                      <p className="font-semibold mb-1">
+                        El total de programas supera el presupuesto estimado
+                      </p>
+                      <p className="text-sm opacity-90">
+                        Total de programas: <span className="font-bold">{formatPesos(totalProgramas.toString())}</span>
+                        {' | '}
+                        Presupuesto: <span className="font-bold">{formatPesos(presupuestoEstimado.toString())}</span>
+                        {' | '}
+                        Excedente: <span className="font-bold">{formatPesos((totalProgramas - presupuestoEstimado).toString())}</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Tipo de Importe */}
