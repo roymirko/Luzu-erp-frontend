@@ -20,7 +20,6 @@ import { Toaster } from 'sonner';
 import imgLogoLuzu from "../assets/logo-luzu-2025 1.png";
 import imgLogoLuzuSmall from "../assets/loguito.png";
 import imgContainer from "../assets/Container.png";
-import imgMiguelProfile from "../assets/Miguel Uccello.jpeg";
 
 // Luzu ERP - Sistema de gestión empresarial
 type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implementacion' | 'programacion' | 'configuraciones' | 'editar-formulario';
@@ -61,29 +60,24 @@ function AppContent() {
       }
     }
 
-    // Intentar login con usuario seed (Gabriela) o fallback a Miguel (hardcoded en mocks pero no en DB)
-    // Primero intentamos con el usuario que sabemos que existe en seeds
-    let result = await login('gaby@luzutv.com.ar');
+    // Intentar login con usuario seed (Gabriela)
+    let result = await login('gabriela.rivero@gmail.com');
 
     if (result.success) {
       setIsAuthenticated(true);
       return;
     }
 
-    // Si falla, intentamos con Miguel (legacy)
+    // Si falla, intentamos con fallback legacy o mock
     result = await login('miguel@luzu.tv');
     if (result.success) {
       setIsAuthenticated(true);
     } else {
       console.warn('Login fallido. Verifica que los datos estén en Supabase o que el .env esté configurado.');
-      // En desarrollo, podríamos permitir entrar pero sin usuario real, 
-      // pero mejor mostrar error o no dejar entrar para depurar.
-      // Dejamos el comportamiento "permisivo" anterior pero con advertencia,
-      // O ajustamos para usar un usuario mock local si la DB falla.
 
       // Fallback para no bloquear la UI si la DB no responde
       setIsAuthenticated(true);
-      const mockUser = users.find(u => u.email === 'miguel@luzu.tv' || u.email === 'gaby@luzutv.com.ar');
+      const mockUser = users.find(u => u.email === 'gabriela.rivero@gmail.com');
       if (mockUser) setCurrentUser(mockUser);
     }
   };

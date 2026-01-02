@@ -11,7 +11,7 @@ import imgListasYoutubeEe1 from "../../assets/LISTAS-YOUTUBE-EE.jpg";
 import imgListasYoutubeAvap1 from "../../assets/LISTAS-YOUTUBE-AVAP.jpg";
 import imgListasYoutubeAqn1 from "../../assets/LISTAS-YOUTUBE-AQN.jpg";
 import imgFondo1 from "../../assets/fondo.png";
-import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
+import imgGabrielProfile from "../../assets/GabrielRivero.jpg";
 
 interface LoginProps {
   onLogin: (email?: string) => void;
@@ -155,22 +155,22 @@ export function Login({ onLogin }: LoginProps) {
             <div className="w-full">
               <div
                 className="bg-[#e8f0fe] flex flex-col gap-[12px] pb-0 pt-[12px] px-[40px] cursor-pointer hover:bg-[#d3e3fd] transition-colors"
-                onClick={() => onLogin('miguel@luzutv.com.ar')}
+                onClick={() => onLogin('gabriela.rivero@gmail.com')}
               >
                 <div className="flex gap-[14px] items-center">
                   <div className="bg-white overflow-clip rounded-full size-[32px] shrink-0">
                     <img
-                      alt="Miguel Uccello"
+                      alt="Gabriela Rivero"
                       className="size-full object-cover"
-                      src={imgMiguelProfile}
+                      src={imgGabrielProfile}
                     />
                   </div>
                   <div className="flex flex-col gap-px text-[#3c4043]">
                     <p className="font-['Roboto',sans-serif] font-medium text-[14px]">
-                      Miguel Uccello
+                      Gabriela Rivero
                     </p>
                     <p className="font-['Roboto',sans-serif] font-light text-[12px] tracking-[0.024px]">
-                      miguel@luzutv.com.ar
+                      gabriela.rivero@gmail.com
                     </p>
                   </div>
                 </div>

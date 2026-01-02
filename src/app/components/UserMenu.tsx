@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Separator } from './ui/separator';
 import { useTheme } from '../contexts/ThemeContext';
 import { useData } from '../contexts/DataContext';
-import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
+import imgGabrielProfile from "../../assets/GabrielRivero.jpg";
 
 interface UserMenuProps {
   onLogout?: () => void;
@@ -37,7 +37,7 @@ export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
   const fullName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Usuario Invitado';
   const email = currentUser ? currentUser.email : '';
   const role = currentUser?.metadata?.position || 'Usuario';
-  const avatarSrc = currentUser?.avatar || imgMiguelProfile;
+  const avatarSrc = currentUser?.avatar || imgGabrielProfile;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

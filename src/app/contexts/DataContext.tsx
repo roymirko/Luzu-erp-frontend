@@ -105,20 +105,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (usersData) {
           const mappedUsers = usersData.map(mapUserFromDB);
 
-          // Ensure Miguel Uccello exists (Mock injection if missing)
-          const miguelExists = mappedUsers.some(u => u.email === 'miguel@luzutv.com.ar');
-          if (!miguelExists) {
+          // Ensure Gabriela Rivero exists (Mock injection if missing)
+          const gabrielaExists = mappedUsers.some(u => u.email === 'gabriela.rivero@gmail.com');
+          if (!gabrielaExists) {
             mappedUsers.push({
               id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-              email: 'miguel@luzutv.com.ar',
-              firstName: 'Miguel',
-              lastName: 'Uccello',
+              email: 'gabriela.rivero@gmail.com',
+              firstName: 'Gabriela',
+              lastName: 'Rivero',
               active: true,
               createdBy: 'system',
               createdAt: new Date(),
               updatedAt: new Date(),
               metadata: {
-                position: 'CFO'
+                position: 'CEO'
               }
             });
           }
