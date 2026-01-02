@@ -28,7 +28,7 @@ function AppContent() {
   const { isDark } = useTheme();
   const { users, currentUser, setCurrentUser, login } = useData();
   const [activeView, setActiveView] = useState<View>('comercial');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     // Si hay un currentUser en localStorage, está autenticado
     return !!currentUser;
