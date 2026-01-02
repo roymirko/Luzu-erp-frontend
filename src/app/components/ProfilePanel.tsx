@@ -5,7 +5,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useTheme } from '../contexts/ThemeContext';
-import imgMiguelProfile from "../../assets/Miguel Uccello.jpeg";
+import { useData } from '../contexts/DataContext';
+import imgGabrielProfile from "../../assets/GabrielRivero.jpg";
 
 interface ProfilePanelProps {
   onClose: () => void;
@@ -13,16 +14,17 @@ interface ProfilePanelProps {
 
 export function ProfilePanel({ onClose }: ProfilePanelProps) {
   const { isDark } = useTheme();
+  const { currentUser } = useData();
   const [isEditing, setIsEditing] = useState(false);
-  const [profileImage, setProfileImage] = useState<string>(imgMiguelProfile);
+  const [profileImage, setProfileImage] = useState<string>(currentUser?.avatar || imgGabrielProfile);
 
   // Datos del perfil
   const [profileData, setProfileData] = useState({
-    nombre: 'Miguel Uccello',
-    email: 'miguel@luzutv.com.ar',
-    rol: 'CFO',
-    departamento: 'Comercial',
-    telefono: '+54 11 4567-8900',
+    nombre: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Usuario',
+    email: currentUser?.email || '',
+    rol: currentUser?.metadata?.position || '',
+    departamento: 'Comercial', // Esto podría venir de las áreas asignadas si se implementa lógica
+    telefono: '', // No tenemos teléfono en el modelo de usuario actual, dejamos vacío o mock
   });
 
   const handleSave = () => {
@@ -83,7 +85,9 @@ export function ProfilePanel({ onClose }: ProfilePanelProps) {
             <div className="relative group mb-4">
               <Avatar className="h-24 w-24 ring-4 ring-[#fb2c36]/20">
                 <img src={profileImage} alt="Usuario" className="object-cover" />
-                <AvatarFallback className="bg-[#fb2c36] text-white text-xl">MU</AvatarFallback>
+                <AvatarFallback className="bg-[#fb2c36] text-white text-xl">
+                  {currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}` : 'US'}
+                </AvatarFallback>
               </Avatar>
               {isEditing && (
                 <>
