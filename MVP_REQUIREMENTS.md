@@ -63,7 +63,7 @@ Sistema ERP completo para la gestión de usuarios, roles y áreas con sistema de
 - **Visualizador:** Solo lectura general.
 
 ### ✅ RN-04: Auditoría
-- **Persistencia:** LocalStorage (MVP).
+- **Persistencia:** Supabase.
 - **Datos:** Timestamp, Actor, Acción, Entidad afectada, Resultado.
 
 ---
@@ -75,11 +75,12 @@ Sistema ERP completo para la gestión de usuarios, roles y áreas con sistema de
 #### **Usuario (User)**
 ```typescript
 {
-  id: string;
+  id: string;           // UUID Supabase
   email: string;        // Único
   firstName: string;
   lastName: string;
   active: boolean;
+  avatar?: string;
   createdAt: Date;
 }
 ```
@@ -143,7 +144,7 @@ Sistema ERP completo para la gestión de usuarios, roles y áreas con sistema de
 ### Tecnologías Clave
 - **Frontend:** React + TypeScript + Tailwind CSS
 - **Estado:** React Context API
-- **Persistencia:** LocalStorage (MVP)
+- **Persistencia:** Supabase
 - **Iconos:** Lucide React
 
 ---
@@ -160,12 +161,37 @@ Sistema ERP completo para la gestión de usuarios, roles y áreas con sistema de
 - **Integridad Referencial:** No se pueden crear asignaciones a usuarios/áreas inexistentes.
 - **Seguridad:** Validaciones de permisos antes de cualquier acción crítica.
 - **Consistencia:** Un usuario siempre debe tener al menos un rol asignado.
+- **Atribución:** Los formularios y acciones se atribuyen automáticamente al usuario logueado.
+
+### UI/UX
+- **Sidebar:** 
+  - Colapsado por defecto en inicio.
+  - Comportamiento responsivo (Hamburger menu en móvil).
+- **Dashboard:**
+  - Alertas inteligentes basadas en surplus/deficit presupuestario.
+
+### ✅ RN-05: Lógica de Formularios (Smart Forms)
+- **Fechas:** 
+  - Al crear, solo permite seleccionar año actual o futuro.
+  - Si es año actual, solo permite meses actuales o futuros.
+  - En edición, se permite histórico completo (desde 2020).
+- **Dependencias de Campos:**
+  - `Proyecto` depende de `Unidad de Negocio`.
+  - Reglas específicas para 'Media', 'Experience' y 'Productora'.
+  - Limpieza automática de campos dependientes al cambiar el padre.
+- **Cálculos Automáticos:**
+  - `NC Programa` = Monto * (NC % / 100)
+  - `Fee Programa` = Monto * (Fee % / 100)
+  - `Utilidad` = Total Venta - (Notas Crédito + Fee + Gastos Venta)
+- **Validaciones Financieras:**
+  - Alerta visual si la suma de programas supera el Total de Venta.
+  - Bloqueo de importes que superan el presupuesto individualmente.
 
 ---
 
 ## 🔮 Roadmap Post-MVP
 
-1. **Backend Real:** Migración a Supabase/Firebase.
-2. **Auth Robusta:** JWT + Refresh Tokens.
-3. **Reportes:** Exportación a PDF/Excel.
-4. **Notificaciones:** Sistema realtime (WebSockets).
+1. **Auth Robusta:** Implementación completa de RLS en Supabase.
+2. **Reportes:** Exportación a PDF/Excel.
+3. **Notificaciones:** Sistema realtime (WebSockets).
+
