@@ -156,7 +156,7 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
             <div className="w-full">
               <div
                 className="bg-[#e8f0fe] flex flex-col gap-[12px] pb-0 pt-[12px] px-[40px] cursor-pointer hover:bg-[#d3e3fd] transition-colors"
-                onClick={() => onLogin('gabriela.rivero@gmail.com')}
+                onClick={() => onLogin('gaby@luzutv.com.ar')}
               >
                 <div className="flex gap-[14px] items-center">
                   <div className="bg-white overflow-clip rounded-full size-[32px] shrink-0">
@@ -171,7 +171,7 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
                       Gabriela Rivero
                     </p>
                     <p className="font-['Roboto',sans-serif] font-light text-[12px] tracking-[0.024px]">
-                      gabriela.rivero@gmail.com
+                      gaby@luzutv.com.ar
                     </p>
                   </div>
                 </div>

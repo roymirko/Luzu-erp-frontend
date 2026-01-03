@@ -61,34 +61,36 @@ function AppContent() {
   };
 
   const handleLogin = async (email?: string) => {
-    // Si se proporciona un email específico, usarlo
-    if (email) {
-      const result = await login(email);
-      if (result.success) {
-        setIsAuthenticated(true);
-        return;
-      }
-    }
+    // Si no llega email (ej: botón genérico), usamos el de admin por defecto
+    const targetEmail = email || 'gaby@luzutv.com.ar';
 
-    // Intentar login con usuario seed (Gabriela)
-    let result = await login('gabriela.rivero@gmail.com');
-
+    // 1. Intentar login normal a través del Context
+    const result = await login(targetEmail);
     if (result.success) {
       setIsAuthenticated(true);
       return;
     }
 
-    // Si falla, intentamos con fallback legacy o mock
-    result = await login('miguel@luzu.tv');
-    if (result.success) {
+    // 2. Si falla y es el usuario Admin (Gabriela), forzar entrada con Mock
+    // Esto es necesario si la DB no responde o el usuario no está sincronizado aún
+    if (targetEmail === 'gaby@luzutv.com.ar') {
+      console.warn('Login db falló, forzando acceso Admin locales...');
+      const adminMock = {
+        id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        email: 'gaby@luzutv.com.ar',
+        firstName: 'Gabriela',
+        lastName: 'Rivero',
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: 'system',
+        metadata: { position: 'CEO', avatar: undefined } // Avatar undefined usa fallback de UserMenu
+      };
+
+      setCurrentUser(adminMock);
       setIsAuthenticated(true);
     } else {
-      console.warn('Login fallido. Verifica que los datos estén en Supabase o que el .env esté configurado.');
-
-      // Fallback para no bloquear la UI si la DB no responde
-      setIsAuthenticated(true);
-      const mockUser = users.find(u => u.email === 'gabriela.rivero@gmail.com');
-      if (mockUser) setCurrentUser(mockUser);
+      console.error('Login fallido para:', targetEmail);
     }
   };
 

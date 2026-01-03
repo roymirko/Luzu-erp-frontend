@@ -37,7 +37,9 @@ export function UserMenu({ onLogout, onOpenProfile }: UserMenuProps) {
   const fullName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Usuario Invitado';
   const email = currentUser ? currentUser.email : '';
   const role = currentUser?.metadata?.position || 'Usuario';
-  const avatarSrc = currentUser?.avatar || imgGabrielProfile;
+  // Generar avatar por defecto si no existe
+  const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random&color=fff`;
+  const avatarSrc = currentUser?.avatar || defaultAvatar;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

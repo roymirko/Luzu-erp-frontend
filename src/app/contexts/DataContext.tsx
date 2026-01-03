@@ -76,7 +76,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { addLog } = useLog();
   const [loading, setLoading] = useState(true);
 
-  const [users, setUsers] = useState<User[]>([]);
+
+  const [users, setUsers] = useState<User[]>([{
+    id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    email: 'gaby@luzutv.com.ar',
+    firstName: 'Gabriela',
+    lastName: 'Rivero',
+    active: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'system',
+    metadata: {
+      position: 'CEO'
+    }
+  }]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [userAreaRoles, setUserAreaRoles] = useState<UserAreaRole[]>([]);
@@ -107,11 +120,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const mappedUsers = usersData.map(mapUserFromDB);
 
           // Ensure Gabriela Rivero exists (Mock injection if missing)
-          const gabrielaExists = mappedUsers.some(u => u.email === 'gabriela.rivero@gmail.com');
+          const gabrielaExists = mappedUsers.some(u => u.email === 'gaby@luzutv.com.ar');
           if (!gabrielaExists) {
             mappedUsers.push({
               id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-              email: 'gabriela.rivero@gmail.com',
+              email: 'gaby@luzutv.com.ar',
               firstName: 'Gabriela',
               lastName: 'Rivero',
               active: true,

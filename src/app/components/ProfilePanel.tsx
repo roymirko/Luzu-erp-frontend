@@ -16,7 +16,8 @@ export function ProfilePanel({ onClose }: ProfilePanelProps) {
   const { isDark } = useTheme();
   const { currentUser } = useData();
   const [isEditing, setIsEditing] = useState(false);
-  const [profileImage, setProfileImage] = useState<string>(currentUser?.avatar || imgGabrielProfile);
+  const defaultAvatar = currentUser ? `https://ui-avatars.com/api/?name=${encodeURIComponent(`${currentUser.firstName} ${currentUser.lastName}`)}&background=random&color=fff` : imgGabrielProfile;
+  const [profileImage, setProfileImage] = useState<string>(currentUser?.avatar || defaultAvatar);
 
   // Datos del perfil
   const [profileData, setProfileData] = useState({
