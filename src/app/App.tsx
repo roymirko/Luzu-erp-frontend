@@ -28,7 +28,10 @@ function AppContent() {
   const { isDark } = useTheme();
   const { users, currentUser, setCurrentUser, login } = useData();
   const [activeView, setActiveView] = useState<View>('comercial');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Inicializar estado del sidebar basado en el dispositivo
+  // Web (Desktop): Expandido por defecto (true)
+  // Mobile: Colapsado por defecto (false)
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     // Si hay un currentUser en localStorage, está autenticado
     return !!currentUser;
@@ -217,7 +220,7 @@ function AppContent() {
           } h-full`}
       >
         {/* Logo */}
-        <div className={`border-b px-5 py-3 transition-all duration-300 ${isDark ? 'border-gray-800' : 'border-gray-200'
+        <div className={`border-b px-5 py-3 transition-all duration-300 flex items-center justify-between ${isDark ? 'border-gray-800' : 'border-gray-200'
           }`}>
           <div
             className="flex items-center justify-center cursor-pointer h-10"
@@ -230,6 +233,19 @@ function AppContent() {
               className="h-10 w-auto object-contain transition-all duration-300"
             />
           </div>
+          {sidebarOpen && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+              className={isDark
+                ? 'text-gray-400 hover:text-white hover:bg-[#1e1e1e] md:hidden'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 md:hidden'
+              }
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         {/* Menu Items */}
@@ -284,13 +300,14 @@ function AppContent() {
             )}
           </button>
         </div>
-      </aside>
+      </aside >
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      < div className="flex-1 flex flex-col overflow-hidden" >
         {/* Navbar */}
-        <header className={`border-b px-5 py-3 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
-          }`}>
+        < header className={`border-b px-5 py-3 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
+          }`
+        }>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
@@ -318,10 +335,10 @@ function AppContent() {
               />
             </div>
           </div>
-        </header>
+        </header >
 
         {/* Breadcrumbs */}
-        <div className={`border-b px-5 py-2.5 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
+        < div className={`border-b px-5 py-2.5 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
           }`}>
           <div className="flex items-center gap-2 text-sm">
             {getBreadcrumbs().map((crumb, index) => (
@@ -340,24 +357,26 @@ function AppContent() {
               </div>
             ))}
           </div>
-        </div>
+        </div >
 
         {/* Content Area */}
-        <main className={`flex-1 overflow-y-auto p-5 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'
+        < main className={`flex-1 overflow-y-auto p-5 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'
           }`}>
           <div className="max-w-[1440px] mx-auto">
             {renderContent()}
           </div>
-        </main>
-      </div>
+        </main >
+      </div >
 
       {/* Profile Panel */}
-      {profilePanelOpen && (
-        <ProfilePanel
-          onClose={() => setProfilePanelOpen(false)}
-        />
-      )}
-    </div>
+      {
+        profilePanelOpen && (
+          <ProfilePanel
+            onClose={() => setProfilePanelOpen(false)}
+          />
+        )
+      }
+    </div >
   );
 }
 
