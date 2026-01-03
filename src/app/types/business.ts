@@ -71,6 +71,8 @@ export interface User {
   metadata?: {
     position?: string; // Cargo
     googleId?: string; // ID de Google OAuth
+    avatar?: string;
+    source?: string;
   };
 }
 
@@ -116,6 +118,7 @@ export type LogAction =
   | 'login'
   | 'logout'
   | 'create_user'
+  | 'auto_create_user'
   | 'edit_user'
   | 'delete_user'
   | 'activate_user'

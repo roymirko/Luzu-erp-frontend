@@ -143,30 +143,87 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Supabase Auth Event:', event, session?.user?.email);
 
-      if (session?.user?.email) {
-        // User is signed in via Supabase
-        // Find matching user in our DB
-        // NOTE: In a real app we might upsert the user here if they don't exist
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', session.user.email) // Supabase Auth email should match internal users email
-          .single();
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (session?.user?.email) {
+          // User is signed in via Supabase
+          const email = session.user.email;
 
-        if (userData) {
-          const mappedUser = mapUserFromDB(userData);
-          // Explicitly set as current user
-          setCurrentUser(prev => {
-            // Only update if different to avoid excess renders loop if any
-            if (prev?.id === mappedUser.id) return prev;
-            return mappedUser;
-          });
+          // 1. Try to find user in our DB (case-insensitive)
+          const { data: userData, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('email', email)
+            .maybeSingle(); // Use maybeSingle to avoid error if not found
 
-          // Also simulate the internal "login" logic (last_login update) if needed
-          // But strict "login" function does that.
-        } else {
-          console.warn('User authenticated in Supabase but not found in `users` table:', session.user.email);
-          // Optional: Create user if they don't exist? For now, just warn.
+          if (userData) {
+            console.log('User found in DB, logging in:', userData.email);
+            const mappedUser = mapUserFromDB(userData);
+
+            // Update local state
+            setCurrentUser(prev => {
+              if (prev?.id === mappedUser.id) return prev;
+              return mappedUser;
+            });
+
+            // Update last_login
+            await supabase
+              .from('users')
+              .update({ last_login: new Date().toISOString() })
+              .eq('id', userData.id);
+
+          } else {
+            console.warn('User authenticated in Google but not found in `users` table. Creating user...');
+
+            // 2. Auto-create user if not found
+            const metadata = session.user.user_metadata || {};
+            const fullName = metadata.full_name || metadata.name || email.split('@')[0];
+            const [firstName, ...rest] = fullName.split(' ');
+            const lastName = rest.join(' ') || '';
+            const avatarUrl = metadata.avatar_url || metadata.picture;
+
+            const newUserBase = {
+              email: email.toLowerCase(),
+              firstName: firstName || 'User',
+              lastName: lastName || '',
+              active: true, // Auto-activate
+              createdBy: 'system',
+              metadata: {
+                avatar: avatarUrl,
+                source: 'google_auth'
+              }
+            };
+
+            const { data: insertedUser, error: createError } = await supabase
+              .from('users')
+              .insert(mapUserToDB(newUserBase))
+              .select()
+              .single();
+
+            if (insertedUser && !createError) {
+              console.log('User auto-created successfully:', insertedUser);
+              const mappedNewUser = mapUserFromDB(insertedUser);
+              setCurrentUser(mappedNewUser);
+
+              setUsers(prev => [...prev, mappedNewUser]);
+
+              addLog({
+                userId: mappedNewUser.id,
+                userEmail: mappedNewUser.email,
+                userRole: RoleType.VISUALIZADOR, // Default role
+                action: 'auto_create_user',
+                entity: 'user',
+                entityId: mappedNewUser.id,
+                entityName: `${mappedNewUser.firstName} ${mappedNewUser.lastName}`,
+                details: `Usuario auto-creado vía Google Auth: ${mappedNewUser.email}`,
+                result: 'success'
+              });
+
+            } else {
+              console.error('Failed to auto-create user:', createError);
+              // Fallback: If creation fails (e.g. permission), we can't log them in efficiently to the "app logic"
+              // typically we might show an error. 
+            }
+          }
         }
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
