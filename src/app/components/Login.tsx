@@ -15,6 +15,7 @@ import imgGabrielProfile from "../../assets/GabrielRivero.jpg";
 
 interface LoginProps {
   onLogin: (email?: string) => void;
+  onGoogleLogin?: () => void;
 }
 
 const channelImages = [
@@ -113,7 +114,7 @@ function ImageCarousel() {
   );
 }
 
-export function Login({ onLogin }: LoginProps) {
+export function Login({ onLogin, onGoogleLogin }: LoginProps) {
   return (
     <div className="bg-white relative w-screen h-screen overflow-hidden">
       {/* Fondo con opacidad */}
@@ -177,8 +178,11 @@ export function Login({ onLogin }: LoginProps) {
                 <div className="h-0 w-full border-t border-[#DADCE0]" />
               </div>
 
-              {/* Use another account */}
-              <div className="flex flex-col gap-[12px] pb-0 pt-[12px] px-[40px] cursor-pointer hover:bg-gray-50 transition-colors">
+              {/* Use another account - Trigger Google Auth */}
+              <div
+                className="flex flex-col gap-[12px] pb-0 pt-[12px] px-[40px] cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => onGoogleLogin?.()}
+              >
                 <div className="flex gap-[14px] items-center">
                   <div className="relative shrink-0 size-[24px]">
                     <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 24 24">

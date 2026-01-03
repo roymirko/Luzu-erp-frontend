@@ -65,6 +65,7 @@ interface DataContextType {
 
   // Autenticación simulada
   login: (email: string) => Promise<{ success: boolean; user?: User }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: any }>;
   logout: () => void;
   setCurrentUser: (user: User | null) => void;
 }
@@ -137,6 +138,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     fetchData();
+
+    // Listen for auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Supabase Auth Event:', event, session?.user?.email);
+
+      if (session?.user?.email) {
+        // User is signed in via Supabase
+        // Find matching user in our DB
+        // NOTE: In a real app we might upsert the user here if they don't exist
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', session.user.email) // Supabase Auth email should match internal users email
+          .single();
+
+        if (userData) {
+          const mappedUser = mapUserFromDB(userData);
+          // Explicitly set as current user
+          setCurrentUser(prev => {
+            // Only update if different to avoid excess renders loop if any
+            if (prev?.id === mappedUser.id) return prev;
+            return mappedUser;
+          });
+
+          // Also simulate the internal "login" logic (last_login update) if needed
+          // But strict "login" function does that.
+        } else {
+          console.warn('User authenticated in Supabase but not found in `users` table:', session.user.email);
+          // Optional: Create user if they don't exist? For now, just warn.
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        localStorage.removeItem('erp_current_user');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   // Persist current user to local storage (session only)
@@ -932,6 +972,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return { success: true, user: updatedUser };
   };
 
+  const loginWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+
+    if (error) {
+      console.error('Google login error:', error);
+      return { success: false, error };
+    }
+
+    return { success: true };
+  };
+
   const logout = () => {
     if (currentUser) {
       const userRole = userAreaRoles.find(uar => uar.userId === currentUser.id);
@@ -951,6 +1007,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     setCurrentUser(null);
+    supabase.auth.signOut(); // Also sign out from Supabase
   };
 
   return (
@@ -977,6 +1034,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         removeUserFromArea,
         changeUserRoleInArea,
         login,
+        loginWithGoogle,
         logout,
         setCurrentUser
       }}

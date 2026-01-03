@@ -26,7 +26,7 @@ type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implemen
 
 function AppContent() {
   const { isDark } = useTheme();
-  const { users, currentUser, setCurrentUser, login } = useData();
+  const { users, currentUser, setCurrentUser, login, loginWithGoogle } = useData();
   const [activeView, setActiveView] = useState<View>('comercial');
   // Inicializar estado del sidebar basado en el dispositivo
   // Web (Desktop): Expandido por defecto (true)
@@ -47,6 +47,13 @@ function AppContent() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Sync isAuthenticated with currentUser (for async auth updates like Google Login)
+  useEffect(() => {
+    if (currentUser) {
+      setIsAuthenticated(true);
+    }
+  }, [currentUser]);
 
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -87,7 +94,7 @@ function AppContent() {
 
   // Mostrar pantalla de login si no está autenticado
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} onGoogleLogin={loginWithGoogle} />;
   }
 
   const menuItems = [

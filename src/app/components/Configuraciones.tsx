@@ -32,9 +32,11 @@ import { useData } from '../contexts/DataContext';
 import { useLog } from '../contexts/LogContext';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CreateUserModal } from './CreateUserModal';
 
 export function Configuraciones() {
   const [activeTab, setActiveTab] = useState('general');
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const { isDark } = useTheme();
   const { users, areas, getUserWithRelations } = useData();
   const { logs } = useLog();
@@ -186,7 +188,10 @@ export function Configuraciones() {
               <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Gestión de Usuarios</h3>
               <p className="text-sm text-gray-500">{users.length} usuarios registrados</p>
             </div>
-            <Button className="bg-[#fb2c36] text-white hover:bg-[#e02731]">
+            <Button
+              className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
+              onClick={() => setIsCreateUserOpen(true)}
+            >
               <UserIcon className="h-4 w-4 mr-2" />
               Nuevo Usuario
             </Button>
@@ -386,6 +391,10 @@ export function Configuraciones() {
           </Card>
         </TabsContent>
       </Tabs>
+      <CreateUserModal
+        open={isCreateUserOpen}
+        onOpenChange={setIsCreateUserOpen}
+      />
     </div>
   );
 }
