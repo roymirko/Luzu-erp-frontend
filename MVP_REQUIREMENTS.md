@@ -179,6 +179,7 @@ Sistema ERP completo para la gestión de usuarios, roles y áreas con sistema de
   - `Proyecto` depende de `Unidad de Negocio`.
   - Reglas específicas para 'Media', 'Experience' y 'Productora'.
   - Limpieza automática de campos dependientes al cambiar el padre.
+  - **Validación Condicional:** Si un campo está bloqueado/deshabilitado por reglas de negocio, NO es obligatorio.
 - **Cálculos Automáticos:**
   - `NC Programa` = Monto * (NC % / 100)
   - `Fee Programa` = Monto * (Fee % / 100)

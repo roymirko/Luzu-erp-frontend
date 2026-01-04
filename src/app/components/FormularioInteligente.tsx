@@ -420,7 +420,10 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
     if (!mesServicioMes || !mesServicioAnio) camposFaltantes.push('Mes de Servicio');
     if (!unidadNegocio) camposFaltantes.push('Unidad de Negocio');
     // if (!categoriaNegocio) camposFaltantes.push('Categoría de Negocio');
-    if (!proyecto) camposFaltantes.push('Proyecto');
+
+    // Solo validar proyecto si no está deshabilitado
+    if (!isProyectoDisabled() && !proyecto) camposFaltantes.push('Proyecto');
+
     if (!razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');
     if (!empresaAgencia.trim()) camposFaltantes.push('Empresa/Agencia');
@@ -623,7 +626,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
               <div className="space-y-2">
                 <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
                   Proyecto
-                  <span className="text-red-500">*</span>
+                  {!isProyectoDisabled() && <span className="text-red-500">*</span>}
                 </Label>
                 <div className="relative">
                   <select
