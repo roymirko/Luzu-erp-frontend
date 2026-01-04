@@ -825,9 +825,44 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 {importeRows.map((row, index) => (
                   <div key={row.id} className={`border rounded-lg p-4 sm:p-6 ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-[#E6EBFF] border-[#ABBCFF]'}`}>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Programa {index + 1}
-                      </h4>
+                      <div className="flex items-center gap-3">
+                        <h4 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          Programa {index + 1}
+                        </h4>
+                        {(() => {
+                          const monto = parseFloat(row.monto) || 0;
+                          const impl = parseFloat(row.implementacion) || 0;
+                          const tal = parseFloat(row.talentos) || 0;
+                          const tec = parseFloat(row.tecnica) || 0;
+                          const suma = impl + tal + tec;
+
+                          const isDuplicate = row.programa && importeRows.some(r => r.id !== row.id && r.programa === row.programa);
+
+                          return (
+                            <div className="flex flex-col gap-1">
+                              {/* Cap Alert */}
+                              {monto > 0 && suma > monto && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800">
+                                  <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
+                                  <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                                    El desglose supera el monto asignado ({formatPesos((suma - monto).toString())})
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Duplicate Alert */}
+                              {isDuplicate && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800">
+                                  <AlertCircle className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
+                                    Este programa ya fue agregado
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
                       {importeRows.length > 1 && (
                         <Button
                           onClick={() => removeImporteRow(row.id)}
@@ -1242,6 +1277,47 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                     description: `Por favor completa: ${camposFaltantes.join(', ')}`
                   });
                   return;
+                }
+
+                // Validar montos vs Total Venta
+                const totalProgramasCalc = importeRows.reduce((sum, row) => {
+                  return sum + (parseFloat(row.monto) || 0);
+                }, 0);
+                const totalVentaNum = parseFloat(totalVenta) || 0;
+
+                if (totalProgramasCalc !== totalVentaNum) {
+                  toast.error('❌ Error en montos', {
+                    description: 'Faltan asignaciones para completar el total de venta o que los importes en cada programa no coincide.'
+                  });
+                  return;
+                }
+
+                // Validar topes por programa y duplicados
+                const programasUsados = new Set();
+                for (const row of importeRows) {
+                  const monto = parseFloat(row.monto) || 0;
+                  const impl = parseFloat(row.implementacion) || 0;
+                  const tal = parseFloat(row.talentos) || 0;
+                  const tec = parseFloat(row.tecnica) || 0;
+
+                  // Validación de tope
+                  if ((impl + tal + tec) > monto) {
+                    toast.error('❌ Error en desglose', {
+                      description: `En el programa ${row.programa || 'sin nombre'}, la suma de Implementación, Talentos y Técnica supera el monto asignado.`
+                    });
+                    return;
+                  }
+
+                  // Validación de duplicados
+                  if (row.programa) {
+                    if (programasUsados.has(row.programa)) {
+                      toast.error('❌ Programa duplicado', {
+                        description: `El programa "${row.programa}" se repite. No se pueden agregar dos veces el mismo programa en una Orden.`
+                      });
+                      return;
+                    }
+                    programasUsados.add(row.programa);
+                  }
                 }
 
                 const formularioData = {

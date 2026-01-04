@@ -187,6 +187,10 @@ Sistema ERP completo para la gestión de usuarios, roles y áreas con sistema de
 - **Validaciones Financieras:**
   - Alerta visual si la suma de programas supera el Total de Venta.
   - Bloqueo de importes que superan el presupuesto individualmente.
+  - **Validación de Totales (Guardar):** La suma de los montos de todos los programas debe ser EXACTAMENTE igual al Total de Venta.
+  - **Validación de Topes por Programa:** La suma de `Implementación` + `Talentos` + `Técnica` NO puede superar el `Monto` asignado a ese programa.
+  - **Alerta Visual Inline:** Se debe mostrar una etiqueta de advertencia claramente visible ("El desglose supera el monto asignado") junto al título del programa si el desglose excede el monto asignado, sin necesidad de guardar el formulario.
+  - **Programas Duplicados:** No se permite asignar el mismo programa más de una vez en la misma orden. Se debe mostrar una alerta visual ("Este programa ya fue agregado") y bloquear el guardado.
 
 ---
 
