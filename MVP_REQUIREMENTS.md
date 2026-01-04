@@ -180,6 +180,7 @@ Sistema ERP completo para la gestión de usuarios, roles y áreas con sistema de
   - Reglas específicas para 'Media', 'Experience' y 'Productora'.
   - Limpieza automática de campos dependientes al cambiar el padre.
   - **Validación Condicional:** Si un campo está bloqueado/deshabilitado por reglas de negocio, NO es obligatorio.
+  - **Proveedor FEE:** Debe comportarse como campo de búsqueda y escritura libre (ComboBox), no limitado a opciones predefinidas.
 - **Cálculos Automáticos:**
   - `NC Programa` = Monto * (NC % / 100)
   - `Fee Programa` = Monto * (Fee % / 100)

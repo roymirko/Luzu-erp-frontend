@@ -959,20 +959,22 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                         <div className="space-y-1.5">
                           <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Proveedor FEE</Label>
                           <div className="relative">
-                            <select
+                            <Search className={`absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                            <Input
                               value={row.proveedorFee}
                               onChange={(e) => setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, proveedorFee: e.target.value } : r))}
-                              className={`w-full h-9 pl-2 pr-8 rounded-md border text-sm appearance-none ${isDark
-                                ? 'bg-[#1e1e1e] border-gray-700 text-white'
-                                : 'bg-white border-gray-300 text-gray-900'
-                                } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
-                            >
-                              <option value="">Seleccionar</option>
-                              <option value="proveedor1">Proveedor 1</option>
-                              <option value="proveedor2">Proveedor 2</option>
-                              <option value="proveedor3">Proveedor 3</option>
-                            </select>
-                            <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                              placeholder="Buscar proveedor"
+                              list={`proveedores-${row.id}`}
+                              className={`pl-8 h-9 text-sm ${isDark
+                                ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
+                                : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+                                }`}
+                            />
+                            <datalist id={`proveedores-${row.id}`}>
+                              <option value="Proveedor 1" />
+                              <option value="Proveedor 2" />
+                              <option value="Proveedor 3" />
+                            </datalist>
                           </div>
                         </div>
 
