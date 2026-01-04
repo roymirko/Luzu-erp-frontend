@@ -183,6 +183,11 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   useEffect(() => {
     if (isEditMode && formularioExistente) {
       setMesServicio(formularioExistente.mesServicio || '');
+      if (formularioExistente.mesServicio) {
+        const [anio, mes] = formularioExistente.mesServicio.split('-');
+        setMesServicioAnio(anio || '');
+        setMesServicioMes(mes || '');
+      }
       setOrdenPublicidad(formularioExistente.ordenPublicidad || '');
       setTotalVenta(formularioExistente.totalVenta || '');
       setUnidadNegocio(formularioExistente.unidadNegocio || '');
