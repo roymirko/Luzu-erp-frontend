@@ -93,6 +93,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   const [tipoImporte, setTipoImporte] = useState<'canje' | 'factura'>('factura');
   const [observaciones, setObservaciones] = useState('');
   const [showAddRazonSocial, setShowAddRazonSocial] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estados para el modal de nueva razón social
   const [newRazonSocial, setNewRazonSocial] = useState('');
@@ -1276,6 +1277,9 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
             </Button>
             <Button
               onClick={async () => {
+                // Prevent double submission
+                if (isSubmitting) return;
+
                 // Validar campos obligatorios
                 const camposFaltantes = validarCamposObligatorios();
 
@@ -1346,39 +1350,44 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   responsable: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '',
                 };
 
-                let result;
-                if (isEditMode && formularioId) {
-                  // Modo edición: actualizar formulario existente
-                  result = await updateFormulario(formularioId, {
-                    ...formularioExistente,
-                    ...formularioData,
-                    id: formularioId,
-                    fecha: formularioExistente?.fecha || new Date().toISOString(),
-                  });
-                } else {
-                  // Modo creación: crear nuevo formulario
-                  result = await addFormulario(formularioData);
-                }
+                setIsSubmitting(true);
 
-                if (result.success) {
-                  toast.success(isEditMode ? '✅ Formulario actualizado correctamente' : '✅ Formulario guardado correctamente');
-                  // Redirigir a la interfaz de Comercial
-                  if (onFormularioGuardado) {
-                    onFormularioGuardado();
+                try {
+                  let result;
+                  if (isEditMode && formularioId) {
+                    result = await updateFormulario(formularioId, {
+                      ...formularioExistente,
+                      ...formularioData,
+                      id: formularioId,
+                      fecha: formularioExistente?.fecha || new Date().toISOString(),
+                    });
+                  } else {
+                    result = await addFormulario(formularioData);
                   }
-                } else {
-                  toast.error('❌ Error al guardar', {
-                    description: (result as any).error || 'Hubo un problema al guardar el formulario'
-                  });
+
+                  if (result.success) {
+                    toast.success(isEditMode ? '✅ Formulario actualizado correctamente' : '✅ Formulario guardado correctamente');
+                    if (onFormularioGuardado) {
+                      onFormularioGuardado();
+                    }
+                  } else {
+                    toast.error('❌ Error al guardar', {
+                      description: (result as any).error || 'Hubo un problema al guardar el formulario'
+                    });
+                  }
+                } finally {
+                  setIsSubmitting(false);
                 }
               }}
-              disabled={!formularioValido}
-              className={`${!formularioValido
+              disabled={!formularioValido || isSubmitting}
+              className={`${!formularioValido || isSubmitting
                 ? 'bg-gray-400 cursor-not-allowed opacity-50'
                 : 'bg-[#0070ff] hover:bg-[#0060dd]'
                 } text-white`}
             >
-              {isEditMode ? 'Actualizar' : 'Guardar'}
+              {isSubmitting 
+                ? (isEditMode ? 'Actualizando...' : 'Guardando...') 
+                : (isEditMode ? 'Actualizar' : 'Guardar')}
             </Button>
           </div>
         </div>
