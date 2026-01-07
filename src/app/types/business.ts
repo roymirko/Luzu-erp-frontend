@@ -259,3 +259,27 @@ export interface SystemStats {
   totalRoleAssignments: number;
   recentLogs: number; // Logs de las últimas 24h
 }
+
+/**
+ * MODELO: CLIENTE (Razón Social)
+ */
+export interface Client {
+  id: string;
+  businessName: string;
+  cuit: string;
+  address?: string;
+  companyName?: string;
+  active: boolean;
+  createdAt: Date;
+  createdBy?: string;
+}
+
+/**
+ * FORMULARIO: CREAR CLIENTE
+ */
+export interface CreateClientForm {
+  businessName: string;
+  cuit: string;
+  address?: string;
+  companyName?: string;
+}

@@ -146,3 +146,22 @@ alter table public.form_items enable row level security;
 
 create policy "Enable all for forms" on public.forms for all using (true) with check (true);
 create policy "Enable all for form_items" on public.form_items for all using (true) with check (true);
+
+-- ============================================
+-- CLIENTS (Razones Sociales)
+-- ============================================
+create table public.clients (
+  id uuid default uuid_generate_v4() primary key,
+  business_name text not null,
+  cuit text not null unique,
+  address text,
+  company_name text,
+  active boolean default true not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  created_by text
+);
+
+-- RLS
+alter table public.clients enable row level security;
+
+create policy "Enable all access for all users" on public.clients for all using (true) with check (true);

@@ -1,4 +1,4 @@
-import { User, Area, Role, UserAreaRole, AuditLog, RoleType, LogAction, LogEntity, LogResult } from '../types/business';
+import { User, Area, Role, UserAreaRole, AuditLog, RoleType, LogAction, LogEntity, LogResult, Client } from '../types/business';
 import { FormularioData } from '../contexts/FormulariosContext';
 
 // HELPERS
@@ -192,7 +192,6 @@ export const mapFormItemFromDB = (dbItem: any): any => ({
 });
 
 export const mapFormItemToDB = (item: any, formId: string) => ({
-    // id: item.id, // Usually new or existing, let DB handle generated if needed or pass it.
     form_id: formId,
     programa: item.programa,
     monto: item.monto,
@@ -205,3 +204,25 @@ export const mapFormItemToDB = (item: any, formId: string) => ({
     talentos: item.talentos,
     tecnica: item.tecnica
 });
+
+export const mapClientFromDB = (dbClient: any): Client => ({
+    id: dbClient.id,
+    businessName: dbClient.business_name,
+    cuit: dbClient.cuit,
+    address: dbClient.address,
+    companyName: dbClient.company_name,
+    active: dbClient.active,
+    createdAt: toDate(dbClient.created_at),
+    createdBy: dbClient.created_by
+});
+
+export const mapClientToDB = (client: Partial<Client>) => {
+    const dbClient: any = {};
+    if (client.businessName) dbClient.business_name = client.businessName;
+    if (client.cuit) dbClient.cuit = client.cuit;
+    if (client.address !== undefined) dbClient.address = client.address;
+    if (client.companyName !== undefined) dbClient.company_name = client.companyName;
+    if (client.active !== undefined) dbClient.active = client.active;
+    if (client.createdBy) dbClient.created_by = client.createdBy;
+    return dbClient;
+};

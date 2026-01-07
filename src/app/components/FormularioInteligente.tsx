@@ -17,6 +17,9 @@ import { useFormularios } from '../contexts/FormulariosContext';
 import { useFormFields } from '../contexts/FormFieldsContext';
 import { useData } from '../contexts/DataContext';
 import { toast } from 'sonner';
+import { supabase } from '../services/supabase';
+import { mapClientFromDB, mapClientToDB } from '../utils/supabaseMappers';
+import type { Client } from '../types/business';
 
 interface FormularioInteligenteProps {
   onFormularioGuardado?: () => void;
@@ -93,12 +96,15 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
   const [tipoImporte, setTipoImporte] = useState<'canje' | 'factura'>('factura');
   const [observaciones, setObservaciones] = useState('');
   const [showAddRazonSocial, setShowAddRazonSocial] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Estados para el modal de nueva razón social
   const [newRazonSocial, setNewRazonSocial] = useState('');
   const [newCuit, setNewCuit] = useState('');
   const [newDireccion, setNewDireccion] = useState('');
   const [newEmpresaAgencia, setNewEmpresaAgencia] = useState('');
+  const [isSavingClient, setIsSavingClient] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
 
   const [importeRows, setImporteRows] = useState<ImporteRow[]>([
     {
@@ -179,7 +185,27 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
     return true;
   };
 
-  // Cargar datos del formulario existente en modo edición
+  useEffect(() => {
+    const fetchClients = async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('active', true)
+        .order('business_name');
+      
+      if (error) {
+        console.error('Error fetching clients:', error);
+        return;
+      }
+      
+      if (data) {
+        setClients(data.map(mapClientFromDB));
+      }
+    };
+    
+    fetchClients();
+  }, []);
+
   useEffect(() => {
     if (isEditMode && formularioExistente) {
       setMesServicio(formularioExistente.mesServicio || '');
@@ -672,9 +698,9 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                         }`}
                     />
                     <datalist id="razones-sociales">
-                      <option value="OMG Argentina S.A." />
-                      <option value="Unilever Argentina S.A." />
-                      <option value="Coca-Cola FEMSA S.A." />
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.businessName} />
+                      ))}
                     </datalist>
                   </div>
                   <Button
@@ -730,9 +756,9 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                       }`}
                   />
                   <datalist id="empresas">
-                    <option value="OMG" />
-                    <option value="Unilever" />
-                    <option value="Coca-Cola" />
+                    {[...new Set(clients.map(c => c.companyName).filter(Boolean))].map((company) => (
+                      <option key={company} value={company} />
+                    ))}
                   </datalist>
                 </div>
               </div>
@@ -1276,6 +1302,9 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
             </Button>
             <Button
               onClick={async () => {
+                // Prevent double submission
+                if (isSubmitting) return;
+
                 // Validar campos obligatorios
                 const camposFaltantes = validarCamposObligatorios();
 
@@ -1346,39 +1375,44 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   responsable: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '',
                 };
 
-                let result;
-                if (isEditMode && formularioId) {
-                  // Modo edición: actualizar formulario existente
-                  result = await updateFormulario(formularioId, {
-                    ...formularioExistente,
-                    ...formularioData,
-                    id: formularioId,
-                    fecha: formularioExistente?.fecha || new Date().toISOString(),
-                  });
-                } else {
-                  // Modo creación: crear nuevo formulario
-                  result = await addFormulario(formularioData);
-                }
+                setIsSubmitting(true);
 
-                if (result.success) {
-                  toast.success(isEditMode ? '✅ Formulario actualizado correctamente' : '✅ Formulario guardado correctamente');
-                  // Redirigir a la interfaz de Comercial
-                  if (onFormularioGuardado) {
-                    onFormularioGuardado();
+                try {
+                  let result;
+                  if (isEditMode && formularioId) {
+                    result = await updateFormulario(formularioId, {
+                      ...formularioExistente,
+                      ...formularioData,
+                      id: formularioId,
+                      fecha: formularioExistente?.fecha || new Date().toISOString(),
+                    });
+                  } else {
+                    result = await addFormulario(formularioData);
                   }
-                } else {
-                  toast.error('❌ Error al guardar', {
-                    description: (result as any).error || 'Hubo un problema al guardar el formulario'
-                  });
+
+                  if (result.success) {
+                    toast.success(isEditMode ? '✅ Formulario actualizado correctamente' : '✅ Formulario guardado correctamente');
+                    if (onFormularioGuardado) {
+                      onFormularioGuardado();
+                    }
+                  } else {
+                    toast.error('❌ Error al guardar', {
+                      description: (result as any).error || 'Hubo un problema al guardar el formulario'
+                    });
+                  }
+                } finally {
+                  setIsSubmitting(false);
                 }
               }}
-              disabled={!formularioValido}
-              className={`${!formularioValido
+              disabled={!formularioValido || isSubmitting}
+              className={`${!formularioValido || isSubmitting
                 ? 'bg-gray-400 cursor-not-allowed opacity-50'
                 : 'bg-[#0070ff] hover:bg-[#0060dd]'
                 } text-white`}
             >
-              {isEditMode ? 'Actualizar' : 'Guardar'}
+              {isSubmitting 
+                ? (isEditMode ? 'Actualizando...' : 'Guardando...') 
+                : (isEditMode ? 'Actualizar' : 'Guardar')}
             </Button>
           </div>
         </div>
@@ -1471,18 +1505,67 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
               Cancelar
             </Button>
             <Button
-              onClick={() => {
-                // Aquí iría la lógica para guardar
-                console.log({ newRazonSocial, newCuit, newDireccion, newEmpresaAgencia });
-                setShowAddRazonSocial(false);
-                setNewRazonSocial('');
-                setNewCuit('');
-                setNewDireccion('');
-                setNewEmpresaAgencia('');
+              onClick={async () => {
+                if (!newRazonSocial.trim() || !newCuit.trim()) {
+                  toast.error('Razón Social y CUIT son obligatorios');
+                  return;
+                }
+
+                setIsSavingClient(true);
+
+                try {
+                  const clientData = mapClientToDB({
+                    businessName: newRazonSocial.trim(),
+                    cuit: newCuit.trim(),
+                    address: newDireccion.trim() || undefined,
+                    companyName: newEmpresaAgencia.trim() || undefined,
+                    active: true,
+                  });
+
+                  const { data, error } = await supabase
+                    .from('clients')
+                    .insert(clientData)
+                    .select()
+                    .single();
+
+                  if (error) {
+                    if (error.code === '23505') {
+                      toast.error('Ya existe un cliente con esa Razón Social o CUIT');
+                    } else {
+                      toast.error('Error al guardar el cliente');
+                      console.error('Error creating client:', error);
+                    }
+                    return;
+                  }
+
+                  if (data) {
+                    const newClient = mapClientFromDB(data);
+                    setClients(prev => [...prev, newClient].sort((a, b) => 
+                      a.businessName.localeCompare(b.businessName)
+                    ));
+                    setRazonSocial(newClient.businessName);
+                    if (newClient.companyName) {
+                      setEmpresaAgencia(newClient.companyName);
+                    }
+                    toast.success('Cliente creado correctamente');
+                  }
+
+                  setShowAddRazonSocial(false);
+                  setNewRazonSocial('');
+                  setNewCuit('');
+                  setNewDireccion('');
+                  setNewEmpresaAgencia('');
+                } finally {
+                  setIsSavingClient(false);
+                }
               }}
-              className="bg-[#0070ff] hover:bg-[#0060dd] text-white"
+              disabled={isSavingClient || !newRazonSocial.trim() || !newCuit.trim()}
+              className={`${isSavingClient || !newRazonSocial.trim() || !newCuit.trim()
+                ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                : 'bg-[#0070ff] hover:bg-[#0060dd]'
+              } text-white`}
             >
-              Guardar
+              {isSavingClient ? 'Guardando...' : 'Guardar'}
             </Button>
           </DialogFooter>
         </DialogContent>
