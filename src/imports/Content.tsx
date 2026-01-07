@@ -26,7 +26,7 @@ type TableHeaderTextProps = {
 function TableHeaderText({ text }: TableHeaderTextProps) {
   return (
     <div className="content-stretch flex items-center relative shrink-0">
-      <p className="font-['Roboto:Bold',sans-serif] font-bold leading-[18px] relative shrink-0 text-[#667085] text-[14px] text-nowrap" style={{ fontVariationSettings: "'wdth' 100" }}>
+      <p className="font-bold leading-[18px] relative shrink-0 text-[#667085] text-[14px] text-nowrap" style={{ fontVariationSettings: "'wdth' 100" }}>
         {text}
       </p>
     </div>
@@ -39,7 +39,7 @@ type TableCellTextProps = {
 function TableCellText({ text }: TableCellTextProps) {
   return (
     <Wrapper>
-      <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[#1d1d1d] text-[14px] text-nowrap">{text}</p>
+      <p className="font-normal leading-[20px] not-italic relative shrink-0 text-[#1d1d1d] text-[14px] text-nowrap">{text}</p>
     </Wrapper>
   );
 }
@@ -47,7 +47,7 @@ function TableCellText({ text }: TableCellTextProps) {
 function TableHeader() {
   return (
     <div className="content-stretch flex items-center relative shrink-0" data-name="Table header">
-      <p className="font-['Inter:Bold',sans-serif] font-bold leading-[18px] not-italic relative shrink-0 text-[#667085] text-[14px] text-nowrap">Mes de servicio</p>
+      <p className="font-bold leading-[18px] not-italic relative shrink-0 text-[#667085] text-[14px] text-nowrap">Mes de servicio</p>
     </div>
   );
 }
@@ -85,7 +85,7 @@ function TableHeaderCell1() {
 function TextAndSupportingText() {
   return (
     <div className="content-stretch flex flex-col items-start relative shrink-0" data-name="Text and supporting text">
-      <p className="font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[#1d1d1d] text-[14px] text-nowrap">03/07/2025</p>
+      <p className="font-medium leading-[20px] not-italic relative shrink-0 text-[#1d1d1d] text-[14px] text-nowrap">03/07/2025</p>
     </div>
   );
 }
@@ -198,7 +198,7 @@ function TableCell1() {
   return (
     <div className="content-stretch flex h-[48px] items-center px-[24px] py-[12px] relative shrink-0" data-name="Table cell">
       <div aria-hidden="true" className="absolute border-[#eaecf0] border-[0px_0px_1px] border-solid inset-0 pointer-events-none" />
-      <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[#1d1d1d] text-[14px] text-nowrap">OMG Argentina SRL</p>
+      <p className="font-normal leading-[20px] not-italic relative shrink-0 text-[#1d1d1d] text-[14px] text-nowrap">OMG Argentina SRL</p>
     </div>
   );
 }
@@ -263,7 +263,7 @@ function TableHeaderCell9() {
 function TableCell2() {
   return (
     <Wrapper>
-      <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[#667085] text-[14px] text-nowrap">OMD</p>
+      <p className="font-normal leading-[20px] not-italic relative shrink-0 text-[#667085] text-[14px] text-nowrap">OMD</p>
     </Wrapper>
   );
 }
@@ -310,7 +310,7 @@ function TableHeaderCell11() {
 function TableCell3() {
   return (
     <Wrapper>
-      <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[#667085] text-[14px] text-nowrap"> </p>
+      <p className="font-normal leading-[20px] not-italic relative shrink-0 text-[#667085] text-[14px] text-nowrap"> </p>
     </Wrapper>
   );
 }
@@ -507,7 +507,7 @@ function Column20() {
 function TableHeader1() {
   return (
     <div className="content-stretch flex items-center relative shrink-0" data-name="Table header">
-      <p className="font-['Inter:Medium',sans-serif] font-medium leading-[18px] not-italic relative shrink-0 text-[#667085] text-[12px] text-nowrap">%</p>
+      <p className="font-medium leading-[18px] not-italic relative shrink-0 text-[#667085] text-[12px] text-nowrap">%</p>
     </div>
   );
 }

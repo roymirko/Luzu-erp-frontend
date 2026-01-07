@@ -133,7 +133,7 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
         {/* Header */}
         <div className="bg-white flex items-center gap-[16px] pl-[40px] pr-[32px] py-[16px] border-b border-[rgba(0,0,0,0.22)]">
           <GoogleIcon />
-          <p className="font-['Roboto',sans-serif] text-[#3c4043] text-[18px] tracking-[0.002px]">
+          <p className="font-sans text-[#3c4043] text-[18px] tracking-[0.002px]">
             Sign in with Google
           </p>
         </div>
@@ -143,7 +143,7 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
           {/* Main content */}
           <div className="flex flex-col gap-[40px] items-center w-full">
             {/* Heading */}
-            <div className="flex flex-col gap-[8px] items-center font-['Roboto',sans-serif] text-[#202124]">
+            <div className="flex flex-col gap-[8px] items-center font-sans text-[#202124]">
               <p className="text-[24px] leading-[32px]">
                 Choose an Account
               </p>
@@ -167,10 +167,10 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
                     />
                   </div>
                   <div className="flex flex-col gap-px text-[#3c4043]">
-                    <p className="font-['Roboto',sans-serif] font-medium text-[14px]">
+                    <p className="font-sans font-medium text-[14px]">
                       Gabriela Rivero
                     </p>
-                    <p className="font-['Roboto',sans-serif] font-light text-[12px] tracking-[0.024px]">
+                    <p className="font-sans font-light text-[12px] tracking-[0.024px]">
                       gaby@luzutv.com.ar
                     </p>
                   </div>
@@ -197,7 +197,7 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-['Roboto',sans-serif] font-medium text-[#3c4043] text-[14px] tracking-[0.028px]">
+                    <p className="font-sans font-medium text-[#3c4043] text-[14px] tracking-[0.028px]">
                       Use another account
                     </p>
                   </div>
@@ -210,7 +210,7 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
           {/* Footer */}
           <div className="flex items-center justify-between px-[32px] w-[484px]">
             <div className="flex gap-[8px] items-center px-0 py-[4px]">
-              <p className="font-['Roboto',sans-serif] text-[#202124] text-[12px] tracking-[0.024px]">
+              <p className="font-sans text-[#202124] text-[12px] tracking-[0.024px]">
                 English
               </p>
               <div className="relative size-[16px]">
@@ -230,17 +230,17 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
             </div>
             <div className="flex gap-[12px] items-start">
               <div className="flex items-center justify-end p-[4px]">
-                <p className="font-['Roboto',sans-serif] text-[#80868b] text-[12px] tracking-[0.024px]">
+                <p className="font-sans text-[#80868b] text-[12px] tracking-[0.024px]">
                   Help
                 </p>
               </div>
               <div className="flex items-center justify-end p-[4px]">
-                <p className="font-['Roboto',sans-serif] text-[#80868b] text-[12px] tracking-[0.024px]">
+                <p className="font-sans text-[#80868b] text-[12px] tracking-[0.024px]">
                   Privacy
                 </p>
               </div>
               <div className="flex items-center justify-end p-[4px]">
-                <p className="font-['Roboto',sans-serif] text-[#80868b] text-[12px] tracking-[0.024px]">
+                <p className="font-sans text-[#80868b] text-[12px] tracking-[0.024px]">
                   Terms
                 </p>
               </div>
