@@ -4,7 +4,7 @@ import { FormulariosProvider } from './contexts/FormulariosContext';
 import { FormFieldsProvider } from './contexts/FormFieldsContext';
 import { LogProvider } from './contexts/LogContext';
 import { DataProvider, useData } from './contexts/DataContext';
-import { Menu, Home, Briefcase, Settings, TrendingUp, ChevronRight } from 'lucide-react';
+import { Menu, Home, Briefcase, Settings, TrendingUp, ChevronRight, Key } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { FormularioInteligente } from './components/FormularioInteligente';
 import { FormBuilder } from './components/FormBuilder';
@@ -101,7 +101,7 @@ function AppContent() {
 
   const menuItems = [
     { id: 'comercial' as View, label: 'Comercial', icon: <Briefcase className="h-5 w-5" /> },
-    { id: 'implementacion' as View, label: 'Implementación', icon: <Settings className="h-5 w-5" /> },
+    { id: 'implementacion' as View, label: 'Implementación', icon: <Key className="h-5 w-5" /> },
     { id: 'programacion' as View, label: 'Dir. de Programación', icon: <TrendingUp className="h-5 w-5" /> },
   ];
 
