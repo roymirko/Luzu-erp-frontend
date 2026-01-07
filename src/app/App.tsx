@@ -4,6 +4,7 @@ import { FormulariosProvider } from './contexts/FormulariosContext';
 import { FormFieldsProvider } from './contexts/FormFieldsContext';
 import { LogProvider } from './contexts/LogContext';
 import { DataProvider, useData } from './contexts/DataContext';
+import { ImplementacionProvider } from './contexts/ImplementacionContext';
 import { Menu, Home, Briefcase, Settings, TrendingUp, ChevronRight, Key } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
 import { FormularioInteligente } from './components/FormularioInteligente';
@@ -14,6 +15,8 @@ import { NotificationsPanel } from './components/NotificationsPanel';
 import { UserMenu } from './components/UserMenu';
 import { ProfilePanel } from './components/ProfilePanel';
 import { TablaFormularios } from './components/TablaFormularios';
+import { TablaImplementacion } from './components/TablaImplementacion';
+import { FormularioImplementacion } from './components/FormularioImplementacion';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { Button } from './components/ui/button';
 import { Toaster } from 'sonner';
@@ -22,7 +25,7 @@ import imgLogoLuzuSmall from "../assets/loguito.png";
 import imgContainer from "../assets/Container.png";
 
 // Luzu ERP - Sistema de gestión empresarial
-type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implementacion' | 'programacion' | 'configuraciones' | 'editar-formulario';
+type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implementacion' | 'gasto-implementacion' | 'editar-gasto-implementacion' | 'programacion' | 'configuraciones' | 'editar-formulario';
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -37,6 +40,7 @@ function AppContent() {
     return !!currentUser;
   });
   const [editingFormularioId, setEditingFormularioId] = useState<string | null>(null);
+  const [editingGastoId, setEditingGastoId] = useState<string | null>(null);
   const [profilePanelOpen, setProfilePanelOpen] = useState(false);
 
   // Control de tema basado en isDark
@@ -119,6 +123,10 @@ function AppContent() {
         return ['Inicio', 'Comercial'];
       case 'implementacion':
         return ['Inicio', 'Implementación'];
+      case 'gasto-implementacion':
+        return ['Inicio', 'Implementación', 'Nuevo Gasto'];
+      case 'editar-gasto-implementacion':
+        return ['Inicio', 'Implementación', 'Editar Gasto'];
       case 'programacion':
         return ['Inicio', 'Dir. de Programación'];
       case 'configuraciones':
@@ -140,6 +148,10 @@ function AppContent() {
         return [null, null];
       case 'implementacion':
         return [null, null];
+      case 'gasto-implementacion':
+        return [null, 'implementacion', null];
+      case 'editar-gasto-implementacion':
+        return [null, 'implementacion', null];
       case 'programacion':
         return [null, null];
       case 'configuraciones':
@@ -170,7 +182,7 @@ function AppContent() {
           <div className="space-y-6">
             <div
               onClick={() => setActiveView('formulario')}
-              className={`p-4 border rounded-lg hover:border-[#fb2c36] transition-all cursor-pointer group inline-flex items-center gap-3 ${isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'
+              className={`p-4 border rounded-lg hover:border-[#fb2c36] transition-all cursor-pointer group inline-flex items-center gap-3 w-[320px] ${isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'
                 }`}
             >
               <div className="bg-[#fb2c36]/20 p-2.5 rounded-lg group-hover:bg-[#fb2c36]/30 transition-colors">
@@ -180,7 +192,7 @@ function AppContent() {
                 <h3 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Nuevo Formulario</h3>
                 <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Crear propuesta comercial</p>
               </div>
-              <ChevronRight className={`h-4 w-4 ml-2 group-hover:text-[#fb2c36] transition-colors ${isDark ? 'text-gray-600' : 'text-gray-400'
+              <ChevronRight className={`h-4 w-4 ml-auto group-hover:text-[#fb2c36] transition-colors ${isDark ? 'text-gray-600' : 'text-gray-400'
                 }`} />
             </div>
 
@@ -194,13 +206,34 @@ function AppContent() {
         );
       case 'implementacion':
         return (
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center">
-              <Settings className="h-16 w-16 text-gray-700 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-white mb-2">Área de Implementación</h3>
-              <p className="text-gray-500">Módulo en desarrollo</p>
-            </div>
-          </div>
+          <TablaImplementacion
+            onNewGasto={() => setActiveView('gasto-implementacion')}
+            onEditGasto={(id) => {
+              // For now, let's keep editing internal or add another view?
+              // To support breadcrumbs for edit, we should add 'editar-gasto-implementacion' view.
+              // For this step, I will focus on 'Nuevo Gasto' as requested.
+              // I will leave editing as is inside TablaImplementacion for now, OR refactor both.
+              // Refactoring both is cleaner.
+              setEditingGastoId(id);
+              setActiveView('editar-gasto-implementacion');
+            }}
+          />
+        );
+      case 'gasto-implementacion':
+        return (
+          <FormularioImplementacion
+            onClose={() => setActiveView('implementacion')}
+          />
+        );
+      case 'editar-gasto-implementacion':
+        return (
+          <FormularioImplementacion
+            gastoId={editingGastoId || undefined}
+            onClose={() => {
+              setEditingGastoId(null);
+              setActiveView('implementacion');
+            }}
+          />
         );
       case 'programacion':
         return (
@@ -370,7 +403,7 @@ function AppContent() {
 
         {/* Content Area */}
         < main className={`flex-1 overflow-y-auto p-5 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'
-          }`}>
+          }`} style={{ scrollbarGutter: 'stable' }}>
           <div className="max-w-[1440px] mx-auto">
             {renderContent()}
           </div>
@@ -396,8 +429,10 @@ export default function App() {
         <DataProvider>
           <FormulariosProvider>
             <FormFieldsProvider>
-              <AppContent />
-              <Toaster richColors position="top-right" />
+              <ImplementacionProvider>
+                <AppContent />
+                <Toaster richColors position="top-right" />
+              </ImplementacionProvider>
             </FormFieldsProvider>
           </FormulariosProvider>
         </DataProvider>

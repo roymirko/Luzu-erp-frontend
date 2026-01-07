@@ -192,17 +192,17 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
         .select('*')
         .eq('active', true)
         .order('business_name');
-      
+
       if (error) {
         console.error('Error fetching clients:', error);
         return;
       }
-      
+
       if (data) {
         setClients(data.map(mapClientFromDB));
       }
     };
-    
+
     fetchClients();
   }, []);
 
@@ -1244,7 +1244,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-[#F3F5FF] border-gray-100'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Total de venta</p>
                   <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {formatPesos(resumen.totalVenta.toString())}
@@ -1252,7 +1252,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   <p className="text-xs mt-1 text-green-500">100%</p>
                 </div>
 
-                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-[#F3F5FF] border-gray-100'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Total Nota de Crédito</p>
                   <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {formatPesos(resumen.totalNotaCredito.toString())}
@@ -1260,7 +1260,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   <p className="text-xs mt-1 text-yellow-500">{resumen.pctNotaCredito}%</p>
                 </div>
 
-                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-[#F3F5FF] border-gray-100'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Total FEE Facturado</p>
                   <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {formatPesos(resumen.totalFeeFacturado.toString())}
@@ -1268,7 +1268,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   <p className="text-xs mt-1 text-blue-500">{resumen.pctFeeFacturado}%</p>
                 </div>
 
-                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-[#F3F5FF] border-gray-100'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Total gasto de venta</p>
                   <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {formatPesos(resumen.totalGastoVenta.toString())}
@@ -1276,7 +1276,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                   <p className="text-xs mt-1 text-orange-500">{resumen.pctGastoVenta}%</p>
                 </div>
 
-                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`p-4 rounded-lg border text-center ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-[#F3F5FF] border-gray-100'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Utilidad de Proyecto</p>
                   <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {formatPesos(resumen.utilidadProyecto.toString())}
@@ -1410,8 +1410,8 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
                 : 'bg-[#0070ff] hover:bg-[#0060dd]'
                 } text-white`}
             >
-              {isSubmitting 
-                ? (isEditMode ? 'Actualizando...' : 'Guardando...') 
+              {isSubmitting
+                ? (isEditMode ? 'Actualizando...' : 'Guardando...')
                 : (isEditMode ? 'Actualizar' : 'Guardar')}
             </Button>
           </div>
@@ -1540,7 +1540,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
 
                   if (data) {
                     const newClient = mapClientFromDB(data);
-                    setClients(prev => [...prev, newClient].sort((a, b) => 
+                    setClients(prev => [...prev, newClient].sort((a, b) =>
                       a.businessName.localeCompare(b.businessName)
                     ));
                     setRazonSocial(newClient.businessName);
@@ -1563,7 +1563,7 @@ export function FormularioInteligente({ onFormularioGuardado, formularioId }: Fo
               className={`${isSavingClient || !newRazonSocial.trim() || !newCuit.trim()
                 ? 'bg-gray-400 cursor-not-allowed opacity-50'
                 : 'bg-[#0070ff] hover:bg-[#0060dd]'
-              } text-white`}
+                } text-white`}
             >
               {isSavingClient ? 'Guardando...' : 'Guardar'}
             </Button>
