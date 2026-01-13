@@ -1,3 +1,7 @@
+-- Base migration generated from Spanish supabase/schema.sql
+
+BEGIN;
+
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
@@ -21,7 +25,7 @@ create table if not exists public.areas (
   active boolean default true not null,
   fecha_creacion timestamp with time zone default timezone('utc'::text, now()) not null,
   fecha_actualizacion timestamp with time zone default timezone('utc'::text, now()) not null,
-  created_by text,
+  creado_por text,
   metadata jsonb default '{}'::jsonb
 );
 
@@ -36,7 +40,7 @@ create table if not exists public.usuarios (
   fecha_creacion timestamp with time zone default timezone('utc'::text, now()) not null,
   fecha_actualizacion timestamp with time zone default timezone('utc'::text, now()) not null,
   last_login timestamp with time zone,
-  created_by text,
+  creado_por text,
   metadata jsonb default '{}'::jsonb
 );
 
@@ -110,13 +114,13 @@ create table if not exists public.items_orden_publicidad (
   fecha_creacion timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- PROVEEDORES (Spanish-native table)
+-- CLIENTES (Spanish-native table)
 DO $$
 BEGIN
-  -- Drop only if an object named proveedores exists and is a view
+  -- Drop only if an object named clientes exists and is a view
   IF EXISTS (
     SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = 'public' AND c.relname = 'proveedores' AND c.relkind IN ('v','m')
+    WHERE n.nspname = 'public' AND c.relname = 'clientes' AND c.relkind IN ('v','m')
   ) THEN
     EXECUTE 'DROP VIEW IF EXISTS public.proveedores CASCADE';
   END IF;
@@ -148,8 +152,19 @@ create table if not exists public.gastos_implementacion (
   id_formulario_comercial uuid,
   estado text not null default 'pendiente',
   item_orden_publicidad_id uuid,
-  created_by uuid,
-  updated_by uuid
+  acuerdo_pago text,
+  presupuesto decimal(15,2),
+  cantidad_programas integer,
+  programas_disponibles jsonb default '[]'::jsonb,
+  sector text,
+  rubro_gasto text,
+  sub_rubro text,
+  factura_emitida_a text,
+  empresa text,
+  concepto_gasto text,
+  observaciones text,
+  creado_por text,
+  actualizado_por text
 );
 
 -- IMPLEMENTACIÓN: Items
@@ -248,8 +263,4 @@ drop policy if exists "allow_all" on public.items_gasto_implementacion;
 create policy "allow_all" on public.gastos_implementacion for all using (true) with check (true);
 create policy "allow_all" on public.items_gasto_implementacion for all using (true) with check (true);
 
-GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+COMMIT;

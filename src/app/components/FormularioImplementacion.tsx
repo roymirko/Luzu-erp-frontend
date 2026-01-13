@@ -14,12 +14,14 @@ import { Plus, Trash2, Upload, ChevronDown, Lock, AlertTriangle, X, Search } fro
 
 interface FormularioImplementacionProps {
     gastoId?: string;
+    formId?: string;
+    itemId?: string;
     onClose: () => void;
 }
 
-export function FormularioImplementacion({ gastoId, onClose }: FormularioImplementacionProps) {
+export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: FormularioImplementacionProps) {
     const { isDark } = useTheme();
-    const { gastos, addGasto, updateGasto, getGastoById } = useImplementacion();
+    const { gastos, addGasto, updateGasto, getGastoById, getGastoByFormItemId } = useImplementacion();
     const { currentUser } = useData();
 
     const [showNuevoProveedor, setShowNuevoProveedor] = useState(false);
@@ -46,20 +48,29 @@ export function FormularioImplementacion({ gastoId, onClose }: FormularioImpleme
         empresa: '',
         conceptoGasto: '',
         observaciones: '',
-        importes: []
+        importes: [],
+        idFormularioComercial: undefined,
+        formItemId: undefined
     });
 
     useEffect(() => {
+        let existingGasto: GastoImplementacion | undefined;
+        
         if (gastoId) {
-            const existingGasto = getGastoById(gastoId);
-            if (existingGasto) {
-                setFormData(existingGasto);
-            }
+            existingGasto = getGastoById(gastoId);
+        } else if (formId && itemId) {
+            existingGasto = getGastoByFormItemId(formId, itemId);
+        }
+        
+        if (existingGasto) {
+            setFormData(existingGasto);
         } else {
             setFormData(prev => ({
                 ...prev,
                 fechaRegistro: new Date().toISOString().split('T')[0],
                 responsable: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Usuario Actual',
+                idFormularioComercial: formId,
+                formItemId: itemId,
                 importes: [{
                     id: crypto.randomUUID(),
                     programa: '',
@@ -73,7 +84,7 @@ export function FormularioImplementacion({ gastoId, onClose }: FormularioImpleme
                 }]
             }));
         }
-    }, [gastoId, getGastoById, currentUser]);
+    }, [gastoId, formId, itemId, getGastoById, getGastoByFormItemId, currentUser]);
 
     const isCerrado = formData.estadoOP === 'cerrado' || formData.estadoOP === 'anulado';
 
@@ -133,17 +144,32 @@ export function FormularioImplementacion({ gastoId, onClose }: FormularioImpleme
         return true;
     };
 
-    const handleGuardar = () => {
+    const [saving, setSaving] = useState(false);
+
+    const isExistingGasto = gastoId || (formId && itemId && getGastoByFormItemId(formId, itemId));
+
+    const handleGuardar = async () => {
         if (!validarFormulario()) return;
 
-        if (gastoId) {
-            updateGasto(formData.id, formData);
-            toast.success('Gasto actualizado correctamente');
-        } else {
-            addGasto(formData);
-            toast.success('Gasto creado correctamente');
+        setSaving(true);
+        try {
+            let success: boolean;
+            if (isExistingGasto) {
+                success = await updateGasto(formData.id, formData);
+                if (success) toast.success('Gasto actualizado correctamente');
+                else toast.error('Error al actualizar el gasto');
+            } else {
+                success = await addGasto(formData);
+                if (success) toast.success('Gasto creado correctamente');
+                else toast.error('Error al crear el gasto');
+            }
+            if (success) onClose();
+        } catch (err) {
+            console.error('Error saving gasto:', err);
+            toast.error('Error inesperado al guardar');
+        } finally {
+            setSaving(false);
         }
-        onClose();
     };
 
     const ejecutado = formData.importes.reduce((sum, imp) => sum + (parseFloat(imp.neto) || 0), 0);
@@ -155,7 +181,7 @@ export function FormularioImplementacion({ gastoId, onClose }: FormularioImpleme
     const handleProveedorCreado = (nombre: string) => { if (activeImporteId) { updateImporte(activeImporteId, 'proveedor', nombre); setActiveImporteId(null); } };
     const handleRazonSocialCreada = (rs: string) => { if (activeImporteId) { updateImporte(activeImporteId, 'razonSocial', rs); setActiveImporteId(null); } };
 
-    // Common Input Class Logic from FormularioInteligente
+    // Common Input Class Logic from OrdenesPublicidadForm
     const inputClass = isDark
         ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed'
         : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed';
@@ -503,8 +529,10 @@ export function FormularioImplementacion({ gastoId, onClose }: FormularioImpleme
 
                     {/* FOOTER */}
                     <div className="flex justify-end gap-3 pt-8 pb-8">
-                        <Button variant="ghost" onClick={onClose} className="text-gray-500">Cancelar</Button>
-                        <Button onClick={handleGuardar} className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8">Guardar</Button>
+                        <Button variant="ghost" onClick={onClose} className="text-gray-500" disabled={saving}>Cancelar</Button>
+                        <Button onClick={handleGuardar} className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8" disabled={saving}>
+                            {saving ? 'Guardando...' : 'Guardar'}
+                        </Button>
                     </div>
 
                 </div>

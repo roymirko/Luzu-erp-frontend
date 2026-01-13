@@ -7,7 +7,7 @@ import { DataProvider, useData } from './contexts/DataContext';
 import { ImplementacionProvider } from './contexts/ImplementacionContext';
 import { Menu, Home, Briefcase, Settings, TrendingUp, ChevronRight, Key } from 'lucide-react';
 import { Dashboard } from './components/Dashboard';
-import { FormularioInteligente } from './components/FormularioInteligente';
+import { OrdenesPublicidadForm } from './components/OrdenesPublicidadForm';
 import { FormBuilder } from './components/FormBuilder';
 import { Configuraciones } from './components/Configuraciones';
 import { Login } from './components/Login';
@@ -15,7 +15,7 @@ import { NotificationsPanel } from './components/NotificationsPanel';
 import { UserMenu } from './components/UserMenu';
 import { ProfilePanel } from './components/ProfilePanel';
 import { TablaFormularios } from './components/TablaFormularios';
-import { TablaImplementacion } from './components/TablaImplementacion';
+import { Implementaciones } from './components/Implementaciones';
 import { FormularioImplementacion } from './components/FormularioImplementacion';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { Button } from './components/ui/button';
@@ -41,6 +41,7 @@ function AppContent() {
   });
   const [editingFormularioId, setEditingFormularioId] = useState<string | null>(null);
   const [editingGastoId, setEditingGastoId] = useState<string | null>(null);
+  const [selectedImplementation, setSelectedImplementation] = useState<{ formId: string; itemId?: string } | null>(null);
   const [profilePanelOpen, setProfilePanelOpen] = useState(false);
 
   // Control de tema basado en isDark
@@ -172,9 +173,9 @@ function AppContent() {
       case 'dashboard':
         return <Dashboard />;
       case 'formulario':
-        return <FormularioInteligente onFormularioGuardado={() => setActiveView('comercial')} />;
+        return <OrdenesPublicidadForm onFormularioGuardado={() => setActiveView('comercial')} />;
       case 'editar-formulario':
-        return <FormularioInteligente onFormularioGuardado={() => setActiveView('comercial')} formularioId={editingFormularioId} />;
+        return <OrdenesPublicidadForm onFormularioGuardado={() => setActiveView('comercial')} formularioId={editingFormularioId} />;
       case 'formbuilder':
         return <FormBuilder />;
       case 'comercial':
@@ -206,33 +207,27 @@ function AppContent() {
         );
       case 'implementacion':
         return (
-          <TablaImplementacion
-            onNewGasto={() => setActiveView('gasto-implementacion')}
-            onEditGasto={(id) => {
-              // For now, let's keep editing internal or add another view?
-              // To support breadcrumbs for edit, we should add 'editar-gasto-implementacion' view.
-              // For this step, I will focus on 'Nuevo Gasto' as requested.
-              // I will leave editing as is inside TablaImplementacion for now, OR refactor both.
-              // Refactoring both is cleaner.
-              setEditingGastoId(id);
-              setActiveView('editar-gasto-implementacion');
+          <Implementaciones
+            onOpen={(formId, itemId) => {
+              setSelectedImplementation({ formId, itemId });
+              setActiveView('gasto-implementacion');
             }}
           />
         );
       case 'gasto-implementacion':
         return (
           <FormularioImplementacion
+            formId={selectedImplementation?.formId}
+            itemId={selectedImplementation?.itemId}
             onClose={() => setActiveView('implementacion')}
           />
         );
       case 'editar-gasto-implementacion':
         return (
           <FormularioImplementacion
-            gastoId={editingGastoId || undefined}
-            onClose={() => {
-              setEditingGastoId(null);
-              setActiveView('implementacion');
-            }}
+            formId={selectedImplementation?.formId}
+            itemId={selectedImplementation?.itemId}
+            onClose={() => setActiveView('implementacion')}
           />
         );
       case 'programacion':

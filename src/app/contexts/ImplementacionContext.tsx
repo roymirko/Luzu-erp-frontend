@@ -1,260 +1,205 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-// --- TYPES ---
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../services/supabase';
+import { mapGastoFromDB, mapGastoToDB, mapBloqueImporteToDB } from '../utils/supabaseMappers';
 
 export type EstadoOP = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
 export type EstadoPGM = 'pendiente-pago' | 'pagado' | 'anulado';
 
 export interface BloqueImporte {
     id: string;
-    programa: string;              // Nombre del programa
-    empresaPgm: string;            // Empresa asociada
-    fechaComprobante: string;      // YYYY-MM-DD
-    proveedor: string;             // Nombre del proveedor
-    razonSocial: string;           // Razón social del proveedor
-    condicionPago: string;         // '5' | '30' | '45' | '60' | '90'
-    neto: string;                  // Monto neto
-    documentoAdjunto?: string;     // Nombre del archivo
-    estadoPgm: EstadoPGM;          // Estado del pago
+    programa: string;
+    empresaPgm: string;
+    fechaComprobante: string;
+    proveedor: string;
+    razonSocial: string;
+    condicionPago: string;
+    neto: string;
+    documentoAdjunto?: string;
+    estadoPgm: EstadoPGM;
 }
 
 export interface GastoImplementacion {
-    // Identificación y estado
     id: string;
     estadoOP: EstadoOP;
-
-    // Datos de registro
-    fechaRegistro: string;          // YYYY-MM-DD
-    responsable: string;            // Usuario que carga
-
-    // Clasificación
-    unidadNegocio: string;          // 'Media' | 'Experience' | ...
-    categoriaNegocio?: string;      // Solo si unidadNegocio === 'Media'
-
-    // Datos heredados de Comercial
-    ordenPublicidad: string;        // Ej: 'OP-2024-001'
-    presupuesto: string;            // Monto en ARS
+    fechaRegistro: string;
+    responsable: string;
+    unidadNegocio: string;
+    categoriaNegocio?: string;
+    ordenPublicidad: string;
+    presupuesto: string;
     cantidadProgramas: number;
-    programasDisponibles: string[]; // Array de nombres de programas
-    sector: string;                 // Siempre 'Implementación'
-    rubroGasto: string;             // Ej: 'Gasto de venta'
-    subRubro: string;               // Ej: 'Producción' | 'Honorarios'
-    nombreCampana: string;          // Heredado de Comercial
-    acuerdoPago: string;            // Ej: '30 días' | 'Pago anticipado'
-
-    // Campos editables del formulario
-    facturaEmitidaA: string;        // 'Luzu TV' | 'Luzu TV SA'
-    empresa: string;                // 'Luzu TV' | 'Luzu TV SA'
-    conceptoGasto: string;          // Max 250 caracteres
-    observaciones: string;          // Max 250 caracteres
-
-    // Bloques de importe
+    programasDisponibles: string[];
+    sector: string;
+    rubroGasto: string;
+    subRubro: string;
+    nombreCampana: string;
+    acuerdoPago: string;
+    facturaEmitidaA: string;
+    empresa: string;
+    conceptoGasto: string;
+    observaciones: string;
     importes: BloqueImporte[];
+    idFormularioComercial?: string;
+    formItemId?: string;
 }
 
 interface ImplementacionContextType {
     gastos: GastoImplementacion[];
-    addGasto: (gasto: GastoImplementacion) => void;
-    updateGasto: (id: string, updates: Partial<GastoImplementacion>) => void;
-    deleteGasto: (id: string) => void;
+    loading: boolean;
+    addGasto: (gasto: GastoImplementacion) => Promise<boolean>;
+    updateGasto: (id: string, updates: Partial<GastoImplementacion>) => Promise<boolean>;
+    deleteGasto: (id: string) => Promise<boolean>;
     getGastoById: (id: string) => GastoImplementacion | undefined;
+    getGastoByFormItemId: (formId: string, itemId: string) => GastoImplementacion | undefined;
+    refetch: () => Promise<void>;
 }
 
 const ImplementacionContext = createContext<ImplementacionContextType | undefined>(undefined);
 
-// --- MOCK DATA ---
-
-const MOCK_GASTOS: GastoImplementacion[] = [
-    // GASTO PENDIENTE 1
-    {
-        id: '1',
-        estadoOP: 'pendiente',
-        fechaRegistro: '',
-        responsable: '',
-        unidadNegocio: '',
-        categoriaNegocio: '',
-        ordenPublicidad: 'OP-2024-001',
-        presupuesto: '5000000',
-        cantidadProgramas: 3,
-        programasDisponibles: ['Programa 1', 'Programa 2', 'Programa 3'],
-        sector: 'Implementación',
-        rubroGasto: 'Gasto de venta',
-        subRubro: 'Producción',
-        nombreCampana: 'Campaña Coca Cola',
-        acuerdoPago: 'Pago anticipado',
-        facturaEmitidaA: '',
-        empresa: '',
-        conceptoGasto: '',
-        observaciones: '',
-        importes: []
-    },
-    // GASTO PENDIENTE 2
-    {
-        id: '2',
-        estadoOP: 'pendiente',
-        fechaRegistro: '',
-        responsable: '',
-        unidadNegocio: '',
-        ordenPublicidad: 'OP-2024-005',
-        presupuesto: '4200000',
-        cantidadProgramas: 2,
-        programasDisponibles: ['Luzu Stream', 'Después te explico'],
-        sector: 'Implementación',
-        rubroGasto: 'Gasto de venta',
-        subRubro: 'Honorarios',
-        nombreCampana: 'Campaña Adidas',
-        acuerdoPago: '30 días',
-        facturaEmitidaA: '',
-        empresa: '',
-        conceptoGasto: '',
-        observaciones: '',
-        importes: []
-    },
-    // GASTO PENDIENTE 3
-    {
-        id: '3',
-        estadoOP: 'pendiente',
-        fechaRegistro: '',
-        responsable: '',
-        unidadNegocio: '',
-        ordenPublicidad: 'OP-2024-007',
-        presupuesto: '3800000',
-        cantidadProgramas: 1,
-        programasDisponibles: ['La Cruda'],
-        sector: 'Implementación',
-        rubroGasto: 'Gasto de venta',
-        subRubro: 'Producción',
-        nombreCampana: 'Campaña Quilmes',
-        acuerdoPago: '45 días',
-        facturaEmitidaA: '',
-        empresa: '',
-        conceptoGasto: '',
-        observaciones: '',
-        importes: []
-    },
-    // GASTO PENDIENTE 4
-    {
-        id: '4',
-        estadoOP: 'pendiente',
-        fechaRegistro: '',
-        responsable: '',
-        unidadNegocio: '',
-        ordenPublicidad: 'OP-2024-009',
-        presupuesto: '6500000',
-        cantidadProgramas: 4,
-        programasDisponibles: ['Luzu Stream', 'Nadie Dice Nada', 'Después te explico', 'La Cruda'],
-        sector: 'Implementación',
-        rubroGasto: 'Gasto de venta',
-        subRubro: 'Producción',
-        nombreCampana: 'Campaña Mercado Libre',
-        acuerdoPago: 'Pago anticipado',
-        facturaEmitidaA: '',
-        empresa: '',
-        conceptoGasto: '',
-        observaciones: '',
-        importes: []
-    },
-    // GASTO ACTIVO
-    {
-        id: '5',
-        estadoOP: 'activo',
-        fechaRegistro: '2024-01-10',
-        responsable: 'Laura Fernández',
-        unidadNegocio: 'Experience',
-        ordenPublicidad: 'OP-2024-002',
-        presupuesto: '3500000',
-        cantidadProgramas: 2,
-        programasDisponibles: ['Programa 4', 'Programa 5'],
-        sector: 'Implementación',
-        rubroGasto: 'Gasto de venta',
-        subRubro: 'Producción',
-        nombreCampana: 'Evento Samsung',
-        acuerdoPago: '30 días',
-        facturaEmitidaA: 'Luzu TV SA',
-        empresa: 'Luzu TV SA',
-        conceptoGasto: 'Organización de evento experiencial',
-        observaciones: 'Requiere coordinación con equipo de producción',
-        importes: [
-            {
-                id: '1',
-                programa: 'Programa 4',
-                empresaPgm: 'Samsung Argentina',
-                fechaComprobante: '2024-01-12',
-                proveedor: 'Producciones XYZ',
-                razonSocial: 'Producciones XYZ SRL',
-                condicionPago: '30',
-                neto: '1500000',
-                documentoAdjunto: 'factura_001.pdf',
-                estadoPgm: 'pendiente-pago'
-            }
-        ]
-    },
-    // GASTO CERRADO
-    {
-        id: '6',
-        estadoOP: 'cerrado',
-        fechaRegistro: '2023-12-20',
-        responsable: 'Carlos Ruiz',
-        unidadNegocio: 'Media',
-        categoriaNegocio: 'Branded Content',
-        ordenPublicidad: 'OP-2023-099',
-        presupuesto: '2000000',
-        cantidadProgramas: 1,
-        programasDisponibles: ['Programa 6'],
-        sector: 'Implementación',
-        rubroGasto: 'Gasto de venta',
-        subRubro: 'Producción',
-        nombreCampana: 'Content Pepsi',
-        acuerdoPago: '45 días',
-        facturaEmitidaA: 'Luzu TV',
-        empresa: 'Luzu TV',
-        conceptoGasto: 'Producción de branded content',
-        observaciones: 'Proyecto finalizado exitosamente',
-        importes: [
-            {
-                id: '1',
-                programa: 'Programa 6',
-                empresaPgm: 'Pepsi Argentina',
-                fechaComprobante: '2023-12-22',
-                proveedor: 'Estudio Creativo ABC',
-                razonSocial: 'ABC Creativos SA',
-                condicionPago: '45',
-                neto: '1800000',
-                estadoPgm: 'pagado'
-            }
-        ]
-    }
-];
-
 export function ImplementacionProvider({ children }: { children: ReactNode }) {
-    const [gastos, setGastos] = useState<GastoImplementacion[]>(MOCK_GASTOS);
+    const [gastos, setGastos] = useState<GastoImplementacion[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const addGasto = (gasto: GastoImplementacion) => {
-        setGastos((prev) => [...prev, gasto]);
+    const fetchGastos = async () => {
+        setLoading(true);
+        try {
+            const { data: expenses, error } = await supabase
+                .from('gastos_implementacion')
+                .select('*')
+                .order('fecha_creacion', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching gastos:', error);
+                return;
+            }
+
+            const gastosWithItems: GastoImplementacion[] = [];
+            for (const expense of expenses || []) {
+                const { data: items } = await supabase
+                    .from('items_gasto_implementacion')
+                    .select('*')
+                    .eq('gasto_id', expense.id);
+                gastosWithItems.push(mapGastoFromDB(expense, items || []));
+            }
+            setGastos(gastosWithItems);
+        } catch (err) {
+            console.error('Error in fetchGastos:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const updateGasto = (id: string, updates: Partial<GastoImplementacion>) => {
-        setGastos((prev) =>
-            prev.map((g) => (g.id === id ? { ...g, ...updates } : g))
-        );
+    useEffect(() => {
+        fetchGastos();
+    }, []);
+
+    const addGasto = async (gasto: GastoImplementacion): Promise<boolean> => {
+        try {
+            const dbGasto = mapGastoToDB(gasto);
+            const { data: inserted, error } = await supabase
+                .from('gastos_implementacion')
+                .insert(dbGasto)
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Error adding gasto:', error);
+                return false;
+            }
+
+            if (gasto.importes.length > 0) {
+                const dbItems = gasto.importes.map(imp => mapBloqueImporteToDB(imp, inserted.id));
+                    const { error: itemsError } = await supabase
+                        .from('items_gasto_implementacion')
+                        .insert(dbItems);
+
+                if (itemsError) {
+                    console.error('Error adding expense items:', itemsError);
+                }
+            }
+
+            await fetchGastos();
+            return true;
+        } catch (err) {
+            console.error('Error in addGasto:', err);
+            return false;
+        }
     };
 
-    const deleteGasto = (id: string) => {
-        setGastos((prev) => prev.filter((g) => g.id !== id));
+    const updateGasto = async (id: string, updates: Partial<GastoImplementacion>): Promise<boolean> => {
+        try {
+            const dbUpdates = mapGastoToDB(updates);
+                const { error } = await supabase
+                .from('gastos_implementacion')
+                .update(dbUpdates)
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error updating gasto:', error);
+                return false;
+            }
+
+            if (updates.importes) {
+                await supabase
+                    .from('items_gasto_implementacion')
+                    .delete()
+                    .eq('gasto_id', id);
+
+                if (updates.importes.length > 0) {
+                    const dbItems = updates.importes.map(imp => mapBloqueImporteToDB(imp, id));
+                    await supabase
+                        .from('items_gasto_implementacion')
+                        .insert(dbItems);
+                }
+            }
+
+            await fetchGastos();
+            return true;
+        } catch (err) {
+            console.error('Error in updateGasto:', err);
+            return false;
+        }
+    };
+
+    const deleteGasto = async (id: string): Promise<boolean> => {
+        try {
+            const { error } = await supabase
+                .from('gastos_implementacion')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error deleting gasto:', error);
+                return false;
+            }
+
+            await fetchGastos();
+            return true;
+        } catch (err) {
+            console.error('Error in deleteGasto:', err);
+            return false;
+        }
     };
 
     const getGastoById = (id: string) => {
         return gastos.find((g) => g.id === id);
     };
 
+    const getGastoByFormItemId = (formId: string, itemId: string) => {
+        return gastos.find((g) => g.idFormularioComercial === formId && g.formItemId === itemId);
+    };
+
     return (
         <ImplementacionContext.Provider
             value={{
                 gastos,
+                loading,
                 addGasto,
                 updateGasto,
                 deleteGasto,
                 getGastoById,
+                getGastoByFormItemId,
+                refetch: fetchGastos,
             }}
         >
             {children}

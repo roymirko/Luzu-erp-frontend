@@ -155,7 +155,7 @@ export function Dashboard() {
   // Alertas del sistema basadas en logs recientes de error/warning
   const systemAlerts = useMemo(() => {
     return logs
-      .filter(l => l.result === 'warning' || l.result === 'error')
+      .filter(l => l.result === 'advertencia' || l.result === 'error')
       .slice(0, 3)
       .map(l => ({
         type: l.result,

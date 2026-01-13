@@ -34,9 +34,9 @@ export function LogProvider({ children }: { children: ReactNode }) {
     const fetchLogs = async () => {
       try {
         const { data, error } = await supabase
-          .from('audit_logs')
+          .from('registros_auditoria')
           .select('*')
-          .order('timestamp', { ascending: false })
+          .order('fecha', { ascending: false })
           .limit(500); // Limit to recent 500 logs for performance
 
         if (error) {
@@ -72,7 +72,7 @@ export function LogProvider({ children }: { children: ReactNode }) {
     const dbLog = mapLogToDB(logData);
 
     const { data: insertedLog, error } = await supabase
-      .from('audit_logs')
+      .from('registros_auditoria')
       .insert(dbLog)
       .select()
       .single();
@@ -91,10 +91,10 @@ export function LogProvider({ children }: { children: ReactNode }) {
   const clearLogs = async () => {
     if (window.confirm('¿Estás seguro de que deseas eliminar todos los logs? Esta acción no se puede deshacer.')) {
       const { error } = await supabase
-        .from('audit_logs')
+        .from('registros_auditoria')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all (hacky way to delete all rows widely used if no WHERE clause allowed without specific filter)
-      // Or better: .gt('timestamp', '1970-01-01')
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      // Or better: .gt('fecha', '1970-01-01')
 
       if (!error) {
         setLogs([]);
@@ -146,9 +146,9 @@ export function LogProvider({ children }: { children: ReactNode }) {
   // Obtener estadísticas de logs
   const getLogStats = () => {
     const totalLogs = logs.length;
-    const successCount = logs.filter(l => l.result === 'success').length;
+    const successCount = logs.filter(l => l.result === 'exito').length;
     const errorCount = logs.filter(l => l.result === 'error').length;
-    const warningCount = logs.filter(l => l.result === 'warning').length;
+    const warningCount = logs.filter(l => l.result === 'advertencia').length;
     const recentLogsCount = getRecentLogs(24).length;
 
     // Contar por acción

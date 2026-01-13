@@ -73,12 +73,12 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const { data: formsData, error } = await supabase
-          .from('forms')
+          .from('ordenes_publicidad')
           .select(`
             *,
-            form_items (*)
+            items_orden_publicidad (*)
           `)
-          .order('created_at', { ascending: false });
+          .order('fecha_creacion', { ascending: false });
 
         if (error) {
           console.error('Error fetching forms:', error);
@@ -86,7 +86,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
         }
 
         if (formsData) {
-          const mappedForms = formsData.map(f => mapFormFromDB(f, f.form_items));
+          const mappedForms = formsData.map(f => mapFormFromDB(f, f.items_orden_publicidad));
           setFormularios(mappedForms);
         }
       } catch (err) {
@@ -112,7 +112,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
 
     // Insert Form
     const { data: insertedForm, error: formError } = await supabase
-      .from('forms')
+      .from('ordenes_publicidad')
       .insert(mapFormToDB(newFormBase))
       .select()
       .single();
@@ -127,7 +127,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       const itemsToInsert = formulario.importeRows.map(item => mapFormItemToDB(item, insertedForm.id));
 
       const { error: itemsError } = await supabase
-        .from('form_items')
+        .from('items_orden_publicidad')
         .insert(itemsToInsert);
 
       if (itemsError) {
@@ -140,13 +140,13 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     // Ideally we re-fetch to get IDs of items, but constructing is faster.
     // Let's re-fetch this single form to be clean.
     const { data: fullForm } = await supabase
-      .from('forms')
-      .select('*, form_items(*)')
+      .from('ordenes_publicidad')
+      .select('*, items_orden_publicidad(*)')
       .eq('id', insertedForm.id)
       .single();
 
     if (fullForm) {
-      const newFormulario = mapFormFromDB(fullForm, fullForm.form_items);
+      const newFormulario = mapFormFromDB(fullForm, fullForm.items_orden_publicidad);
       setFormularios(prev => [newFormulario, ...prev]);
 
       // Notification
@@ -167,7 +167,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
 
   const deleteFormulario = async (id: string) => {
     const { error } = await supabase
-      .from('forms')
+      .from('ordenes_publicidad')
       .delete()
       .eq('id', id);
 
@@ -189,7 +189,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     };
 
     const { error: formError } = await supabase
-      .from('forms')
+      .from('ordenes_publicidad')
       .update(mapFormToDB(formToUpdate))
       .eq('id', id);
 
@@ -200,11 +200,11 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
 
     // Update Items
     // Strategy: Delete all items and re-create. Simple and effective for small lists.
-    await supabase.from('form_items').delete().eq('form_id', id);
+    await supabase.from('items_orden_publicidad').delete().eq('orden_publicidad_id', id);
 
     if (formulario.importeRows && formulario.importeRows.length > 0) {
       const itemsToInsert = formulario.importeRows.map(item => mapFormItemToDB(item, id));
-      await supabase.from('form_items').insert(itemsToInsert);
+      await supabase.from('items_orden_publicidad').insert(itemsToInsert);
     }
 
     // Update Local State
@@ -212,13 +212,13 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     // However, DB generated IDs for new items are missing if we don't fetch.
     // So better re-fetch.
     const { data: fullForm } = await supabase
-      .from('forms')
-      .select('*, form_items(*)')
+      .from('ordenes_publicidad')
+      .select('*, items_orden_publicidad(*)')
       .eq('id', id)
       .single();
 
     if (fullForm) {
-      const updatedForm = mapFormFromDB(fullForm, fullForm.form_items);
+      const updatedForm = mapFormFromDB(fullForm, fullForm.items_orden_publicidad);
       setFormularios(prev => prev.map(f => f.id === id ? updatedForm : f));
       return { success: true };
     }

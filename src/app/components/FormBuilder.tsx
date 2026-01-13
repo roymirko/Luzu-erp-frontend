@@ -1150,11 +1150,11 @@ const AuditTab = () => {
 
   const getResultIcon = (result: string) => {
     switch (result) {
-      case 'success':
+      case 'exito':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'error':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'warning':
+      case 'advertencia':
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       default:
         return <Activity className="h-4 w-4 text-gray-500" />;
@@ -1222,7 +1222,7 @@ const AuditTab = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+                    link.download = `registros_auditoria_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
 
     toast.success('📥 Logs exportados exitosamente');

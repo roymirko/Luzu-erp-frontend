@@ -110,10 +110,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
           { data: rolesData },
           { data: uarData }
         ] = await Promise.all([
-          supabase.from('users').select('*'),
+          supabase.from('usuarios').select('*'),
           supabase.from('areas').select('*'),
           supabase.from('roles').select('*'),
-          supabase.from('user_area_roles').select('*')
+          supabase.from('usuario_area_roles').select('*')
         ]);
 
         if (usersData) {
@@ -162,10 +162,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const email = session.user.email;
 
           // 1. Try to find user in our DB (case-insensitive)
-          const { data: userData, error: fetchError } = await supabase
-            .from('users')
+            const { data: userData, error: fetchError } = await supabase
+            .from('usuarios')
             .select('*')
-            .ilike('email', email)
+            .ilike('correo', email)
             .maybeSingle(); // Use maybeSingle to avoid error if not found
 
           if (userData) {
@@ -180,8 +180,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
             // Update last_login
             await supabase
-              .from('users')
-              .update({ last_login: new Date().toISOString() })
+              .from('usuarios')
+              .update({ ultimo_acceso: new Date().toISOString() })
               .eq('id', userData.id);
 
           } else {
@@ -207,7 +207,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             };
 
             const { data: insertedUser, error: createError } = await supabase
-              .from('users')
+              .from('usuarios')
               .insert(mapUserToDB(newUserBase))
               .select()
               .single();
@@ -228,7 +228,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 entityId: mappedNewUser.id,
                 entityName: `${mappedNewUser.firstName} ${mappedNewUser.lastName}`,
                 details: `Usuario auto-creado vía Google Auth: ${mappedNewUser.email}`,
-                result: 'success'
+                result: 'exito'
               });
 
             } else {
@@ -293,7 +293,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     // Insert User
     const { data: insertedUser, error: userError } = await supabase
-      .from('users')
+      .from('usuarios')
       .insert(mapUserToDB(newUserBase))
       .select()
       .single();
@@ -315,7 +315,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (newAssignments.length > 0) {
       const { data: insertedAssignments, error: assignError } = await supabase
-        .from('user_area_roles')
+        .from('usuario_area_roles')
         .insert(newAssignments.map(mapUserAreaRoleToDB))
         .select();
 
@@ -342,7 +342,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entityId: newUser.id,
       entityName: `${newUser.firstName} ${newUser.lastName}`,
       details: `Usuario creado: ${newUser.email} con ${form.areas.length} asignación(es) de área`,
-      result: 'success',
+      result: 'exito',
       metadata: {
         areas: form.areas.map(a => {
           const area = areas.find(ar => ar.id === a.areaId);
@@ -371,8 +371,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const { error: userError } = await supabase
-      .from('users')
+      const { error: userError } = await supabase
+      .from('usuarios')
       .update(mapUserToDB(updates))
       .eq('id', userId);
 
@@ -413,528 +413,82 @@ export function DataProvider({ children }: { children: ReactNode }) {
       !currentAssignments.some(ca => ca.areaId === fa.areaId && ca.roleId === ca.roleId)
     );
 
+    // Apply removals
     if (toRemove.length > 0) {
-      await supabase
-        .from('user_area_roles')
-        .delete()
-        .in('id', toRemove.map(r => r.id));
+      for (const rem of toRemove) {
+        const { error: delErr } = await supabase
+          .from('usuario_area_roles')
+          .delete()
+          .eq('id', rem.id);
+        if (delErr) {
+          console.error('Error deleting assignment:', delErr);
+          return { success: false };
+        }
+        setUserAreaRoles(prev => prev.filter(uar => uar.id !== rem.id));
 
-      setUserAreaRoles(prev => prev.filter(p => !toRemove.find(tr => tr.id === p.id)));
+        // Log removal
+        const user = users.find(u => u.id === userId);
+        const area = areas.find(a => a.id === rem.areaId);
+        const currentRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
+        const role = currentRole ? roles.find(r => r.id === currentRole.roleId) : null;
+        addLog({
+          userId: currentUser?.id || 'system',
+          userEmail: currentUser?.email || 'system',
+          userRole: role?.name || RoleType.ADMINISTRADOR,
+          action: 'remove_user_from_area',
+          entity: 'assignment',
+          entityId: rem.id,
+          entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
+          details: `Usuario removido de área: ${user?.email} de ${area?.name}`,
+          result: 'exito'
+        });
+      }
     }
 
+    // Apply additions
     if (toAdd.length > 0) {
-      const newAssignments = toAdd.map(a => ({
-        userId,
+      const additions = toAdd.map(a => ({
+        userId: userId,
         areaId: a.areaId,
         roleId: a.roleId,
         assignedBy: currentUser?.id || 'system'
       }));
 
-      const { data: inserted, error: assignError } = await supabase
-        .from('user_area_roles')
-        .insert(newAssignments.map(mapUserAreaRoleToDB))
+      const { data: inserted, error: insErr } = await supabase
+        .from('usuario_area_roles')
+        .insert(additions.map(mapUserAreaRoleToDB))
         .select();
-
-      if (!assignError && inserted) {
-        setUserAreaRoles(prev => [...prev, ...inserted.map(mapUserAreaRoleFromDB)]);
+      if (insErr) {
+        console.error('Error adding assignments:', insErr);
+        return { success: false };
       }
-    }
-
-    // Log
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: 'edit_user',
-      entity: 'user',
-      entityId: userId,
-      entityName: `${form.firstName} ${form.lastName}`,
-      details: `Usuario actualizado: ${form.email}`,
-      result: 'success'
-    });
-
-    return { success: true };
-  };
-
-  const deleteUser = async (userId: string) => {
-    const deleteCheck = canDeleteUser(userId, users, userAreaRoles, roles);
-    if (!deleteCheck.canDelete) {
-      return { success: false, reason: deleteCheck.reason };
-    }
-
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-
-    if (error) {
-      console.error('Error deleting user:', error);
-      return { success: false, reason: 'Error de base de datos' };
-    }
-
-    const user = users.find(u => u.id === userId);
-
-    // Eliminar usuario y sus asignaciones (Cascade handles DB, need to update local)
-    setUsers(prev => prev.filter(u => u.id !== userId));
-    setUserAreaRoles(prev => prev.filter(uar => uar.userId !== userId));
-
-    // Log
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: 'delete_user',
-      entity: 'user',
-      entityId: userId,
-      entityName: user ? `${user.firstName} ${user.lastName}` : 'Usuario',
-      details: `Usuario eliminado: ${user?.email}`,
-      result: 'success'
-    });
-
-    return { success: true };
-  };
-
-  const toggleUserStatus = async (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return { success: false };
-
-    const newStatus = !user.active;
-
-    const { error } = await supabase
-      .from('users')
-      .update({ active: newStatus })
-      .eq('id', userId);
-
-    if (error) return { success: false };
-
-    setUsers(prev => prev.map(u =>
-      u.id === userId ? { ...u, active: newStatus, updatedAt: new Date() } : u
-    ));
-
-    // Log
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: newStatus ? 'activate_user' : 'deactivate_user',
-      entity: 'user',
-      entityId: userId,
-      entityName: `${user.firstName} ${user.lastName}`,
-      details: `Usuario ${newStatus ? 'activado' : 'desactivado'}: ${user.email}`,
-      result: 'success'
-    });
-
-    return { success: true };
-  };
-
-  const getUserWithRelations = (userId: string): UserWithRelations | null => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return null;
-
-    const userAssignments = userAreaRoles.filter(uar => uar.userId === userId);
-    const userAreas = userAssignments.map(assignment => {
-      const area = areas.find(a => a.id === assignment.areaId);
-      const role = roles.find(r => r.id === assignment.roleId);
-      if (!area || !role) return null;
-      return {
-        area,
-        role,
-        assignedAt: assignment.assignedAt
-      };
-    }).filter((a): a is { area: Area; role: Role; assignedAt: Date } => a !== null);
-
-    return { ...user, areas: userAreas };
-  };
-
-  // ============================================
-  // FUNCIONES DE ÁREAS
-  // ============================================
-
-  const createArea = async (form: CreateAreaForm) => {
-    // Generar código automáticamente si no se proporciona
-    const generatedCode = form.code || form.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-    const generatedDescription = form.description || `Área de ${form.name}`;
-
-    const completeForm = {
-      ...form,
-      code: generatedCode,
-      description: generatedDescription
-    };
-
-    const validation = validateCreateArea(completeForm, areas);
-    if (!validation.valid) {
-      return { success: false, errors: validation.errors };
-    }
-
-    const newAreaBase = {
-      name: completeForm.name.trim(),
-      code: completeForm.code.toUpperCase(),
-      description: completeForm.description.trim(),
-      manager: completeForm.managerId,
-      active: true,
-      createdBy: currentUser?.id || 'system',
-      metadata: {
-        color: completeForm.color,
-        icon: completeForm.icon
-      }
-    };
-
-    const { data: insertedArea, error: areaError } = await supabase
-      .from('areas')
-      .insert(mapAreaToDB(newAreaBase))
-      .select()
-      .single();
-
-    if (areaError || !insertedArea) {
-      console.error('Error creating area:', areaError);
-      return { success: false, errors: [{ field: 'general', message: 'Error creating area' }] };
-    }
-
-    const newArea = mapAreaFromDB(insertedArea);
-
-    // Create user assignments if provided
-    if (form.users && form.users.length > 0) {
-      const newAssignments = form.users
-        .filter(u => u.userId && u.roleId)
-        .map(assignment => ({
-          userId: assignment.userId,
-          areaId: newArea.id,
-          roleId: assignment.roleId,
-          assignedBy: currentUser?.id || 'system'
-        }));
-
-      if (newAssignments.length > 0) {
-        const { data: insertedAssignments } = await supabase
-          .from('user_area_roles')
-          .insert(newAssignments.map(mapUserAreaRoleToDB))
-          .select();
-
-        if (insertedAssignments) {
-          setUserAreaRoles(prev => [...prev, ...insertedAssignments.map(mapUserAreaRoleFromDB)]);
+      if (inserted) {
+        const mapped = inserted.map(mapUserAreaRoleFromDB);
+        setUserAreaRoles(prev => [...prev, ...mapped]);
+        // Log additions
+        for (const m of mapped) {
+          const user = users.find(u => u.id === userId);
+          const area = areas.find(a => a.id === m.areaId);
+          const roleObj = roles.find(r => r.id === m.roleId);
+          const currentRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
+          const actorRole = currentRole ? roles.find(r => r.id === currentRole.roleId) : null;
+          addLog({
+            userId: currentUser?.id || 'system',
+            userEmail: currentUser?.email || 'system',
+            userRole: actorRole?.name || RoleType.ADMINISTRADOR,
+            action: 'assign_user_to_area',
+            entity: 'assignment',
+            entityId: m.id,
+            entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
+            details: `Usuario asignado a área como ${roleObj?.name}`,
+            result: 'exito'
+          });
         }
       }
     }
 
-    setAreas(prev => [...prev, newArea]);
-
-    // Log
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: 'create_area',
-      entity: 'area',
-      entityId: newArea.id,
-      entityName: newArea.name,
-      details: `Área creada: ${newArea.name} (${newArea.code})`,
-      result: 'success',
-      metadata: form.users && form.users.length > 0 ? { userCount: form.users.length } : undefined
-    });
-
-    return { success: true, areaId: newArea.id };
-  };
-
-  const editArea = async (areaId: string, form: EditAreaForm) => {
-    const validation = validateEditArea(areaId, form, areas);
-    if (!validation.valid) {
-      return { success: false, errors: validation.errors };
-    }
-
-    const updates = {
-      name: form.name.trim(),
-      code: form.code.toUpperCase(),
-      description: form.description.trim(),
-      manager: form.managerId,
-      active: form.active,
-      metadata: {
-        color: form.color,
-        icon: form.icon
-      }
-    };
-
-    const { error: areaError } = await supabase
-      .from('areas')
-      .update(mapAreaToDB(updates))
-      .eq('id', areaId);
-
-    if (areaError) {
-      return { success: false, errors: [{ field: 'general', message: 'Error updating area' }] };
-    }
-
-    setAreas(prev => prev.map(area => {
-      if (area.id === areaId) {
-        return {
-          ...area,
-          ...updates,
-          updatedAt: new Date(),
-          metadata: { ...area.metadata, ...updates.metadata }
-        };
-      }
-      return area;
-    }));
-
-    if (form.users) {
-      // Logic to sync users similar to editUser
-      // For simplicity/safety, we can just ignore full sync if it's too complex for this step, 
-      // OR implement the diff logic. 
-      // The original code did:
-      /*
-        const newAssignments = form.users...
-        setUserAreaRoles(prev => [...filter_old, ...new])
-      */
-      // We'll reimplement similarly but with DB calls.
-
-      const currentAreaAssignments = userAreaRoles.filter(uar => uar.areaId === areaId);
-
-      // To keep it simple: We won't remove existing ones not in the list unless explicit. 
-      // The original code MERGED them (if existing return existing, else create new). 
-      // It did NOT appear to remove users not in list? 
-      // Wait, original code:
-      /*
-         const newAssignments = form.users.map(...)
-         setUserAreaRoles(prev => [ ...prev.filter(uar => uar.areaId !== areaId), ...newAssignments ]);
-      */
-      // Ah, it replaced ALL assignments for that area with the new list.
-      // So we should DELETE all assignments for areaId and INSERT new ones.
-
-      await supabase.from('user_area_roles').delete().eq('area_id', areaId);
-
-      if (form.users.length > 0) {
-        const newAssignments = form.users.map(u => ({
-          userId: u.userId,
-          areaId,
-          roleId: u.roleId,
-          assignedBy: currentUser?.id || 'system'
-        }));
-
-        const { data: inserted } = await supabase
-          .from('user_area_roles')
-          .insert(newAssignments.map(mapUserAreaRoleToDB))
-          .select();
-
-        if (inserted) {
-          // Clean update local state
-          setUserAreaRoles(prev => [
-            ...prev.filter(uar => uar.areaId !== areaId),
-            ...inserted.map(mapUserAreaRoleFromDB)
-          ]);
-        }
-      } else {
-        setUserAreaRoles(prev => prev.filter(uar => uar.areaId !== areaId));
-      }
-    }
-
-    // Log
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: 'edit_area',
-      entity: 'area',
-      entityId: areaId,
-      entityName: form.name,
-      details: `Área actualizada: ${form.name} (${form.code})`,
-      result: 'success'
-    });
-
     return { success: true };
-  };
-
-  const deleteArea = async (areaId: string) => {
-    const deleteCheck = canDeleteArea(areaId, userAreaRoles);
-
-    // Check local logic first, but DB will also fail if constraints exist.
-    // However business rule might be stricter.
-
-    const area = areas.find(a => a.id === areaId);
-    if (!area) {
-      return { success: false, reason: 'Área no encontrada' };
-    }
-
-    const { error } = await supabase.from('areas').delete().eq('id', areaId);
-
-    if (error) {
-      return { success: false, reason: 'No se pudo eliminar el área (posiblemente tiene datos asociados)' };
-    }
-
-    setAreas(prev => prev.filter(a => a.id !== areaId));
-    setUserAreaRoles(prev => prev.filter(uar => uar.areaId !== areaId));
-
-    // Log
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: 'delete_area',
-      entity: 'area',
-      entityId: areaId,
-      entityName: area.name,
-      details: `Área eliminada: ${area.name} (${area.code})`,
-      result: 'success',
-      metadata: { affectedUsers: deleteCheck.affectedUsers }
-    });
-
-    return { success: true };
-  };
-
-  const toggleAreaStatus = async (areaId: string) => {
-    const area = areas.find(a => a.id === areaId);
-    if (!area) return { success: false };
-
-    const newStatus = !area.active;
-    const deactivateCheck = canDeactivateArea(areaId, userAreaRoles);
-
-    const { error } = await supabase
-      .from('areas')
-      .update({ active: newStatus })
-      .eq('id', areaId);
-
-    if (error) return { success: false };
-
-    setAreas(prev => prev.map(a =>
-      a.id === areaId ? { ...a, active: newStatus, updatedAt: new Date() } : a
-    ));
-
-    // Log
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: newStatus ? 'activate_area' : 'deactivate_area',
-      entity: 'area',
-      entityId: areaId,
-      entityName: area.name,
-      details: `Área ${newStatus ? 'activada' : 'desactivada'}: ${area.name}`,
-      result: 'success'
-    });
-
-    return {
-      success: true,
-      warning: !newStatus && deactivateCheck.reason ? deactivateCheck.reason : undefined
-    };
-  };
-
-  const getAreaWithUsers = (areaId: string): AreaWithUsers | null => {
-    const area = areas.find(a => a.id === areaId);
-    if (!area) return null;
-
-    const areaAssignments = userAreaRoles.filter(uar => uar.areaId === areaId);
-    const areaUsers = areaAssignments.map(assignment => {
-      const user = users.find(u => u.id === assignment.userId);
-      const role = roles.find(r => r.id === assignment.roleId);
-      if (!user || !role) return null;
-      return {
-        user,
-        role,
-        assignedAt: assignment.assignedAt
-      };
-    }).filter((a): a is { user: User; role: Role; assignedAt: Date } => a !== null);
-
-    return { ...area, users: areaUsers };
-  };
-
-  // ============================================
-  // FUNCIONES DE ASIGNACIONES
-  // ============================================
-
-  const assignUserToArea = async (userId: string, areaId: string, roleId: string) => {
-    const newAssignmentBase = {
-      userId,
-      areaId,
-      roleId,
-      assignedBy: currentUser?.id || 'system'
-    };
-
-    const { data: inserted, error } = await supabase
-      .from('user_area_roles')
-      .insert(mapUserAreaRoleToDB(newAssignmentBase))
-      .select()
-      .single();
-
-    if (error || !inserted) {
-      return { success: false };
-    }
-
-    setUserAreaRoles(prev => [...prev, mapUserAreaRoleFromDB(inserted)]);
-
-    // Log
-    const user = users.find(u => u.id === userId);
-    const area = areas.find(a => a.id === areaId);
-    const roleObj = roles.find(r => r.id === roleId);
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const currentRole = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: currentRole?.name || RoleType.ADMINISTRADOR,
-      action: 'assign_user_to_area',
-      entity: 'assignment',
-      entityId: inserted.id,
-      entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
-      details: `Usuario asignado a área: ${user?.email} como ${roleObj?.name} en ${area?.name}`,
-      result: 'success'
-    });
-
-    return { success: true };
-  };
-
-  const removeUserFromArea = async (userId: string, areaId: string) => {
-    const assignment = userAreaRoles.find(
-      uar => uar.userId === userId && uar.areaId === areaId
-    );
-
-    if (!assignment) return { success: false };
-
-    const { error } = await supabase
-      .from('user_area_roles')
-      .delete()
-      .eq('id', assignment.id);
-
-    if (error) return { success: false };
-
-    setUserAreaRoles(prev => prev.filter(
-      uar => uar.id !== assignment.id
-    ));
-
-    // Log
-    const user = users.find(u => u.id === userId);
-    const area = areas.find(a => a.id === areaId);
-    const userRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
-
-    addLog({
-      userId: currentUser?.id || 'system',
-      userEmail: currentUser?.email || 'system',
-      userRole: role?.name || RoleType.ADMINISTRADOR,
-      action: 'remove_user_from_area',
-      entity: 'assignment',
-      entityId: assignment.id,
-      entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
-      details: `Usuario removido de área: ${user?.email} de ${area?.name}`,
-      result: 'success'
-    });
-
-    return { success: true };
-  };
+  }
 
   const changeUserRoleInArea = async (userId: string, areaId: string, newRoleId: string) => {
     const assignment = userAreaRoles.find(
@@ -944,8 +498,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!assignment) return { success: false };
 
     const { error } = await supabase
-      .from('user_area_roles')
-      .update({ role_id: newRoleId, assigned_by: currentUser?.id || 'system', assigned_at: new Date().toISOString() })
+      .from('usuario_area_roles')
+      .update({ rol_id: newRoleId, asignado_por: currentUser?.id || 'system', asignado_el: new Date().toISOString() })
       .eq('id', assignment.id);
 
     if (error) return { success: false };
@@ -978,11 +532,496 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entityId: assignment.id,
       entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
       details: `Rol cambiado: ${user?.email} es ahora ${newRole?.name} en ${area?.name}`,
-      result: 'success'
+      result: 'exito'
     });
 
     return { success: true };
   };
+
+  // Minimal stubs for not-yet-implemented APIs to prevent runtime errors
+  const deleteUser = async (userId: string): Promise<{ success: boolean; reason?: string }> => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return { success: false, reason: 'Usuario no encontrado' };
+
+    const rule = canDeleteUser(userId, users, userAreaRoles);
+    if (!rule.allowed) {
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'delete_user',
+        entity: 'user',
+        entityId: userId,
+        entityName: `${user.firstName} ${user.lastName}`,
+        details: `Eliminación bloqueada: ${rule.reason || 'Reglas de negocio'}`,
+        result: 'advertencia'
+      });
+      return { success: false, reason: rule.reason };
+    }
+
+    const userAssignments = userAreaRoles.filter(uar => uar.userId === userId);
+    if (userAssignments.length > 0) {
+      const { error: delAssignErr } = await supabase
+        .from('usuario_area_roles')
+        .delete()
+        .in('id', userAssignments.map(a => a.id));
+      if (delAssignErr) {
+        console.error('Error deleting user assignments:', delAssignErr);
+        return { success: false, reason: 'Error eliminando asignaciones' };
+      }
+    }
+
+    const { error: delUserErr } = await supabase
+      .from('usuarios')
+      .delete()
+      .eq('id', userId);
+
+    if (delUserErr) {
+      console.error('Error deleting user:', delUserErr);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'delete_user',
+        entity: 'user',
+        entityId: userId,
+        entityName: `${user.firstName} ${user.lastName}`,
+        details: `Error eliminando usuario: ${user.email}`,
+        result: 'error'
+      });
+      return { success: false, reason: 'Error eliminando usuario' };
+    }
+
+    setUserAreaRoles(prev => prev.filter(uar => uar.userId !== userId));
+    setUsers(prev => prev.filter(u => u.id !== userId));
+
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: 'delete_user',
+      entity: 'user',
+      entityId: userId,
+      entityName: `${user.firstName} ${user.lastName}`,
+      details: `Usuario eliminado: ${user.email}`,
+      result: 'exito'
+    });
+
+    return { success: true };
+  };
+
+  const toggleUserStatus = async (userId: string): Promise<{ success: boolean }> => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return { success: false };
+
+    const newStatus = !user.active;
+
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ activo: newStatus, actualizado_el: new Date().toISOString(), actualizado_por: currentUser?.id || 'system' })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error toggling user status:', error);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'toggle_user_status',
+        entity: 'user',
+        entityId: userId,
+        entityName: `${user.firstName} ${user.lastName}`,
+        details: `Error cambiando estado de usuario: ${user.email}`,
+        result: 'error'
+      });
+      return { success: false };
+    }
+
+    setUsers(prev => prev.map(u => (u.id === userId ? { ...u, active: newStatus, updatedAt: new Date() } : u)));
+
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: 'toggle_user_status',
+      entity: 'user',
+      entityId: userId,
+      entityName: `${user.firstName} ${user.lastName}`,
+      details: `Estado de usuario cambiado a ${newStatus ? 'activo' : 'inactivo'}: ${user.email}`,
+      result: 'exito'
+    });
+
+    return { success: true };
+  };
+
+  const getUserWithRelations = (userId: string): UserWithRelations | null => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return null;
+    const assignments = userAreaRoles.filter(uar => uar.userId === userId);
+    const userAreas = assignments.map(uar => {
+      const area = areas.find(a => a.id === uar.areaId);
+      const role = roles.find(r => r.id === uar.roleId);
+      return {
+        areaId: uar.areaId,
+        areaName: area?.name || '',
+        roleId: uar.roleId,
+        roleName: role?.name || ''
+      };
+    });
+    return { ...user, areas: userAreas };
+  };
+
+  const createArea = async (form: CreateAreaForm): Promise<{ success: boolean; areaId?: string; errors?: any[] }> => {
+    const validation = validateCreateArea(form, areas);
+    if (!validation.valid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    const base = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      code: form.code.trim().toUpperCase(),
+      active: true,
+      createdBy: currentUser?.id || 'system'
+    };
+
+    const { data: inserted, error } = await supabase
+      .from('areas')
+      .insert(mapAreaToDB(base))
+      .select()
+      .single();
+
+    if (error || !inserted) {
+      console.error('Error creating area:', error);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'create_area',
+        entity: 'area',
+        entityId: 'unknown',
+        entityName: base.name,
+        details: `Error creando área ${base.code}: ${base.name}`,
+        result: 'error'
+      });
+      return { success: false, errors: [{ field: 'general', message: 'Error creando área' }] };
+    }
+
+    const newArea = mapAreaFromDB(inserted);
+    setAreas(prev => [...prev, newArea]);
+
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: 'create_area',
+      entity: 'area',
+      entityId: newArea.id,
+      entityName: newArea.name,
+      details: `Área creada (${newArea.code}): ${newArea.name}`,
+      result: 'exito'
+    });
+
+    return { success: true, areaId: newArea.id };
+  };
+
+  const editArea = async (areaId: string, form: EditAreaForm): Promise<{ success: boolean; errors?: any[] }> => {
+    const validation = validateEditArea(areaId, form, areas);
+    if (!validation.valid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    const updates = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      code: form.code.trim().toUpperCase(),
+      updatedBy: currentUser?.id || 'system'
+    };
+
+    const { error } = await supabase
+      .from('areas')
+      .update(mapAreaToDB(updates))
+      .eq('id', areaId);
+
+    if (error) {
+      console.error('Error updating area:', error);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'edit_area',
+        entity: 'area',
+        entityId: areaId,
+        entityName: updates.name,
+        details: `Error editando área ${updates.code}: ${updates.name}`,
+        result: 'error'
+      });
+      return { success: false, errors: [{ field: 'general', message: 'Error editando área' }] };
+    }
+
+    setAreas(prev => prev.map(a => (a.id === areaId ? { ...a, ...updates, updatedAt: new Date() } : a)));
+
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: 'edit_area',
+      entity: 'area',
+      entityId: areaId,
+      entityName: updates.name,
+      details: `Área actualizada (${updates.code}): ${updates.name}`,
+      result: 'exito'
+    });
+
+    return { success: true };
+  };
+
+  const deleteArea = async (areaId: string): Promise<{ success: boolean; reason?: string }> => {
+    const area = areas.find(a => a.id === areaId);
+    if (!area) return { success: false, reason: 'Área no encontrada' };
+
+    const rule = canDeleteArea(areaId, userAreaRoles);
+    // If assignments exist, we will delete them but return a warning in log message
+    const assignments = userAreaRoles.filter(uar => uar.areaId === areaId);
+    if (assignments.length > 0) {
+      const { error: delAssignErr } = await supabase
+        .from('usuario_area_roles')
+        .delete()
+        .in('id', assignments.map(a => a.id));
+      if (delAssignErr) {
+        console.error('Error deleting area assignments:', delAssignErr);
+        addLog({
+          userId: currentUser?.id || 'system',
+          userEmail: currentUser?.email || 'system',
+          userRole: RoleType.ADMINISTRADOR,
+          action: 'delete_area',
+          entity: 'area',
+          entityId: areaId,
+          entityName: area.name,
+          details: `Error eliminando asignaciones del área ${area.code}`,
+          result: 'error'
+        });
+        return { success: false, reason: 'Error eliminando asignaciones' };
+      }
+    }
+
+    const { error: delAreaErr } = await supabase
+      .from('areas')
+      .delete()
+      .eq('id', areaId);
+
+    if (delAreaErr) {
+      console.error('Error deleting area:', delAreaErr);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'delete_area',
+        entity: 'area',
+        entityId: areaId,
+        entityName: area.name,
+        details: `Error eliminando área ${area.code}: ${area.name}`,
+        result: 'error'
+      });
+      return { success: false, reason: 'Error eliminando área' };
+    }
+
+    setUserAreaRoles(prev => prev.filter(uar => uar.areaId !== areaId));
+    setAreas(prev => prev.filter(a => a.id !== areaId));
+
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: 'delete_area',
+      entity: 'area',
+      entityId: areaId,
+      entityName: area.name,
+      details: `Área eliminada (${area.code})${assignments.length > 0 ? `, ${assignments.length} asignaciones removidas` : ''}`,
+      result: assignments.length > 0 ? 'advertencia' : 'exito'
+    });
+
+    return { success: true };
+  };
+
+  const toggleAreaStatus = async (areaId: string): Promise<{ success: boolean; warning?: string }> => {
+    const area = areas.find(a => a.id === areaId);
+    if (!area) return { success: false };
+
+    const newStatus = !area.active;
+    const rule = canDeactivateArea(areaId, userAreaRoles);
+    let warning: string | undefined = undefined;
+
+    // If deactivating and assignments exist, remove them
+    if (!newStatus) {
+      const assignments = userAreaRoles.filter(uar => uar.areaId === areaId);
+      if (assignments.length > 0) {
+        warning = rule.reason;
+        const { error: delAssignErr } = await supabase
+          .from('usuario_area_roles')
+          .delete()
+          .in('id', assignments.map(a => a.id));
+        if (delAssignErr) {
+          console.error('Error removing assignments on deactivate:', delAssignErr);
+          addLog({
+            userId: currentUser?.id || 'system',
+            userEmail: currentUser?.email || 'system',
+            userRole: RoleType.ADMINISTRADOR,
+            action: 'deactivate_area',
+            entity: 'area',
+            entityId: areaId,
+            entityName: area.name,
+            details: `Error removiendo asignaciones al desactivar ${area.code}`,
+            result: 'error'
+          });
+          return { success: false };
+        }
+        setUserAreaRoles(prev => prev.filter(uar => uar.areaId !== areaId));
+      }
+    }
+
+    const { error } = await supabase
+      .from('areas')
+      .update({ activo: newStatus, actualizado_el: new Date().toISOString(), actualizado_por: currentUser?.id || 'system' })
+      .eq('id', areaId);
+
+    if (error) {
+      console.error('Error toggling area status:', error);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: newStatus ? 'activate_area' : 'deactivate_area',
+        entity: 'area',
+        entityId: areaId,
+        entityName: area.name,
+        details: `Error cambiando estado de área (${area.code})`,
+        result: 'error'
+      });
+      return { success: false };
+    }
+
+    setAreas(prev => prev.map(a => (a.id === areaId ? { ...a, active: newStatus, updatedAt: new Date() } : a)));
+
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: newStatus ? 'activate_area' : 'deactivate_area',
+      entity: 'area',
+      entityId: areaId,
+      entityName: area.name,
+      details: `Área ${newStatus ? 'activada' : 'desactivada'} (${area.code})${warning ? `. ${warning}` : ''}`,
+      result: warning ? 'advertencia' : 'exito'
+    });
+
+    return { success: true, warning };
+  };
+
+  const getAreaWithUsers = (areaId: string): AreaWithUsers | null => {
+    const area = areas.find(a => a.id === areaId);
+    if (!area) return null;
+    const assignments = userAreaRoles.filter(uar => uar.areaId === areaId);
+    const areaUsers = assignments.map(uar => {
+      const user = users.find(u => u.id === uar.userId);
+      const role = roles.find(r => r.id === uar.roleId);
+      return { userId: uar.userId, userName: user ? `${user.firstName} ${user.lastName}` : '', roleId: uar.roleId, roleName: role?.name || '' };
+    });
+    return { ...area, users: areaUsers };
+  };
+
+  const assignUserToArea = async (userId: string, areaId: string, roleId: string): Promise<{ success: boolean }> => {
+    const existing = userAreaRoles.find(uar => uar.userId === userId && uar.areaId === areaId && uar.roleId === roleId);
+    if (existing) return { success: true }; // already assigned
+
+    const payload = { userId, areaId, roleId, assignedBy: currentUser?.id || 'system' };
+    const { data, error } = await supabase
+      .from('usuario_area_roles')
+      .insert(mapUserAreaRoleToDB(payload))
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error('Error assigning user to area:', error);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'assign_user_to_area',
+        entity: 'assignment',
+        entityId: 'unknown',
+        entityName: `${userId} → ${areaId}`,
+        details: `Error asignando usuario a área`,
+        result: 'error'
+      });
+      return { success: false };
+    }
+
+    const mapped = mapUserAreaRoleFromDB(data);
+    setUserAreaRoles(prev => [...prev, mapped]);
+
+    const user = users.find(u => u.id === userId);
+    const area = areas.find(a => a.id === areaId);
+    const roleObj = roles.find(r => r.id === roleId);
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: 'assign_user_to_area',
+      entity: 'assignment',
+      entityId: mapped.id,
+      entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
+      details: `Usuario asignado como ${roleObj?.name}`,
+      result: 'exito'
+    });
+
+    return { success: true };
+  };
+
+  const removeUserFromArea = async (userId: string, areaId: string): Promise<{ success: boolean }> => {
+    const assignment = userAreaRoles.find(uar => uar.userId === userId && uar.areaId === areaId);
+    if (!assignment) return { success: true };
+
+    const { error } = await supabase
+      .from('usuario_area_roles')
+      .delete()
+      .eq('id', assignment.id);
+
+    if (error) {
+      console.error('Error removing assignment:', error);
+      addLog({
+        userId: currentUser?.id || 'system',
+        userEmail: currentUser?.email || 'system',
+        userRole: RoleType.ADMINISTRADOR,
+        action: 'remove_user_from_area',
+        entity: 'assignment',
+        entityId: assignment.id,
+        entityName: `${userId} → ${areaId}`,
+        details: `Error removiendo asignación`,
+        result: 'error'
+      });
+      return { success: false };
+    }
+
+    setUserAreaRoles(prev => prev.filter(uar => uar.id !== assignment.id));
+
+    const user = users.find(u => u.id === userId);
+    const area = areas.find(a => a.id === areaId);
+    addLog({
+      userId: currentUser?.id || 'system',
+      userEmail: currentUser?.email || 'system',
+      userRole: RoleType.ADMINISTRADOR,
+      action: 'remove_user_from_area',
+      entity: 'assignment',
+      entityId: assignment.id,
+      entityName: `${user?.firstName} ${user?.lastName} → ${area?.name}`,
+      details: `Usuario removido del área`,
+      result: 'exito'
+    });
+
+    return { success: true };
+  };
+
 
   // ============================================
   // AUTENTICACIÓN
@@ -1010,8 +1049,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     // Actualizar último login en DB
     await supabase
-      .from('users')
-      .update({ last_login: new Date().toISOString() })
+      .from('usuarios')
+      .update({ ultimo_acceso: new Date().toISOString() })
       .eq('id', user.id);
 
     // Update local
@@ -1036,7 +1075,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entityId: user.id,
       entityName: `${user.firstName} ${user.lastName}`,
       details: `Inicio de sesión exitoso: ${user.email}`,
-      result: 'success'
+      result: 'exito'
     });
 
     return { success: true, user: updatedUser };
@@ -1072,7 +1111,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         entityId: currentUser.id,
         entityName: `${currentUser.firstName} ${currentUser.lastName}`,
         details: `Cierre de sesión: ${currentUser.email}`,
-        result: 'success'
+        result: 'exito'
       });
     }
 

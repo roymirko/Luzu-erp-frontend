@@ -29,7 +29,7 @@ export interface Role {
  * Define qué puede hacer cada rol
  */
 export interface Permission {
-  resource: 'users' | 'areas' | 'roles' | 'logs' | 'forms' | 'tasks';
+  resource: 'usuarios' | 'areas' | 'roles' | 'registros_auditoria' | 'ordenes_publicidad' | 'tareas';
   actions: ('create' | 'read' | 'update' | 'delete')[];
 }
 
@@ -59,15 +59,15 @@ export interface Area {
  */
 export interface User {
   id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
+  email: string; // correo
+  firstName: string; // nombre
+  lastName: string; // apellido
   avatar?: string;
-  active: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  lastLogin?: Date;
-  createdBy: string; // ID del usuario que lo creó
+  active: boolean; // activo
+  createdAt: Date; // creado_el
+  updatedAt: Date; // actualizado_el
+  lastLogin?: Date; // ultimo_acceso
+  createdBy: string; // creado_por (texto por ahora)
   metadata?: {
     position?: string; // Cargo
     googleId?: string; // ID de Google OAuth
@@ -83,11 +83,11 @@ export interface User {
  */
 export interface UserAreaRole {
   id: string;
-  userId: string;
-  areaId: string;
-  roleId: string;
-  assignedAt: Date;
-  assignedBy: string; // ID del usuario que hizo la asignación
+  userId: string; // usuario_id
+  areaId: string; // area_id
+  roleId: string; // rol_id
+  assignedAt: Date; // asignado_el
+  assignedBy: string; // asignado_por
 }
 
 /**
@@ -96,19 +96,19 @@ export interface UserAreaRole {
  */
 export interface AuditLog {
   id: string;
-  timestamp: Date;
-  userId: string; // Usuario que ejecutó la acción
-  userEmail: string; // Email del usuario (para facilitar búsqueda)
-  userRole: RoleType; // Rol con el que ejecutó la acción
-  action: LogAction;
-  entity: LogEntity;
-  entityId: string; // ID de la entidad afectada
-  entityName: string; // Nombre de la entidad (para facilitar búsqueda)
-  details: string; // Descripción detallada de la acción
-  result: LogResult;
-  metadata?: Record<string, any>; // Datos adicionales según el tipo de acción
-  ipAddress?: string;
-  userAgent?: string;
+  timestamp: Date; // fecha
+  userId: string; // usuario_id
+  userEmail: string; // usuario_correo
+  userRole: RoleType; // usuario_rol
+  action: LogAction; // accion
+  entity: LogEntity; // entidad
+  entityId: string; // entidad_id
+  entityName: string; // entidad_nombre
+  details: string; // detalles
+  result: LogResult; // resultado
+  metadata?: Record<string, any>; // metadatos
+  ipAddress?: string; // ip
+  userAgent?: string; // user_agent
 }
 
 /**
@@ -142,7 +142,7 @@ export type LogEntity = 'user' | 'area' | 'role' | 'session' | 'assignment';
 /**
  * RESULTADO DE LA ACCIÓN
  */
-export type LogResult = 'success' | 'error' | 'warning';
+export type LogResult = 'exito' | 'error' | 'advertencia';
 
 /**
  * MODELO: DATOS COMPLETOS DE USUARIO
@@ -265,13 +265,13 @@ export interface SystemStats {
  */
 export interface Client {
   id: string;
-  businessName: string;
+  businessName: string; // razon_social
   cuit: string;
-  address?: string;
-  companyName?: string;
-  active: boolean;
-  createdAt: Date;
-  createdBy?: string;
+  address?: string; // direccion
+  companyName?: string; // empresa
+  active: boolean; // activo
+  createdAt: Date; // creado_el
+  createdBy?: string; // creado_por
 }
 
 /**

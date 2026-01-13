@@ -7,59 +7,59 @@ const toDate = (str: string | Date | null | undefined): Date => {
     return typeof str === 'string' ? new Date(str) : str;
 };
 
-// USERS
+// USERS (usuarios)
 export const mapUserFromDB = (dbUser: any): User => ({
     id: dbUser.id,
-    email: dbUser.email,
-    firstName: dbUser.first_name,
-    lastName: dbUser.last_name,
+    email: dbUser.correo ?? dbUser.email, // fallback if older seed
+    firstName: dbUser.nombre ?? dbUser.first_name,
+    lastName: dbUser.apellido ?? dbUser.last_name,
     avatar: dbUser.avatar,
-    active: dbUser.active,
-    createdAt: toDate(dbUser.created_at),
-    updatedAt: toDate(dbUser.updated_at),
-    lastLogin: dbUser.last_login ? toDate(dbUser.last_login) : undefined,
-    createdBy: dbUser.created_by,
-    metadata: dbUser.metadata || {}
+    active: dbUser.activo ?? dbUser.active,
+    createdAt: toDate(dbUser.fecha_creacion ?? dbUser.creado_el ?? dbUser.created_at),
+    updatedAt: toDate(dbUser.fecha_actualizacion ?? dbUser.actualizado_el ?? dbUser.updated_at),
+    lastLogin: dbUser.ultimo_acceso ? toDate(dbUser.ultimo_acceso) : (dbUser.last_login ? toDate(dbUser.last_login) : undefined),
+    createdBy: dbUser.creado_por ?? dbUser.created_by,
+    metadata: dbUser.metadatos ?? dbUser.metadata ?? {}
 });
 
 export const mapUserToDB = (user: Partial<User>) => {
     const dbUser: any = {};
     if (user.id) dbUser.id = user.id;
-    if (user.email) dbUser.email = user.email;
-    if (user.firstName) dbUser.first_name = user.firstName;
-    if (user.lastName) dbUser.last_name = user.lastName;
+    if (user.email) dbUser.correo = user.email;
+    if (user.firstName) dbUser.nombre = user.firstName;
+    if (user.lastName) dbUser.apellido = user.lastName;
     if (user.avatar !== undefined) dbUser.avatar = user.avatar;
-    if (user.active !== undefined) dbUser.active = user.active;
-    if (user.lastLogin) dbUser.last_login = user.lastLogin.toISOString();
-    if (user.createdBy) dbUser.created_by = user.createdBy;
-    if (user.metadata) dbUser.metadata = user.metadata;
+    if (user.active !== undefined) dbUser.activo = user.active;
+    if (user.lastLogin) dbUser.ultimo_acceso = user.lastLogin.toISOString();
+    if (user.createdBy) dbUser.creado_por = user.createdBy;
+    if (user.metadata) dbUser.metadatos = user.metadata;
     return dbUser;
 };
 
-// AREAS
+// AREAS (areas)
 export const mapAreaFromDB = (dbArea: any): Area => ({
     id: dbArea.id,
-    name: dbArea.name,
-    code: dbArea.code,
-    description: dbArea.description,
-    manager: dbArea.manager_id,
-    active: dbArea.active,
-    createdAt: toDate(dbArea.created_at),
-    updatedAt: toDate(dbArea.updated_at),
-    createdBy: dbArea.created_by,
-    metadata: dbArea.metadata || {}
+    name: dbArea.nombre ?? dbArea.name,
+    code: dbArea.codigo ?? dbArea.code,
+    description: dbArea.descripcion ?? dbArea.description,
+    manager: dbArea.responsable_id ?? dbArea.manager_id,
+    active: dbArea.activo ?? dbArea.active,
+    createdAt: toDate(dbArea.fecha_creacion ?? dbArea.creado_el ?? dbArea.created_at),
+    updatedAt: toDate(dbArea.fecha_actualizacion ?? dbArea.actualizado_el ?? dbArea.updated_at),
+    createdBy: dbArea.creado_por ?? dbArea.created_by,
+    metadata: dbArea.metadatos ?? dbArea.metadata ?? {}
 });
 
 export const mapAreaToDB = (area: Partial<Area>) => {
     const dbArea: any = {};
     if (area.id) dbArea.id = area.id;
-    if (area.name) dbArea.name = area.name;
-    if (area.code) dbArea.code = area.code;
-    if (area.description) dbArea.description = area.description;
-    if (area.manager) dbArea.manager_id = area.manager;
-    if (area.active !== undefined) dbArea.active = area.active;
-    if (area.createdBy) dbArea.created_by = area.createdBy;
-    if (area.metadata) dbArea.metadata = area.metadata;
+    if (area.name) dbArea.nombre = area.name;
+    if (area.code) dbArea.codigo = area.code;
+    if (area.description) dbArea.descripcion = area.description;
+    if (area.manager) dbArea.responsable_id = area.manager;
+    if (area.active !== undefined) dbArea.activo = area.active;
+    if (area.createdBy) dbArea.creado_por = area.createdBy;
+    if (area.metadata) dbArea.metadatos = area.metadata;
     return dbArea;
 };
 
@@ -72,55 +72,55 @@ export const mapRoleFromDB = (dbRole: any): Role => ({
     createdAt: toDate(dbRole.created_at)
 });
 
-// USER AREA ROLES
+// USER AREA ROLES (usuario_area_roles)
 export const mapUserAreaRoleFromDB = (dbUar: any): UserAreaRole => ({
     id: dbUar.id,
-    userId: dbUar.user_id,
+    userId: dbUar.usuario_id ?? dbUar.user_id,
     areaId: dbUar.area_id,
-    roleId: dbUar.role_id,
-    assignedAt: toDate(dbUar.assigned_at),
-    assignedBy: dbUar.assigned_by
+    roleId: dbUar.rol_id ?? dbUar.role_id,
+    assignedAt: toDate(dbUar.asignado_el ?? dbUar.assigned_at),
+    assignedBy: dbUar.asignado_por ?? dbUar.assigned_by
 });
 
 export const mapUserAreaRoleToDB = (uar: Partial<UserAreaRole>) => {
     const dbUar: any = {};
-    if (uar.userId) dbUar.user_id = uar.userId;
+    if (uar.userId) dbUar.usuario_id = uar.userId;
     if (uar.areaId) dbUar.area_id = uar.areaId;
-    if (uar.roleId) dbUar.role_id = uar.roleId;
-    if (uar.assignedBy) dbUar.assigned_by = uar.assignedBy;
+    if (uar.roleId) dbUar.rol_id = uar.roleId;
+    if (uar.assignedBy) dbUar.asignado_por = uar.assignedBy;
     return dbUar;
 };
 
-// LOGS
+// LOGS (registros_auditoria)
 export const mapLogFromDB = (dbLog: any): AuditLog => ({
     id: dbLog.id,
-    timestamp: toDate(dbLog.timestamp),
-    userId: dbLog.user_id,
-    userEmail: dbLog.user_email || '',
-    userRole: (dbLog.user_role as RoleType) || RoleType.VISUALIZADOR,
-    action: dbLog.action as LogAction,
-    entity: dbLog.entity as LogEntity,
-    entityId: dbLog.entity_id,
-    entityName: dbLog.entity_name || '',
-    details: dbLog.details || '',
-    result: dbLog.result as LogResult,
-    metadata: dbLog.metadata,
-    ipAddress: dbLog.ip_address,
+    timestamp: toDate(dbLog.fecha ?? dbLog.timestamp),
+    userId: dbLog.usuario_id ?? dbLog.user_id,
+    userEmail: dbLog.usuario_correo ?? dbLog.user_email ?? '',
+    userRole: (dbLog.usuario_rol as RoleType) || (dbLog.user_role as RoleType) || RoleType.VISUALIZADOR,
+    action: (dbLog.accion ?? dbLog.action) as LogAction,
+    entity: (dbLog.entidad ?? dbLog.entity) as LogEntity,
+    entityId: dbLog.entidad_id ?? dbLog.entity_id,
+    entityName: dbLog.entidad_nombre ?? dbLog.entity_name ?? '',
+    details: dbLog.detalles ?? dbLog.details ?? '',
+    result: (dbLog.resultado ?? dbLog.result) as LogResult,
+    metadata: dbLog.metadatos ?? dbLog.metadata,
+    ipAddress: dbLog.ip ?? dbLog.ip_address,
     userAgent: dbLog.user_agent
 });
 
 export const mapLogToDB = (log: Partial<AuditLog>) => {
     const dbLog: any = {};
-    if (log.userId) dbLog.user_id = log.userId;
-    if (log.userEmail) dbLog.user_email = log.userEmail;
-    if (log.userRole) dbLog.user_role = log.userRole;
-    if (log.action) dbLog.action = log.action;
-    if (log.entity) dbLog.entity = log.entity;
-    if (log.entityId) dbLog.entity_id = log.entityId;
-    if (log.entityName) dbLog.entity_name = log.entityName;
-    if (log.details) dbLog.details = log.details;
-    if (log.result) dbLog.result = log.result;
-    if (log.metadata) dbLog.metadata = log.metadata;
+    if (log.userId) dbLog.usuario_id = log.userId;
+    if (log.userEmail) dbLog.usuario_correo = log.userEmail;
+    if (log.userRole) dbLog.usuario_rol = log.userRole;
+    if (log.action) dbLog.accion = log.action;
+    if (log.entity) dbLog.entidad = log.entity;
+    if (log.entityId) dbLog.entidad_id = log.entityId;
+    if (log.entityName) dbLog.entidad_nombre = log.entityName;
+    if (log.details) dbLog.detalles = log.details;
+    if (log.result) dbLog.resultado = log.result;
+    if (log.metadata) dbLog.metadatos = log.metadata;
     return dbLog;
 };
 
@@ -145,9 +145,9 @@ export const mapFormFromDB = (dbForm: any, dbItems: any[] = []): FormularioData 
     tipoImporte: dbForm.tipo_importe,
     observaciones: dbForm.observaciones,
     importeRows: dbItems.map(mapFormItemFromDB),
-    createdAt: toDate(dbForm.created_at),
-    updatedAt: toDate(dbForm.updated_at),
-    createdBy: dbForm.created_by
+    createdAt: toDate(dbForm.fecha_creacion ?? dbForm.creado_el ?? dbForm.created_at),
+    updatedAt: toDate(dbForm.fecha_actualizacion ?? dbForm.actualizado_el ?? dbForm.updated_at),
+    createdBy: dbForm.creado_por ?? dbForm.created_by
 });
 
 export const mapFormToDB = (form: Partial<FormularioData>) => {
@@ -169,14 +169,13 @@ export const mapFormToDB = (form: Partial<FormularioData>) => {
     if (form.acuerdoPago) dbForm.acuerdo_pago = form.acuerdoPago;
     if (form.tipoImporte) dbForm.tipo_importe = form.tipoImporte;
     if (form.observaciones) dbForm.observaciones = form.observaciones;
-    if (form.createdBy) dbForm.created_by = form.createdBy;
-    if (form.updatedAt) dbForm.updated_at = form.updatedAt.toISOString();
-    // created_at usually handled by default, but if passed we could set it.
-    // For now we assume DB handles created_at on insert.
+    if (form.createdBy) dbForm.creado_por = form.createdBy;
+    if (form.updatedAt) dbForm.fecha_actualizacion = form.updatedAt.toISOString();
+    // fecha_creacion usually handled by default
     return dbForm;
 };
 
-// FORM ITEMS
+// FORM ITEMS (items_orden_publicidad)
 export const mapFormItemFromDB = (dbItem: any): any => ({
     id: dbItem.id,
     programa: dbItem.programa,
@@ -192,7 +191,7 @@ export const mapFormItemFromDB = (dbItem: any): any => ({
 });
 
 export const mapFormItemToDB = (item: any, formId: string) => ({
-    form_id: formId,
+    orden_publicidad_id: formId,
     programa: item.programa,
     monto: item.monto,
     nc_programa: item.ncPrograma,
@@ -207,22 +206,152 @@ export const mapFormItemToDB = (item: any, formId: string) => ({
 
 export const mapClientFromDB = (dbClient: any): Client => ({
     id: dbClient.id,
-    businessName: dbClient.business_name,
+    businessName: dbClient.razon_social ?? dbClient.business_name,
     cuit: dbClient.cuit,
-    address: dbClient.address,
-    companyName: dbClient.company_name,
-    active: dbClient.active,
-    createdAt: toDate(dbClient.created_at),
-    createdBy: dbClient.created_by
+    address: dbClient.direccion ?? dbClient.address,
+    companyName: dbClient.empresa ?? dbClient.company_name,
+    active: dbClient.activo ?? dbClient.active,
+    createdAt: toDate(dbClient.creado_el ?? dbClient.created_at),
+    createdBy: dbClient.creado_por ?? dbClient.created_by
 });
 
 export const mapClientToDB = (client: Partial<Client>) => {
     const dbClient: any = {};
-    if (client.businessName) dbClient.business_name = client.businessName;
+    if (client.businessName) dbClient.razon_social = client.businessName;
     if (client.cuit) dbClient.cuit = client.cuit;
-    if (client.address !== undefined) dbClient.address = client.address;
-    if (client.companyName !== undefined) dbClient.company_name = client.companyName;
-    if (client.active !== undefined) dbClient.active = client.active;
-    if (client.createdBy) dbClient.created_by = client.createdBy;
+    if (client.address !== undefined) dbClient.direccion = client.address;
+    if (client.companyName !== undefined) dbClient.empresa = client.companyName;
+    if (client.active !== undefined) dbClient.activo = client.active;
+    if (client.createdBy) dbClient.creado_por = client.createdBy;
     return dbClient;
+};
+
+// ============================================
+// IMPLEMENTACIÓN: Gastos
+// ============================================
+
+import type { GastoImplementacion, BloqueImporte, EstadoOP, EstadoPGM } from '../contexts/ImplementacionContext';
+
+// Map DB gastos_implementacion row -> App GastoImplementacion
+export const mapGastoFromDB = (dbExpense: any, dbItems: any[] = []): GastoImplementacion => ({
+    id: dbExpense.id,
+    estadoOP: (dbExpense.estado || 'pendiente') as EstadoOP,
+    fechaRegistro: dbExpense.fecha_registro ? String(dbExpense.fecha_registro).split('T')[0] : '',
+    responsable: dbExpense.responsable || '',
+    unidadNegocio: dbExpense.unidad_negocio || '',
+    categoriaNegocio: dbExpense.categoria_negocio || '',
+    ordenPublicidad: dbExpense.orden_publicidad || '',
+    presupuesto: dbExpense.presupuesto ? String(dbExpense.presupuesto) : '0',
+    cantidadProgramas: dbExpense.cantidad_programas || 0,
+    programasDisponibles: dbExpense.programas_disponibles || [],
+    sector: dbExpense.sector || 'Implementación',
+    rubroGasto: dbExpense.rubro_gasto || 'Gasto de venta',
+    subRubro: dbExpense.sub_rubro || '',
+    nombreCampana: dbExpense.nombre_campana || '',
+    acuerdoPago: dbExpense.acuerdo_pago || '',
+    facturaEmitidaA: dbExpense.factura_emitida_a || '',
+    empresa: dbExpense.empresa || '',
+    conceptoGasto: dbExpense.concepto_gasto || '',
+    observaciones: dbExpense.observaciones || '',
+    importes: dbItems.map(mapBloqueImporteFromDB),
+    idFormularioComercial: dbExpense.id_formulario_comercial || undefined,
+    formItemId: (dbExpense.item_orden_publicidad_id ?? dbExpense.form_item_id) ?? undefined
+});
+
+// Map App GastoImplementacion -> DB gastos_implementacion row
+export const mapGastoToDB = (gasto: Partial<GastoImplementacion>) => {
+    const db: any = {};
+    if (gasto.estadoOP) db.estado = gasto.estadoOP;
+    if (gasto.fechaRegistro) db.fecha_registro = gasto.fechaRegistro;
+    if (gasto.responsable) db.responsable = gasto.responsable;
+    if (gasto.unidadNegocio) db.unidad_negocio = gasto.unidadNegocio;
+    if (gasto.categoriaNegocio !== undefined) db.categoria_negocio = gasto.categoriaNegocio;
+    if (gasto.ordenPublicidad) db.orden_publicidad = gasto.ordenPublicidad;
+    if (gasto.presupuesto) db.presupuesto = parseFloat(gasto.presupuesto) || 0;
+    if (gasto.cantidadProgramas !== undefined) db.cantidad_programas = gasto.cantidadProgramas;
+    if (gasto.programasDisponibles) db.programas_disponibles = gasto.programasDisponibles;
+    if (gasto.sector) db.sector = gasto.sector;
+    if (gasto.rubroGasto) db.rubro_gasto = gasto.rubroGasto;
+    if (gasto.subRubro) db.sub_rubro = gasto.subRubro;
+    if (gasto.nombreCampana) db.nombre_campana = gasto.nombreCampana;
+    if (gasto.acuerdoPago) db.acuerdo_pago = gasto.acuerdoPago;
+    if (gasto.facturaEmitidaA) db.factura_emitida_a = gasto.facturaEmitidaA;
+    if (gasto.empresa) db.empresa = gasto.empresa;
+    if (gasto.conceptoGasto !== undefined) db.concepto_gasto = gasto.conceptoGasto;
+    if (gasto.observaciones !== undefined) db.observaciones = gasto.observaciones;
+    if (gasto.idFormularioComercial) db.id_formulario_comercial = gasto.idFormularioComercial;
+    if (gasto.formItemId) db.item_orden_publicidad_id = gasto.formItemId;
+    if (gasto.fechaRegistro) {
+        const date = new Date(gasto.fechaRegistro);
+        db.anio = date.getFullYear();
+        db.mes = date.getMonth() + 1;
+    }
+    return db;
+};
+
+// Map DB items_gasto_implementacion row -> App BloqueImporte
+export const mapBloqueImporteFromDB = (dbItem: any): BloqueImporte => ({
+    id: dbItem.id,
+    programa: dbItem.descripcion || '',
+    empresaPgm: dbItem.tipo_proveedor || '',
+    fechaComprobante: dbItem.fecha_factura ? String(dbItem.fecha_factura).split('T')[0] : '',
+    proveedor: dbItem.proveedor || '',
+    razonSocial: dbItem.razon_social || '',
+    condicionPago: dbItem.condicion_pago || '',
+    neto: dbItem.neto ? String(dbItem.neto) : '',
+    documentoAdjunto: dbItem.adjuntos?.[0] || undefined,
+    estadoPgm: (dbItem.estado_pago || 'pendiente-pago') as EstadoPGM
+});
+
+// Map App BloqueImporte -> DB items_gasto_implementacion row
+export const mapBloqueImporteToDB = (item: BloqueImporte, expenseId: string) => ({
+    gasto_id: expenseId,
+    tipo_proveedor: item.empresaPgm || 'Directo',
+    proveedor: item.proveedor,
+    razon_social: item.razonSocial,
+    descripcion: item.programa,
+    rubro_gasto: 'Gasto de venta',
+    sector: 'Implementación',
+    moneda: 'ARS',
+    neto: parseFloat(item.neto) || 0,
+    iva: 21,
+    importe_total: (parseFloat(item.neto) || 0) * 1.21,
+    fecha_factura: item.fechaComprobante || null,
+    condicion_pago: item.condicionPago,
+    estado_pago: item.estadoPgm || 'pendiente',
+    adjuntos: item.documentoAdjunto ? [item.documentoAdjunto] : null
+});
+
+export interface ImplementationExpense {
+    id: string;
+    expenseId: string;
+    proveedor?: string;
+    razonSocial?: string;
+    proveedorId?: string | null;
+    condicionPago?: string;
+    neto?: number;
+    fechaComprobante?: string;
+}
+
+export const mapImplementationExpenseFromDB = (dbItem: any): ImplementationExpense => ({
+    id: dbItem.id,
+    expenseId: dbItem.gasto_id ?? dbItem.expense_id,
+    proveedor: dbItem.proveedor || '',
+    razonSocial: dbItem.razon_social || '',
+    proveedorId: dbItem.proveedor_id ?? null,
+    condicionPago: dbItem.condicion_pago || '',
+    neto: typeof dbItem.neto === 'number' ? dbItem.neto : Number(dbItem.neto || 0),
+    fechaComprobante: dbItem.fecha_factura ? String(dbItem.fecha_factura) : ''
+});
+
+export const mapImplementationExpenseToDB = (item: Partial<ImplementationExpense>) => {
+    const db: any = {};
+    if (item.expenseId) db.gasto_id = item.expenseId;
+    if (item.proveedor !== undefined) db.proveedor = item.proveedor;
+    if (item.razonSocial !== undefined) db.razon_social = item.razonSocial;
+
+    if (item.condicionPago !== undefined) db.condicion_pago = item.condicionPago;
+    if (item.neto !== undefined) db.neto = item.neto;
+    if (item.fechaComprobante !== undefined) db.fecha_factura = item.fechaComprobante;
+    return db;
 };

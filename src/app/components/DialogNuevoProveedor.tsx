@@ -4,11 +4,13 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
+import { supabase } from '../services/supabase';
+import type { Proveedor } from './ProveedorSelector';
 
 interface DialogNuevoProveedorProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onProveedorCreado: (nombre: string) => void;
+    onProveedorCreado: (created?: Proveedor) => void;
 }
 
 export function DialogNuevoProveedor({ open, onOpenChange, onProveedorCreado }: DialogNuevoProveedorProps) {
@@ -16,7 +18,7 @@ export function DialogNuevoProveedor({ open, onOpenChange, onProveedorCreado }: 
     const [cuit, setCuit] = useState('');
     const [email, setEmail] = useState('');
 
-    const handleGuardar = () => {
+    const handleGuardar = async () => {
         // Validar campos
         if (!nombreComercial.trim()) {
             toast.error('El nombre comercial es obligatorio');
@@ -32,11 +34,33 @@ export function DialogNuevoProveedor({ open, onOpenChange, onProveedorCreado }: 
             return;
         }
 
-        // Callback al componente padre
-        onProveedorCreado(nombreComercial);
+        // Insertar en public.proveedores
+        const { data, error } = await supabase
+          .from('proveedores')
+          .insert({
+            razon_social: nombreComercial,
+            empresa: nombreComercial,
+            cuit,
+            direccion: null,
+            activo: true,
+          })
+          .select('*')
+          .single();
 
-        // Toast de éxito
-        toast.success('Proveedor creado correctamente (pendiente de validación)');
+        if (error) {
+          if ((error as any).code === '23505') {
+            toast.error('El CUIT ya existe. Verifique los datos.');
+          } else {
+            toast.error('Error al crear el proveedor');
+            console.error('Insert proveedor error:', error);
+          }
+          return;
+        }
+
+        const created = data as Proveedor;
+        onProveedorCreado(created);
+
+        toast.success('Proveedor creado correctamente');
 
         // Reset y cerrar
         setNombreComercial('');

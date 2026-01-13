@@ -366,12 +366,12 @@ export function Configuraciones() {
                     key={log.id}
                     className={`flex items-start gap-4 p-4 border rounded-lg ${isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'}`}
                   >
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${log.result === 'success' ? 'bg-green-500/20' :
-                      log.result === 'warning' ? 'bg-yellow-500/20' :
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${log.result === 'exito' ? 'bg-green-500/20' :
+                      log.result === 'advertencia' ? 'bg-yellow-500/20' :
                         'bg-red-500/20'
                       }`}>
-                      {log.result === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                      {log.result === 'warning' && <AlertCircle className="h-5 w-5 text-yellow-500" />}
+                      {log.result === 'exito' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                      {log.result === 'advertencia' && <AlertCircle className="h-5 w-5 text-yellow-500" />}
                       {log.result === 'error' && <AlertCircle className="h-5 w-5 text-red-500" />}
                     </div>
                     <div className="flex-1 min-w-0">
