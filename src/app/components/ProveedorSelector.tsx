@@ -3,17 +3,9 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Search, Plus } from 'lucide-react';
-import { supabase } from '../services/supabase';
 import { DialogNuevoProveedor } from './DialogNuevoProveedor';
-
-export interface Proveedor {
-  id: string;
-  razon_social: string;
-  empresa: string | null;
-  cuit: string;
-  direccion?: string | null;
-  activo: boolean;
-}
+import * as proveedoresService from '../services/proveedoresService';
+import type { Proveedor } from '../types/proveedores';
 
 export interface ProveedorSelectorValue {
   proveedor?: string;
@@ -35,19 +27,16 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
   const [localProveedor, setLocalProveedor] = useState<string>(value?.proveedor || '');
   const [localRazonSocial, setLocalRazonSocial] = useState<string>(value?.razonSocial || '');
 
+  const fetchProveedores = async () => {
+    const { data, error } = await proveedoresService.getActive();
+    if (error) {
+      console.error('Fetch proveedores error:', error);
+      return;
+    }
+    setProveedores(data);
+  };
+
   useEffect(() => {
-    const fetchProveedores = async () => {
-      const { data, error } = await supabase
-        .from('proveedores')
-        .select('*')
-        .eq('activo', true)
-        .order('razon_social');
-      if (error) {
-        console.error('Fetch proveedores error:', error);
-        return;
-      }
-      if (data) setProveedores(data as Proveedor[]);
-    };
     fetchProveedores();
   }, []);
 
@@ -57,29 +46,23 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
   }, [value?.proveedor, value?.razonSocial]);
 
   const selectByRazonSocial = (razon: string) => {
-    const found = proveedores.find(p => p.razon_social === razon);
-    const proveedorName = found?.empresa ?? found?.razon_social ?? razon;
+    const found = proveedores.find(p => p.razonSocial === razon);
+    const proveedorName = found?.empresa ?? found?.razonSocial ?? razon;
     onChange({ proveedor: proveedorName, razonSocial: razon, proveedorId: found?.id || null, proveedorData: found });
   };
 
   const selectByEmpresa = (empresa: string) => {
-    const found = proveedores.find(p => (p.empresa ?? '') === empresa) || proveedores.find(p => p.razon_social === empresa);
-    const razon = found?.razon_social ?? localRazonSocial;
+    const found = proveedores.find(p => (p.empresa ?? '') === empresa) || proveedores.find(p => p.razonSocial === empresa);
+    const razon = found?.razonSocial ?? localRazonSocial;
     onChange({ proveedor: empresa, razonSocial: razon, proveedorId: found?.id || null, proveedorData: found });
   };
 
   const onCreatedProveedor = async (created?: Proveedor) => {
     setShowCreate(false);
-    // Refresh list
-    const { data, error } = await supabase
-      .from('proveedores')
-      .select('*')
-      .eq('activo', true)
-      .order('razon_social');
-    if (!error && data) setProveedores(data as Proveedor[]);
+    await fetchProveedores();
     if (created) {
-      const proveedorName = created.empresa ?? created.razon_social;
-      onChange({ proveedor: proveedorName, razonSocial: created.razon_social, proveedorId: created.id, proveedorData: created });
+      const proveedorName = created.empresa ?? created.razonSocial;
+      onChange({ proveedor: proveedorName, razonSocial: created.razonSocial, proveedorId: created.id, proveedorData: created });
     }
   };
 
@@ -103,7 +86,7 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
               className="pl-10"
             />
             <datalist id="proveedores-empresas">
-              {[...new Set(proveedores.map(p => p.empresa || p.razon_social))].map((empresa) => (
+              {[...new Set(proveedores.map(p => p.empresa || p.razonSocial))].map((empresa) => (
                 <option key={empresa} value={empresa} />
               ))}
             </datalist>
@@ -111,7 +94,7 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
         </div>
 
         <div className="space-y-2">
-          <Label className="flex items-center gap-1">Razón Social</Label>
+          <Label className="flex items-center gap-1">Razon Social</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -121,14 +104,14 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
                 setLocalRazonSocial(v);
               }}
               onBlur={(e) => selectByRazonSocial(e.target.value)}
-              placeholder="Buscar razón social"
+              placeholder="Buscar razon social"
               list="proveedores-razon-social"
               disabled={disabled}
               className="pl-10"
             />
             <datalist id="proveedores-razon-social">
               {proveedores.map((p) => (
-                <option key={p.id} value={p.razon_social} />
+                <option key={p.id} value={p.razonSocial} />
               ))}
             </datalist>
           </div>

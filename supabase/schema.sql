@@ -132,24 +132,30 @@ create table if not exists public.proveedores (
   creado_por text
 );
 
--- IMPLEMENTACIÓN: Headers
+-- IMPLEMENTACION: Headers (normalized - orden data fetched via id_formulario_comercial FK)
 create table if not exists public.gastos_implementacion (
   id uuid default gen_random_uuid() primary key,
   fecha_creacion timestamp with time zone default timezone('utc'::text, now()) not null,
   fecha_actualizacion timestamp with time zone default timezone('utc'::text, now()) not null,
   fecha_registro date not null,
-  orden_publicidad text not null,
-  responsable text not null,
-  unidad_negocio text not null,
-  categoria_negocio text,
-  nombre_campana text not null,
   anio integer not null,
   mes integer not null,
-  id_formulario_comercial uuid,
+  id_formulario_comercial uuid not null,
   estado text not null default 'pendiente',
   item_orden_publicidad_id uuid,
-  created_by uuid,
-  updated_by uuid
+  acuerdo_pago text,
+  presupuesto decimal(15,2),
+  cantidad_programas integer,
+  programas_disponibles jsonb default '[]'::jsonb,
+  sector text,
+  rubro_gasto text,
+  sub_rubro text,
+  factura_emitida_a text,
+  empresa text,
+  concepto_gasto text,
+  observaciones text,
+  creado_por text,
+  actualizado_por text
 );
 
 -- IMPLEMENTACIÓN: Items
@@ -177,7 +183,19 @@ create table if not exists public.items_gasto_implementacion (
   adjuntos jsonb
 );
 
--- FK: gastos_implementacion.item_orden_publicidad_id -> items_orden_publicidad(id)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'gastos_implementacion_orden_fk'
+  ) THEN
+    ALTER TABLE public.gastos_implementacion
+      ADD CONSTRAINT gastos_implementacion_orden_fk
+      FOREIGN KEY (id_formulario_comercial)
+      REFERENCES public.ordenes_publicidad(id)
+      ON DELETE SET NULL;
+  END IF;
+END $$;
+
 DO $$
 BEGIN
   IF to_regclass('public.items_orden_publicidad') IS NOT NULL THEN
@@ -193,7 +211,7 @@ BEGIN
   END IF;
 END $$;
 
--- Helpful indexes
+create index if not exists idx_gastos_implementacion_formulario_comercial on public.gastos_implementacion(id_formulario_comercial);
 create index if not exists idx_gastos_item_orden_publicidad_id on public.gastos_implementacion(item_orden_publicidad_id);
 create index if not exists idx_items_gasto_gasto_id on public.items_gasto_implementacion(gasto_id);
 
@@ -247,6 +265,41 @@ drop policy if exists "allow_all" on public.gastos_implementacion;
 drop policy if exists "allow_all" on public.items_gasto_implementacion;
 create policy "allow_all" on public.gastos_implementacion for all using (true) with check (true);
 create policy "allow_all" on public.items_gasto_implementacion for all using (true) with check (true);
+
+CREATE OR REPLACE VIEW public.gastos_implementacion_full AS
+SELECT 
+  gi.id,
+  gi.fecha_creacion,
+  gi.fecha_actualizacion,
+  gi.fecha_registro,
+  gi.anio,
+  gi.mes,
+  gi.id_formulario_comercial,
+  gi.estado,
+  gi.item_orden_publicidad_id,
+  gi.acuerdo_pago,
+  gi.presupuesto,
+  gi.cantidad_programas,
+  gi.programas_disponibles,
+  gi.sector,
+  gi.rubro_gasto,
+  gi.sub_rubro,
+  gi.factura_emitida_a,
+  gi.empresa,
+  gi.concepto_gasto,
+  gi.observaciones,
+  gi.creado_por,
+  gi.actualizado_por,
+  op.orden_publicidad,
+  op.responsable,
+  op.unidad_negocio,
+  op.categoria_negocio,
+  op.nombre_campana,
+  op.razon_social,
+  op.marca,
+  op.empresa_agencia
+FROM public.gastos_implementacion gi
+LEFT JOIN public.ordenes_publicidad op ON gi.id_formulario_comercial = op.id;
 
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;

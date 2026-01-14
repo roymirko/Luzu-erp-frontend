@@ -1,42 +1,12 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../services/supabase';
-import { mapFormFromDB, mapFormToDB, mapFormItemToDB } from '../utils/supabaseMappers';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import * as ordenesService from '../services/ordenesPublicidadService';
+import type { OrdenPublicidad, ItemOrdenPublicidad, CreateOrdenPublicidadInput } from '../types/comercial';
 import { useData } from './DataContext';
 
-export interface FormularioData {
-  id: string;
-  fecha: string;
-  mesServicio: string;
-  responsable: string;
-  ordenPublicidad: string;
-  totalVenta: string;
-  unidadNegocio: string;
-  categoriaNegocio: string;
-  proyecto: string;
-  razonSocial: string;
-  categoria: string;
-  empresaAgencia: string;
-  marca: string;
-  nombreCampana: string;
-  acuerdoPago: string;
-  importeRows: Array<{
-    id: string;
-    programa: string;
-    monto: string;
-    ncPrograma: string;
-    ncPorcentaje: string;
-    proveedorFee: string;
-    feePrograma: string;
-    feePorcentaje: string;
-    implementacion: string;
-    talentos: string;
-    tecnica: string;
-  }>;
-  tipoImporte: 'canje' | 'factura';
-  observaciones: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  createdBy?: string;
+export type { OrdenPublicidad, ItemOrdenPublicidad };
+
+export interface FormularioData extends OrdenPublicidad {
+  importeRows: ItemOrdenPublicidad[];
 }
 
 export interface FormularioNotification {
@@ -55,12 +25,21 @@ interface FormulariosContextType {
   addFormulario: (formulario: Partial<FormularioData>) => Promise<{ success: boolean; error?: string }>;
   deleteFormulario: (id: string) => Promise<{ success: boolean }>;
   updateFormulario: (id: string, formulario: FormularioData) => Promise<{ success: boolean }>;
+  getFormularioById: (id: string) => FormularioData | undefined;
   markNotificationAsRead: (notificationId: string) => void;
   markAllNotificationsAsRead: () => void;
   removeNotification: (notificationId: string) => void;
+  refetch: () => Promise<void>;
 }
 
 const FormulariosContext = createContext<FormulariosContextType | undefined>(undefined);
+
+function toFormularioData(orden: OrdenPublicidad): FormularioData {
+  return {
+    ...orden,
+    importeRows: orden.items,
+  };
+}
 
 export function FormulariosProvider({ children }: { children: ReactNode }) {
   const [formularios, setFormularios] = useState<FormularioData[]>([]);
@@ -68,111 +47,84 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { currentUser } = useData();
 
-  useEffect(() => {
-    const fetchFormularios = async () => {
-      setLoading(true);
-      try {
-        const { data: formsData, error } = await supabase
-          .from('ordenes_publicidad')
-          .select(`
-            *,
-            items_orden_publicidad (*)
-          `)
-          .order('fecha_creacion', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching forms:', error);
-          return;
-        }
-
-        if (formsData) {
-          const mappedForms = formsData.map(f => mapFormFromDB(f, f.items_orden_publicidad));
-          setFormularios(mappedForms);
-        }
-      } catch (err) {
-        console.error('Error in fetchFormularios:', err);
-      } finally {
-        setLoading(false);
+  const fetchFormularios = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await ordenesService.getAll();
+      if (result.error) {
+        console.error('Error fetching formularios:', result.error);
+        return;
       }
-    };
-
-    fetchFormularios();
+      setFormularios(result.data.map(toFormularioData));
+    } catch (err) {
+      console.error('Error in fetchFormularios:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const addFormulario = async (formulario: Partial<FormularioData>) => {
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString('es-AR');
+  useEffect(() => {
+    fetchFormularios();
+  }, [fetchFormularios]);
 
-    // Create base form object for DB
-    const newFormBase = {
-      ...formulario,
-      fecha: formattedDate,
-      createdBy: currentUser?.id, // Use createdBy to match mapper expectation
+  const addFormulario = async (formulario: Partial<FormularioData>): Promise<{ success: boolean; error?: string }> => {
+    const input: CreateOrdenPublicidadInput = {
+      mesServicio: formulario.mesServicio || '',
+      responsable: formulario.responsable || currentUser?.firstName + ' ' + currentUser?.lastName || '',
+      ordenPublicidad: formulario.ordenPublicidad || '',
+      totalVenta: formulario.totalVenta || '',
+      unidadNegocio: formulario.unidadNegocio || '',
+      categoriaNegocio: formulario.categoriaNegocio || '',
+      proyecto: formulario.proyecto,
+      razonSocial: formulario.razonSocial || '',
+      categoria: formulario.categoria || '',
+      empresaAgencia: formulario.empresaAgencia || '',
+      marca: formulario.marca || '',
+      nombreCampana: formulario.nombreCampana || '',
+      acuerdoPago: formulario.acuerdoPago || '',
+      tipoImporte: formulario.tipoImporte || 'factura',
+      observaciones: formulario.observaciones,
+      items: (formulario.importeRows || []).map(item => ({
+        programa: item.programa,
+        monto: item.monto,
+        ncPrograma: item.ncPrograma,
+        ncPorcentaje: item.ncPorcentaje,
+        proveedorFee: item.proveedorFee,
+        feePrograma: item.feePrograma,
+        feePorcentaje: item.feePorcentaje,
+        implementacion: item.implementacion,
+        talentos: item.talentos,
+        tecnica: item.tecnica,
+      })),
+      createdBy: currentUser?.id,
     };
 
-    // Insert Form
-    const { data: insertedForm, error: formError } = await supabase
-      .from('ordenes_publicidad')
-      .insert(mapFormToDB(newFormBase))
-      .select()
-      .single();
+    const result = await ordenesService.create(input);
 
-    if (formError || !insertedForm) {
-      console.error('Error creating form:', formError);
-      return { success: false, error: 'Error al guardar el formulario' };
+    if (result.error || !result.data) {
+      return { success: false, error: result.error || 'Error al crear el formulario' };
     }
 
-    // Insert Items
-    if (formulario.importeRows && formulario.importeRows.length > 0) {
-      const itemsToInsert = formulario.importeRows.map(item => mapFormItemToDB(item, insertedForm.id));
+    const newFormulario = toFormularioData(result.data);
+    setFormularios(prev => [newFormulario, ...prev]);
 
-      const { error: itemsError } = await supabase
-        .from('items_orden_publicidad')
-        .insert(itemsToInsert);
+    const newNotification: FormularioNotification = {
+      id: Date.now().toString(),
+      formularioId: newFormulario.id,
+      ordenPublicidad: newFormulario.ordenPublicidad,
+      responsable: newFormulario.responsable,
+      timestamp: new Date(),
+      read: false,
+    };
+    setNotifications(prev => [...prev, newNotification]);
 
-      if (itemsError) {
-        console.error('Error creating form items:', itemsError);
-        // Should we delete the form? For now, keep it partial or warn.
-      }
-    }
-
-    // Update local state by re-fetching or constructing. Use DB data to be safe.
-    // Ideally we re-fetch to get IDs of items, but constructing is faster.
-    // Let's re-fetch this single form to be clean.
-    const { data: fullForm } = await supabase
-      .from('ordenes_publicidad')
-      .select('*, items_orden_publicidad(*)')
-      .eq('id', insertedForm.id)
-      .single();
-
-    if (fullForm) {
-      const newFormulario = mapFormFromDB(fullForm, fullForm.items_orden_publicidad);
-      setFormularios(prev => [newFormulario, ...prev]);
-
-      // Notification
-      const newNotification: FormularioNotification = {
-        id: Date.now().toString(),
-        formularioId: newFormulario.id,
-        ordenPublicidad: newFormulario.ordenPublicidad,
-        responsable: newFormulario.responsable,
-        timestamp: new Date(),
-        read: false,
-      };
-      setNotifications(prev => [...prev, newNotification]);
-      return { success: true };
-    }
-
-    return { success: false };
+    return { success: true };
   };
 
-  const deleteFormulario = async (id: string) => {
-    const { error } = await supabase
-      .from('ordenes_publicidad')
-      .delete()
-      .eq('id', id);
+  const deleteFormulario = async (id: string): Promise<{ success: boolean }> => {
+    const result = await ordenesService.remove(id);
 
-    if (error) {
-      console.error('Error deleting form:', error);
+    if (!result.success) {
       return { success: false };
     }
 
@@ -181,49 +133,49 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     return { success: true };
   };
 
-  const updateFormulario = async (id: string, formulario: FormularioData) => {
-    // Update Form Table
-    const formToUpdate = {
-      ...formulario,
-      updatedAt: new Date()
-    };
+  const updateFormulario = async (id: string, formulario: FormularioData): Promise<{ success: boolean }> => {
+    const result = await ordenesService.update({
+      id,
+      mesServicio: formulario.mesServicio,
+      responsable: formulario.responsable,
+      ordenPublicidad: formulario.ordenPublicidad,
+      totalVenta: formulario.totalVenta,
+      unidadNegocio: formulario.unidadNegocio,
+      categoriaNegocio: formulario.categoriaNegocio,
+      proyecto: formulario.proyecto,
+      razonSocial: formulario.razonSocial,
+      categoria: formulario.categoria,
+      empresaAgencia: formulario.empresaAgencia,
+      marca: formulario.marca,
+      nombreCampana: formulario.nombreCampana,
+      acuerdoPago: formulario.acuerdoPago,
+      tipoImporte: formulario.tipoImporte,
+      observaciones: formulario.observaciones,
+      items: formulario.importeRows.map(item => ({
+        programa: item.programa,
+        monto: item.monto,
+        ncPrograma: item.ncPrograma,
+        ncPorcentaje: item.ncPorcentaje,
+        proveedorFee: item.proveedorFee,
+        feePrograma: item.feePrograma,
+        feePorcentaje: item.feePorcentaje,
+        implementacion: item.implementacion,
+        talentos: item.talentos,
+        tecnica: item.tecnica,
+      })),
+    });
 
-    const { error: formError } = await supabase
-      .from('ordenes_publicidad')
-      .update(mapFormToDB(formToUpdate))
-      .eq('id', id);
-
-    if (formError) {
-      console.error('Error updating form:', formError);
+    if (result.error || !result.data) {
       return { success: false };
     }
 
-    // Update Items
-    // Strategy: Delete all items and re-create. Simple and effective for small lists.
-    await supabase.from('items_orden_publicidad').delete().eq('orden_publicidad_id', id);
+    const updatedFormulario = toFormularioData(result.data);
+    setFormularios(prev => prev.map(f => f.id === id ? updatedFormulario : f));
+    return { success: true };
+  };
 
-    if (formulario.importeRows && formulario.importeRows.length > 0) {
-      const itemsToInsert = formulario.importeRows.map(item => mapFormItemToDB(item, id));
-      await supabase.from('items_orden_publicidad').insert(itemsToInsert);
-    }
-
-    // Update Local State
-    // We could re-fetch, but mapping the input is fast if we trust it.
-    // However, DB generated IDs for new items are missing if we don't fetch.
-    // So better re-fetch.
-    const { data: fullForm } = await supabase
-      .from('ordenes_publicidad')
-      .select('*, items_orden_publicidad(*)')
-      .eq('id', id)
-      .single();
-
-    if (fullForm) {
-      const updatedForm = mapFormFromDB(fullForm, fullForm.items_orden_publicidad);
-      setFormularios(prev => prev.map(f => f.id === id ? updatedForm : f));
-      return { success: true };
-    }
-
-    return { success: false };
+  const getFormularioById = (id: string): FormularioData | undefined => {
+    return formularios.find(f => f.id === id);
   };
 
   const markNotificationAsRead = (notificationId: string) => {
@@ -246,9 +198,11 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       addFormulario,
       deleteFormulario,
       updateFormulario,
+      getFormularioById,
       markNotificationAsRead,
       markAllNotificationsAsRead,
-      removeNotification
+      removeNotification,
+      refetch: fetchFormularios,
     }}>
       {children}
     </FormulariosContext.Provider>
