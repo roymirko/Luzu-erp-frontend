@@ -317,4 +317,6 @@ if (error) {
 │ Region     │ local                                                            │
 ╰────────────┴──────────────────────────────────────────────────────────────────╯
 
-➜  Luzu-erp
+## Plans
+- Make the plan extremely concise. sacrifice grammar for the sake of concision.
+- At the end of each plan, give me a list of unresolved questions to answer, if any.

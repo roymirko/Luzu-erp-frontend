@@ -1,21 +1,24 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useImplementacion, GastoImplementacion, BloqueImporte } from '../contexts/ImplementacionContext';
+import { useImplementacion } from '../contexts/ImplementacionContext';
 import { useFormularios } from '../contexts/FormulariosContext';
 import { useData } from '../contexts/DataContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Button } from './ui/button';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
 import { cn } from './ui/utils';
 import {
-  CargaDatosSection,
+  CampaignInfoCard,
   CargaImportesSection,
-  ObservacionesSection,
   ResumenPresupuestario,
-  type CargaDatosSectionErrors,
   type ImportesErrors,
+  type BloqueImporte,
+  type EstadoOP,
 } from './implementacion';
-import { IMPLEMENTACION_DEFAULTS } from '@/app/utils/implementacionConstants';
+import type { CreateGastoImplementacionInput, GastoImplementacion } from '../types/implementacion';
+import { IMPLEMENTACION_DEFAULTS, FIELD_MAX_LENGTHS } from '@/app/utils/implementacionConstants';
 
 interface FormularioImplementacionProps {
   gastoId?: string;
@@ -25,7 +28,11 @@ interface FormularioImplementacionProps {
 }
 
 interface FormErrors {
-  cargaDatos: CargaDatosSectionErrors;
+  cargaDatos: {
+    facturaEmitidaA?: string;
+    empresa?: string;
+    conceptoGasto?: string;
+  };
   importes: ImportesErrors;
 }
 
@@ -34,9 +41,66 @@ const EMPTY_ERRORS: FormErrors = {
   importes: {},
 };
 
+// Convert GastoImplementacion (from service) to BloqueImporte (UI)
+function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
+  return {
+    id: gasto.id,
+    programa: '',
+    empresaPgm: gasto.sector || '',
+    fechaComprobante: gasto.fechaFactura || new Date().toISOString().split('T')[0],
+    proveedor: gasto.proveedor,
+    razonSocial: gasto.razonSocial,
+    condicionPago: gasto.condicionPago || '30',
+    neto: String(gasto.neto),
+    documentoAdjunto: gasto.adjuntos?.[0],
+    estadoPgm: gasto.estadoPago === 'pagado' ? 'pagado' : gasto.estadoPago === 'anulado' ? 'anulado' : 'pendiente',
+  };
+}
+
+// Convert BloqueImporte (UI) to CreateGastoImplementacionInput (service)
+function bloqueToCreateInput(
+  bloque: BloqueImporte,
+  shared: {
+    facturaEmitidaA: string;
+    empresa: string;
+    conceptoGasto: string;
+    observaciones: string;
+    ordenPublicidadId?: string;
+    itemOrdenPublicidadId?: string;
+    rubroGasto?: string;
+    subRubro?: string;
+  }
+): CreateGastoImplementacionInput {
+  return {
+    proveedor: bloque.proveedor,
+    razonSocial: bloque.razonSocial,
+    fechaFactura: bloque.fechaComprobante,
+    neto: parseFloat(bloque.neto) || 0,
+    empresa: shared.empresa,
+    conceptoGasto: shared.conceptoGasto,
+    observaciones: shared.observaciones,
+    ordenPublicidadId: shared.ordenPublicidadId,
+    itemOrdenPublicidadId: shared.itemOrdenPublicidadId,
+    facturaEmitidaA: shared.facturaEmitidaA,
+    sector: bloque.empresaPgm,
+    rubroGasto: shared.rubroGasto,
+    subRubro: shared.subRubro,
+    condicionPago: bloque.condicionPago,
+  };
+}
+
 export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: FormularioImplementacionProps) {
   const { isDark } = useTheme();
-  const { addGasto, updateGasto, getGastoById, getGastoByFormItemId } = useImplementacion();
+  const {
+    addMultipleGastos,
+    updateGasto,
+    getGastoById,
+    getGastosByItemOrdenId,
+    approveGasto,
+    rejectGasto,
+    markGastoAsPaid,
+    getTotalEjecutadoByItem,
+  } = useImplementacion();
   const { formularios } = useFormularios();
   const { currentUser } = useData();
 
@@ -60,87 +124,135 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       categoriaNegocio: formulario.categoriaNegocio || '',
       nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
-      presupuesto: presupuestoImpl.toString(),
+      presupuesto: presupuestoImpl,
       programasDisponibles: programasDisponibles.length > 0 ? programasDisponibles : ['Sin programas'],
       responsable: formulario.responsable || '',
+      marca: formulario.marca || '',
+      mesServicio: formulario.mesServicio || '',
     };
   }, [formId, itemId, formularios]);
 
-  const [formData, setFormData] = useState<GastoImplementacion>({
-    id: crypto.randomUUID(),
-    estadoOP: 'pendiente',
-    fechaRegistro: '',
-    responsable: '',
-    unidadNegocio: '',
-    categoriaNegocio: '',
-    ordenPublicidad: 'OP-2024-001',
-    presupuesto: '5000000',
-    cantidadProgramas: 0,
-    programasDisponibles: ['Programa 1', 'Programa 2'],
-    sector: IMPLEMENTACION_DEFAULTS.sector,
-    rubroGasto: IMPLEMENTACION_DEFAULTS.rubroGasto,
-    subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
-    nombreCampana: 'Campaña Mock',
-    acuerdoPago: '30 días',
-    facturaEmitidaA: '',
-    empresa: '',
-    conceptoGasto: '',
-    observaciones: '',
-    importes: [],
-    idFormularioComercial: undefined,
-    formItemId: undefined,
-  });
+  // Form state
+  const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
+  const [empresa, setEmpresa] = useState('');
+  const [conceptoGasto, setConceptoGasto] = useState('');
+  const [observaciones, setObservaciones] = useState('');
+  const [importes, setImportes] = useState<BloqueImporte[]>([]);
+  const [estadoOP, setEstadoOP] = useState<EstadoOP>('pendiente');
+  const [selectedGastoId, setSelectedGastoId] = useState<string | undefined>(gastoId);
 
   const [saving, setSaving] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
+  // Load existing gastos if editing
   useEffect(() => {
-    let existingGasto: GastoImplementacion | undefined;
-
     if (gastoId) {
-      existingGasto = getGastoById(gastoId);
+      // Editing a specific gasto
+      const existingGasto = getGastoById(gastoId);
+      if (existingGasto) {
+        setFacturaEmitidaA(existingGasto.facturaEmitidaA);
+        setEmpresa(existingGasto.empresa);
+        setConceptoGasto(existingGasto.conceptoGasto);
+        setObservaciones(existingGasto.observaciones);
+        setEstadoOP(existingGasto.estado);
+        setImportes([gastoToBloqueImporte(existingGasto)]);
+        setSelectedGastoId(gastoId);
+      }
     } else if (formId && itemId) {
-      existingGasto = getGastoByFormItemId(formId, itemId);
+      // Check for existing gastos for this item
+      const existingGastos = getGastosByItemOrdenId(itemId);
+      if (existingGastos.length > 0) {
+        // Load first gasto's shared fields
+        const first = existingGastos[0];
+        setFacturaEmitidaA(first.facturaEmitidaA);
+        setEmpresa(first.empresa);
+        setConceptoGasto(first.conceptoGasto);
+        setObservaciones(first.observaciones);
+        setEstadoOP(first.estado);
+        setImportes(existingGastos.map(gastoToBloqueImporte));
+        setSelectedGastoId(first.id);
+      } else {
+        // New gasto - initialize with defaults
+        setImportes([{
+          id: crypto.randomUUID(),
+          programa: '',
+          empresaPgm: '',
+          fechaComprobante: new Date().toISOString().split('T')[0],
+          proveedor: '',
+          razonSocial: '',
+          condicionPago: '30',
+          neto: '',
+          estadoPgm: 'pendiente',
+        }]);
+      }
     }
+  }, [gastoId, formId, itemId, getGastoById, getGastosByItemOrdenId]);
 
-    if (existingGasto) {
-      setFormData(existingGasto);
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        fechaRegistro: new Date().toISOString().split('T')[0],
-        responsable: currentUser
-          ? `${currentUser.firstName} ${currentUser.lastName}`
-          : ordenPublicidadData?.responsable || 'Usuario Actual',
-        idFormularioComercial: formId,
-        formItemId: itemId,
-        ordenPublicidad: ordenPublicidadData?.ordenPublicidad || prev.ordenPublicidad,
-        unidadNegocio: ordenPublicidadData?.unidadNegocio || prev.unidadNegocio,
-        categoriaNegocio: ordenPublicidadData?.categoriaNegocio || prev.categoriaNegocio,
-        nombreCampana: ordenPublicidadData?.nombreCampana || prev.nombreCampana,
-        acuerdoPago: ordenPublicidadData?.acuerdoPago || prev.acuerdoPago,
-        presupuesto: ordenPublicidadData?.presupuesto || prev.presupuesto,
-        programasDisponibles: ordenPublicidadData?.programasDisponibles || prev.programasDisponibles,
-        importes: [
-          {
-            id: crypto.randomUUID(),
-            programa: '',
-            empresaPgm: '',
-            fechaComprobante: new Date().toISOString().split('T')[0],
-            proveedor: '',
-            razonSocial: '',
-            condicionPago: '30',
-            neto: '',
-            estadoPgm: 'pendiente-pago',
-          },
-        ],
-      }));
+  const isCerrado = estadoOP === 'cerrado' || estadoOP === 'anulado';
+  const existingGastos = itemId ? getGastosByItemOrdenId(itemId) : [];
+  const isExistingGasto = existingGastos.length > 0 || !!gastoId;
+  const isNewGasto = !isExistingGasto;
+
+  const handleApprove = useCallback(async () => {
+    if (!selectedGastoId) return;
+    setApprovalLoading(true);
+    try {
+      const success = await approveGasto(selectedGastoId);
+      if (success) {
+        toast.success('Gasto aprobado correctamente');
+        setEstadoOP('activo');
+      } else {
+        toast.error('Error al aprobar el gasto');
+      }
+    } catch (err) {
+      console.error('Error approving gasto:', err);
+      toast.error('Error inesperado al aprobar');
+    } finally {
+      setApprovalLoading(false);
     }
-  }, [gastoId, formId, itemId, getGastoById, getGastoByFormItemId, currentUser, ordenPublicidadData]);
+  }, [selectedGastoId, approveGasto]);
 
-  const isCerrado = formData.estadoOP === 'cerrado' || formData.estadoOP === 'anulado';
-  const isExistingGasto = gastoId || (formId && itemId && getGastoByFormItemId(formId, itemId));
+  const handleReject = useCallback(async () => {
+    if (!selectedGastoId) return;
+    setApprovalLoading(true);
+    try {
+      const success = await rejectGasto(selectedGastoId);
+      if (success) {
+        toast.success('Gasto rechazado');
+        setEstadoOP('anulado');
+      } else {
+        toast.error('Error al rechazar el gasto');
+      }
+    } catch (err) {
+      console.error('Error rejecting gasto:', err);
+      toast.error('Error inesperado al rechazar');
+    } finally {
+      setApprovalLoading(false);
+    }
+  }, [selectedGastoId, rejectGasto]);
+
+  const handleMarkPaid = useCallback(async () => {
+    if (!selectedGastoId) return;
+    setApprovalLoading(true);
+    try {
+      const success = await markGastoAsPaid(selectedGastoId);
+      if (success) {
+        toast.success('Gasto marcado como pagado');
+        setImportes((prev) =>
+          prev.map((imp) => ({ ...imp, estadoPgm: 'pagado' as const }))
+        );
+      } else {
+        toast.error('Error al marcar como pagado');
+      }
+    } catch (err) {
+      console.error('Error marking as paid:', err);
+      toast.error('Error inesperado');
+    } finally {
+      setApprovalLoading(false);
+    }
+  }, [selectedGastoId, markGastoAsPaid]);
 
   const validateForm = useCallback((): FormErrors => {
     const newErrors: FormErrors = {
@@ -148,25 +260,19 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       importes: {},
     };
 
-    if (!formData.facturaEmitidaA) {
+    if (!facturaEmitidaA) {
       newErrors.cargaDatos.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
     }
-    if (!formData.empresa) {
+    if (!empresa) {
       newErrors.cargaDatos.empresa = 'Debe seleccionar una empresa';
     }
-    if (!formData.unidadNegocio && !ordenPublicidadData?.unidadNegocio) {
-      newErrors.cargaDatos.unidadNegocio = 'Debe seleccionar una unidad de negocio';
-    }
-    if (formData.unidadNegocio === 'Media' && !formData.categoriaNegocio && !ordenPublicidadData?.categoriaNegocio) {
-      newErrors.cargaDatos.categoriaNegocio = 'Debe seleccionar una categoría de negocio para Media';
-    }
-    if (!formData.conceptoGasto.trim()) {
+    if (!conceptoGasto.trim()) {
       newErrors.cargaDatos.conceptoGasto = 'Debe ingresar un concepto de gasto';
     }
 
-    for (const imp of formData.importes) {
+    for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
-      
+
       if (!imp.empresaPgm) {
         importeErrors.empresaPgm = 'Requerido';
       }
@@ -189,23 +295,13 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     }
 
     return newErrors;
-  }, [formData, ordenPublicidadData]);
+  }, [facturaEmitidaA, empresa, conceptoGasto, importes]);
 
   useEffect(() => {
     if (hasAttemptedSubmit) {
       setErrors(validateForm());
     }
-  }, [formData, hasAttemptedSubmit, validateForm]);
-
-  const handleInputChange = (field: keyof GastoImplementacion, value: string) => {
-    setFormData((prev) => {
-      const updates: Partial<GastoImplementacion> = { [field]: value };
-      if (field === 'unidadNegocio' && value !== 'Media') {
-        updates.categoriaNegocio = '';
-      }
-      return { ...prev, ...updates };
-    });
-  };
+  }, [facturaEmitidaA, empresa, conceptoGasto, importes, hasAttemptedSubmit, validateForm]);
 
   const addImporte = () => {
     const newImporte: BloqueImporte = {
@@ -217,24 +313,23 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       razonSocial: '',
       condicionPago: '30',
       neto: '',
-      estadoPgm: 'pendiente-pago',
+      estadoPgm: 'pendiente',
     };
-    setFormData((prev) => ({ ...prev, importes: [...prev.importes, newImporte] }));
+    setImportes((prev) => [...prev, newImporte]);
   };
 
   const removeImporte = (id: string) => {
-    if (formData.importes.length === 1) {
+    if (importes.length === 1) {
       toast.error('Debe haber al menos un bloque de importe');
       return;
     }
-    setFormData((prev) => ({ ...prev, importes: prev.importes.filter((imp) => imp.id !== id) }));
+    setImportes((prev) => prev.filter((imp) => imp.id !== id));
   };
 
   const updateImporte = (id: string, field: keyof BloqueImporte, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      importes: prev.importes.map((imp) => (imp.id === id ? { ...imp, [field]: value } : imp)),
-    }));
+    setImportes((prev) =>
+      prev.map((imp) => (imp.id === id ? { ...imp, [field]: value } : imp))
+    );
   };
 
   const hasErrors = (formErrors: FormErrors): boolean => {
@@ -255,17 +350,55 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
     setSaving(true);
     try {
-      let success: boolean;
+      const sharedFields = {
+        facturaEmitidaA,
+        empresa,
+        conceptoGasto,
+        observaciones,
+        ordenPublicidadId: formId,
+        itemOrdenPublicidadId: itemId,
+        rubroGasto: IMPLEMENTACION_DEFAULTS.rubroGasto,
+        subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+      };
+
       if (isExistingGasto) {
-        success = await updateGasto(formData.id, formData);
-        if (success) toast.success('Gasto actualizado correctamente');
-        else toast.error('Error al actualizar el gasto');
+        // Update existing gasto (only first one for now)
+        const firstImporte = importes[0];
+        if (firstImporte && selectedGastoId) {
+          const success = await updateGasto({
+            id: selectedGastoId,
+            proveedor: firstImporte.proveedor,
+            razonSocial: firstImporte.razonSocial,
+            fechaFactura: firstImporte.fechaComprobante,
+            neto: parseFloat(firstImporte.neto) || 0,
+            empresa,
+            conceptoGasto,
+            observaciones,
+            facturaEmitidaA,
+            sector: firstImporte.empresaPgm,
+            condicionPago: firstImporte.condicionPago,
+          });
+          if (success) {
+            toast.success('Gasto actualizado correctamente');
+            onClose();
+          } else {
+            toast.error('Error al actualizar el gasto');
+          }
+        }
       } else {
-        success = await addGasto(formData);
-        if (success) toast.success('Gasto creado correctamente');
-        else toast.error('Error al crear el gasto');
+        // Create new gastos (one per importe)
+        const inputs: CreateGastoImplementacionInput[] = importes.map((imp) =>
+          bloqueToCreateInput(imp, sharedFields)
+        );
+
+        const created = await addMultipleGastos(inputs);
+        if (created.length > 0) {
+          toast.success(`${created.length} gasto(s) creado(s) correctamente`);
+          onClose();
+        } else {
+          toast.error('Error al crear los gastos');
+        }
       }
-      if (success) onClose();
     } catch (err) {
       console.error('Error saving gasto:', err);
       toast.error('Error inesperado al guardar');
@@ -274,26 +407,43 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     }
   };
 
-  const ejecutado = formData.importes.reduce((sum, imp) => sum + (parseFloat(imp.neto) || 0), 0);
-  const asignado = parseFloat(formData.presupuesto) || 0;
-  const disponible = asignado - ejecutado;
-  const excedido = ejecutado > asignado;
+  const ejecutado = itemId ? getTotalEjecutadoByItem(itemId) : 0;
+  const nuevoEjecutado = importes.reduce((sum, imp) => sum + (parseFloat(imp.neto) || 0), 0);
+  const totalEjecutado = isNewGasto ? nuevoEjecutado : ejecutado;
+  const asignado = ordenPublicidadData?.presupuesto || 0;
+  const disponible = asignado - totalEjecutado;
+  const excedido = totalEjecutado > asignado;
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
 
+  const labelClass = cn(
+    'flex items-center gap-1 text-sm font-semibold',
+    isDark ? 'text-gray-400' : 'text-[#374151]'
+  );
+
+  const textareaClass = cn(
+    'min-h-[72px] resize-none transition-colors text-sm',
+    isDark
+      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600'
+      : 'bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]',
+    'disabled:opacity-60 disabled:cursor-not-allowed',
+    errors.cargaDatos.conceptoGasto && 'border-red-500'
+  );
+
   return (
     <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+      <div className="max-w-[620px] mx-auto px-6 sm:px-8 lg:px-0">
         <div className="space-y-6 sm:space-y-8">
+          {/* Header */}
           <div className="mb-6">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className={cn('text-xl sm:text-2xl font-bold mb-2', isDark ? 'text-white' : 'text-gray-900')}>
-                  {gastoId ? 'Editar Gasto' : 'Nuevo Formulario'}
+                <h1 className={cn('text-2xl font-bold mb-2', isDark ? 'text-white' : 'text-[#101828]')}>
+                  Informaci\u00f3n de campa\u00f1a
                 </h1>
-                <p className={cn('text-sm', isDark ? 'text-gray-500' : 'text-gray-600')}>
-                  {gastoId ? 'Edite la información del gasto de implementación' : 'Carga de gasto de implementación'}
+                <p className={cn('text-sm', isDark ? 'text-gray-500' : 'text-[#4a5565]')}>
+                  Detalle de la orden y registro de importes operativos
                 </p>
               </div>
               {isCerrado && (
@@ -305,67 +455,93 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             {isCerrado && (
               <div className="mt-4 p-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 flex items-center gap-2 text-red-700 dark:text-red-400">
                 <Lock className="w-4 h-4" />
-                <span className="text-sm">Este gasto está {formData.estadoOP} y no puede ser editado.</span>
+                <span className="text-sm">Este gasto est\u00e1 {estadoOP} y no puede ser editado.</span>
               </div>
             )}
           </div>
 
-          <CargaDatosSection
+          {/* Campaign Info Card */}
+          <CampaignInfoCard
             isDark={isDark}
-            isCerrado={isCerrado}
-            facturaEmitidaA={formData.facturaEmitidaA}
-            setFacturaEmitidaA={(v) => handleInputChange('facturaEmitidaA', v)}
-            empresa={formData.empresa}
-            setEmpresa={(v) => handleInputChange('empresa', v)}
-            unidadNegocio={formData.unidadNegocio}
-            setUnidadNegocio={(v) => handleInputChange('unidadNegocio', v)}
-            categoriaNegocio={formData.categoriaNegocio || ''}
-            setCategoriaNegocio={(v) => handleInputChange('categoriaNegocio', v)}
-            sector={formData.sector}
-            rubroGasto={formData.rubroGasto}
-            subRubro={formData.subRubro}
-            nombreCampana={formData.nombreCampana}
-            conceptoGasto={formData.conceptoGasto}
-            setConceptoGasto={(v) => handleInputChange('conceptoGasto', v)}
-            errors={errors.cargaDatos}
-            fromOrdenPublicidad={!!ordenPublicidadData}
+            ordenPublicidad={ordenPublicidadData?.ordenPublicidad || ''}
+            presupuesto={String(ordenPublicidadData?.presupuesto || 0)}
+            mesServicio={ordenPublicidadData?.mesServicio}
+            unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
+            categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
+            marca={ordenPublicidadData?.marca}
+            nombreCampana={ordenPublicidadData?.nombreCampana || ''}
+            rubroGasto={IMPLEMENTACION_DEFAULTS.rubroGasto}
+            subRubro={IMPLEMENTACION_DEFAULTS.subRubro}
+            formatCurrency={formatCurrency}
           />
 
+          {/* Carga de Importes Section */}
           <CargaImportesSection
             isDark={isDark}
             isCerrado={isCerrado}
-            ordenPublicidad={formData.ordenPublicidad}
-            presupuesto={formData.presupuesto}
-            importes={formData.importes}
-            programasDisponibles={formData.programasDisponibles}
-            formatCurrency={formatCurrency}
+            importes={importes}
+            programasDisponibles={ordenPublicidadData?.programasDisponibles || []}
             onUpdateImporte={updateImporte}
             onAddImporte={addImporte}
             onRemoveImporte={removeImporte}
+            onSave={handleGuardar}
+            onCancel={onClose}
             errors={errors.importes}
+            facturaEmitidaA={facturaEmitidaA}
+            setFacturaEmitidaA={setFacturaEmitidaA}
+            empresa={empresa}
+            setEmpresa={setEmpresa}
+            conceptoGasto={conceptoGasto}
+            setConceptoGasto={setConceptoGasto}
+            globalFieldsErrors={errors.cargaDatos}
+            // Approval workflow props
+            isNewGasto={isNewGasto}
+            gastoId={selectedGastoId}
+            estadoOP={estadoOP}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onMarkPaid={handleMarkPaid}
+            approvalLoading={approvalLoading}
           />
 
-          <ObservacionesSection
-            isDark={isDark}
-            isCerrado={isCerrado}
-            observaciones={formData.observaciones}
-            setObservaciones={(v) => handleInputChange('observaciones', v)}
-          />
+          {/* Observaciones */}
+          <div className="space-y-2">
+            <Label className={labelClass}>Observaciones</Label>
+            <Textarea
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+              maxLength={FIELD_MAX_LENGTHS.observaciones}
+              disabled={isCerrado}
+              placeholder="Escribe aqu\u00ed"
+              className={textareaClass}
+            />
+          </div>
 
+          {/* Resumen */}
           <ResumenPresupuestario
             isDark={isDark}
             asignado={asignado}
-            ejecutado={ejecutado}
+            ejecutado={totalEjecutado}
             disponible={disponible}
             excedido={excedido}
             formatCurrency={formatCurrency}
           />
 
+          {/* Footer Buttons */}
           <div className="flex justify-end gap-3 pt-8 pb-8">
-            <Button variant="ghost" onClick={onClose} className="text-gray-500" disabled={saving}>
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              className="text-[#0070ff] hover:text-[#0060dd]"
+              disabled={saving}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleGuardar} className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8" disabled={saving}>
+            <Button
+              onClick={handleGuardar}
+              className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8"
+              disabled={saving}
+            >
               {saving ? 'Guardando...' : 'Guardar'}
             </Button>
           </div>

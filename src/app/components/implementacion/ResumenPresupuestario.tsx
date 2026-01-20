@@ -1,3 +1,5 @@
+import { cn } from '@/app/components/ui/utils';
+
 interface ResumenPresupuestarioProps {
   isDark: boolean;
   asignado: number;
@@ -10,54 +12,80 @@ interface ResumenPresupuestarioProps {
 export function ResumenPresupuestario(props: ResumenPresupuestarioProps) {
   const { isDark, asignado, ejecutado, disponible, excedido, formatCurrency } = props;
 
-  const cardClass = `p-4 rounded-lg flex flex-col items-center justify-center text-center gap-1 ${
-    isDark ? 'bg-[#1e1e1e]' : 'bg-[#F3F5FF]'
-  }`;
-
-  const labelClass = `text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`;
-  const valueClass = `text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`;
-
   const calcPercentage = (value: number) => {
-    return asignado > 0 ? `${((value / asignado) * 100).toFixed(1)}%` : '0%';
+    return asignado > 0 ? `${Math.round((value / asignado) * 100)}%` : '0%';
   };
+
+  const cards = [
+    {
+      label: 'Asignado',
+      value: formatCurrency(asignado),
+      percentage: '100%',
+      percentageColor: 'text-[#00c950]',
+    },
+    {
+      label: 'Ejecutado',
+      value: formatCurrency(ejecutado),
+      percentage: calcPercentage(ejecutado),
+      percentageColor: excedido ? 'text-red-500' : 'text-[#f0b100]',
+    },
+    {
+      label: 'Disponible',
+      value: formatCurrency(Math.abs(disponible)),
+      percentage: calcPercentage(disponible),
+      percentageColor: excedido ? 'text-red-500' : 'text-[#2b7fff]',
+    },
+  ];
 
   return (
     <div
-      className={`p-6 rounded-lg border ${
-        isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
-      }`}
+      className={cn(
+        'p-6 rounded-[14px] border',
+        isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-[#e5e7eb]'
+      )}
     >
-      <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+      <h2
+        className={cn(
+          'text-xl font-medium mb-6',
+          isDark ? 'text-white' : 'text-[#101828]'
+        )}
+      >
         Resumen
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className={cardClass}>
-          <span className={labelClass}>Presupuesto Asignado</span>
-          <span className={valueClass}>{formatCurrency(asignado)}</span>
-          <span className="text-xs font-medium text-green-500">100%</span>
-        </div>
-
-        <div className={cardClass}>
-          <span className={labelClass}>Ejecutado</span>
-          <span className={valueClass}>{formatCurrency(ejecutado)}</span>
-          <span className={`text-xs font-medium ${excedido ? 'text-red-500' : 'text-blue-500'}`}>
-            {calcPercentage(ejecutado)}
-          </span>
-        </div>
-
-        <div className={cardClass}>
-          <span className={labelClass}>Disponible</span>
-          <span
-            className={`text-xl font-bold ${
-              excedido ? 'text-red-500' : isDark ? 'text-white' : 'text-gray-900'
-            }`}
-          >
-            {formatCurrency(Math.abs(disponible))}
-          </span>
-          <span className={`text-xs font-medium ${excedido ? 'text-red-500' : 'text-green-500'}`}>
-            {calcPercentage(disponible)}
-          </span>
+      <div className="flex justify-center">
+        <div className="grid grid-cols-3 gap-2.5 max-w-[508px]">
+          {cards.map((card, index) => (
+            <div
+              key={index}
+              className={cn(
+                'rounded-[10px] border px-4 py-4 flex flex-col items-center gap-1 min-w-[162px]',
+                isDark
+                  ? 'bg-[#1e1e1e] border-gray-800'
+                  : 'bg-[#f3f5ff] border-[#e5e7eb]'
+              )}
+            >
+              <span
+                className={cn(
+                  'text-xs font-normal text-center',
+                  isDark ? 'text-gray-400' : 'text-[#4a5565]'
+                )}
+              >
+                {card.label}
+              </span>
+              <span
+                className={cn(
+                  'text-lg font-bold text-center',
+                  isDark ? 'text-white' : 'text-[#101828]'
+                )}
+              >
+                {card.value}
+              </span>
+              <span className={cn('text-xs font-normal text-center', card.percentageColor)}>
+                {card.percentage}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

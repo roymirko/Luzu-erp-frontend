@@ -1,131 +1,40 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import * as implementacionService from '../services/implementacionService';
 import type {
-  GastoImplementacion as ServiceGasto,
-  ItemGastoImplementacion as ServiceItem,
+  GastoImplementacion,
   CreateGastoImplementacionInput,
-  CreateItemGastoInput,
+  UpdateGastoImplementacionInput,
+  EstadoGasto,
+  EstadoPago,
 } from '../types/implementacion';
 
-export type EstadoOP = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPGM = 'pendiente-pago' | 'pagado' | 'anulado';
-
-export interface BloqueImporte {
-  id: string;
-  programa: string;
-  empresaPgm: string;
-  fechaComprobante: string;
-  proveedor: string;
-  razonSocial: string;
-  condicionPago: string;
-  neto: string;
-  documentoAdjunto?: string;
-  estadoPgm: EstadoPGM;
-}
-
-export interface GastoImplementacion {
-  id: string;
-  estadoOP: EstadoOP;
-  fechaRegistro: string;
-  responsable: string;
-  unidadNegocio: string;
-  categoriaNegocio?: string;
-  ordenPublicidad: string;
-  presupuesto: string;
-  cantidadProgramas: number;
-  programasDisponibles: string[];
-  sector: string;
-  rubroGasto: string;
-  subRubro: string;
-  nombreCampana: string;
-  acuerdoPago: string;
-  facturaEmitidaA: string;
-  empresa: string;
-  conceptoGasto: string;
-  observaciones: string;
-  importes: BloqueImporte[];
-  idFormularioComercial?: string;
-  formItemId?: string;
-}
+// Re-export types for components
+export type { GastoImplementacion, CreateGastoImplementacionInput, EstadoGasto, EstadoPago };
 
 interface ImplementacionContextType {
   gastos: GastoImplementacion[];
   loading: boolean;
-  addGasto: (gasto: GastoImplementacion) => Promise<boolean>;
-  updateGasto: (id: string, updates: Partial<GastoImplementacion>) => Promise<boolean>;
+  // CRUD operations
+  addGasto: (input: CreateGastoImplementacionInput) => Promise<GastoImplementacion | null>;
+  addMultipleGastos: (inputs: CreateGastoImplementacionInput[]) => Promise<GastoImplementacion[]>;
+  updateGasto: (input: UpdateGastoImplementacionInput) => Promise<boolean>;
   deleteGasto: (id: string) => Promise<boolean>;
+  // Query operations
   getGastoById: (id: string) => GastoImplementacion | undefined;
-  getGastoByFormItemId: (formId: string, itemId: string) => GastoImplementacion | undefined;
+  getGastosByOrdenId: (ordenId: string) => GastoImplementacion[];
+  getGastosByItemOrdenId: (itemId: string) => GastoImplementacion[];
+  // Workflow operations
+  approveGasto: (id: string) => Promise<boolean>;
+  rejectGasto: (id: string) => Promise<boolean>;
+  markGastoAsPaid: (id: string) => Promise<boolean>;
+  // Refresh
   refetch: () => Promise<void>;
+  // Calculations
+  getTotalEjecutadoByOrden: (ordenId: string) => number;
+  getTotalEjecutadoByItem: (itemId: string) => number;
 }
 
 const ImplementacionContext = createContext<ImplementacionContextType | undefined>(undefined);
-
-function serviceItemToBloque(item: ServiceItem): BloqueImporte {
-  return {
-    id: item.id,
-    programa: '',
-    empresaPgm: item.empresaPgm,
-    fechaComprobante: item.fechaComprobante,
-    proveedor: item.proveedor,
-    razonSocial: item.razonSocial,
-    condicionPago: item.condicionPago,
-    neto: String(item.neto),
-    documentoAdjunto: item.adjuntos?.[0],
-    estadoPgm: item.estadoPago as EstadoPGM,
-  };
-}
-
-function serviceGastoToContext(gasto: ServiceGasto): GastoImplementacion {
-  return {
-    id: gasto.id,
-    estadoOP: gasto.estadoGasto as EstadoOP,
-    fechaRegistro: gasto.fechaRegistro,
-    responsable: '',
-    unidadNegocio: '',
-    categoriaNegocio: '',
-    ordenPublicidad: '',
-    presupuesto: '0',
-    cantidadProgramas: 0,
-    programasDisponibles: [],
-    sector: 'Implementación',
-    rubroGasto: 'Gasto de venta',
-    subRubro: '',
-    nombreCampana: '',
-    acuerdoPago: '',
-    facturaEmitidaA: gasto.facturaEmitidaA,
-    empresa: gasto.empresa,
-    conceptoGasto: gasto.conceptoGasto,
-    observaciones: gasto.observaciones,
-    importes: gasto.items.map(serviceItemToBloque),
-    idFormularioComercial: gasto.idFormularioComercial,
-    formItemId: gasto.itemOrdenPublicidadId,
-  };
-}
-
-function contextGastoToCreateInput(gasto: GastoImplementacion): CreateGastoImplementacionInput {
-  return {
-    fechaRegistro: gasto.fechaRegistro || new Date().toISOString().split('T')[0],
-    idFormularioComercial: gasto.idFormularioComercial,
-    itemOrdenPublicidadId: gasto.formItemId,
-    facturaEmitidaA: gasto.facturaEmitidaA,
-    empresa: gasto.empresa,
-    conceptoGasto: gasto.conceptoGasto,
-    observaciones: gasto.observaciones,
-    items: gasto.importes.map(bloqueToCreateItemInput),
-  };
-}
-
-function bloqueToCreateItemInput(bloque: BloqueImporte): CreateItemGastoInput {
-  return {
-    empresaPgm: bloque.empresaPgm,
-    fechaComprobante: bloque.fechaComprobante,
-    proveedor: bloque.proveedor,
-    razonSocial: bloque.razonSocial,
-    condicionPago: bloque.condicionPago,
-    neto: parseFloat(bloque.neto) || 0,
-  };
-}
 
 export function ImplementacionProvider({ children }: { children: ReactNode }) {
   const [gastos, setGastos] = useState<GastoImplementacion[]>([]);
@@ -139,7 +48,7 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching gastos:', result.error);
         return;
       }
-      setGastos(result.data.map(serviceGastoToContext));
+      setGastos(result.data);
     } catch (err) {
       console.error('Error in fetchGastos:', err);
     } finally {
@@ -151,29 +60,33 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
     fetchGastos();
   }, [fetchGastos]);
 
-  const addGasto = async (gasto: GastoImplementacion): Promise<boolean> => {
-    const input = contextGastoToCreateInput(gasto);
+  const addGasto = async (input: CreateGastoImplementacionInput): Promise<GastoImplementacion | null> => {
     const result = await implementacionService.create(input);
 
     if (result.error || !result.data) {
       console.error('Error adding gasto:', result.error);
-      return false;
+      return null;
     }
 
     await fetchGastos();
-    return true;
+    return result.data;
   };
 
-  const updateGasto = async (id: string, updates: Partial<GastoImplementacion>): Promise<boolean> => {
-    const result = await implementacionService.update({
-      id,
-      facturaEmitidaA: updates.facturaEmitidaA,
-      empresa: updates.empresa,
-      conceptoGasto: updates.conceptoGasto,
-      observaciones: updates.observaciones,
-      estadoGasto: updates.estadoOP,
-      items: updates.importes?.map(bloqueToCreateItemInput),
-    });
+  const addMultipleGastos = async (inputs: CreateGastoImplementacionInput[]): Promise<GastoImplementacion[]> => {
+    if (inputs.length === 0) return [];
+
+    const result = await implementacionService.createMultiple(inputs);
+
+    if (result.error) {
+      console.error('Error adding multiple gastos:', result.error);
+    }
+
+    await fetchGastos();
+    return result.data;
+  };
+
+  const updateGasto = async (input: UpdateGastoImplementacionInput): Promise<boolean> => {
+    const result = await implementacionService.update(input);
 
     if (result.error) {
       console.error('Error updating gasto:', result.error);
@@ -196,12 +109,62 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  const getGastoById = (id: string) => {
+  const getGastoById = (id: string): GastoImplementacion | undefined => {
     return gastos.find((g) => g.id === id);
   };
 
-  const getGastoByFormItemId = (formId: string, itemId: string) => {
-    return gastos.find((g) => g.idFormularioComercial === formId && g.formItemId === itemId);
+  const getGastosByOrdenId = (ordenId: string): GastoImplementacion[] => {
+    return gastos.filter((g) => g.ordenPublicidadId === ordenId);
+  };
+
+  const getGastosByItemOrdenId = (itemId: string): GastoImplementacion[] => {
+    return gastos.filter((g) => g.itemOrdenPublicidadId === itemId);
+  };
+
+  const approveGastoFn = async (id: string): Promise<boolean> => {
+    const result = await implementacionService.approveGasto(id);
+
+    if (!result.success) {
+      console.error('Error approving gasto:', result.error);
+      return false;
+    }
+
+    await fetchGastos();
+    return true;
+  };
+
+  const rejectGastoFn = async (id: string): Promise<boolean> => {
+    const result = await implementacionService.rejectGasto(id);
+
+    if (!result.success) {
+      console.error('Error rejecting gasto:', result.error);
+      return false;
+    }
+
+    await fetchGastos();
+    return true;
+  };
+
+  const markGastoAsPaidFn = async (id: string): Promise<boolean> => {
+    const result = await implementacionService.markGastoAsPaid(id);
+
+    if (!result.success) {
+      console.error('Error marking gasto as paid:', result.error);
+      return false;
+    }
+
+    await fetchGastos();
+    return true;
+  };
+
+  const getTotalEjecutadoByOrden = (ordenId: string): number => {
+    const ordenGastos = getGastosByOrdenId(ordenId);
+    return implementacionService.calculateTotalEjecutado(ordenGastos);
+  };
+
+  const getTotalEjecutadoByItem = (itemId: string): number => {
+    const itemGastos = getGastosByItemOrdenId(itemId);
+    return implementacionService.calculateTotalEjecutado(itemGastos);
   };
 
   return (
@@ -210,11 +173,18 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
         gastos,
         loading,
         addGasto,
+        addMultipleGastos,
         updateGasto,
         deleteGasto,
         getGastoById,
-        getGastoByFormItemId,
+        getGastosByOrdenId,
+        getGastosByItemOrdenId,
+        approveGasto: approveGastoFn,
+        rejectGasto: rejectGastoFn,
+        markGastoAsPaid: markGastoAsPaidFn,
         refetch: fetchGastos,
+        getTotalEjecutadoByOrden,
+        getTotalEjecutadoByItem,
       }}
     >
       {children}

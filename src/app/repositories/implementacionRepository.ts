@@ -1,20 +1,20 @@
 import { supabase } from '../services/supabase';
 import type {
-  GastoImplementacionRow,
-  GastoImplementacionFullRow,
-  GastoImplementacionWithItems,
-  ItemGastoImplementacionRow,
-  GastoImplementacionInsert,
-  GastoImplementacionUpdate,
-  ItemGastoImplementacionInsert,
+  GastoRow,
+  GastoInsert,
+  GastoUpdate,
+  ImplementacionGastoRow,
+  ImplementacionGastoInsert,
+  ImplementacionGastoUpdate,
+  ImplementacionGastoFullRow,
   RepositoryResult,
   RepositoryListResult,
   RepositoryError,
 } from './types';
 
-const TABLE_NAME = 'gastos_implementacion';
-const VIEW_NAME = 'gastos_implementacion_full';
-const ITEMS_TABLE_NAME = 'items_gasto_implementacion';
+const GASTOS_TABLE = 'gastos';
+const CONTEXT_TABLE = 'implementacion_gastos';
+const VIEW_NAME = 'implementacion_gastos_full';
 
 function mapSupabaseError(error: { code?: string; message: string; details?: string }): RepositoryError {
   return {
@@ -24,142 +24,180 @@ function mapSupabaseError(error: { code?: string; message: string; details?: str
   };
 }
 
-export async function findAll(): Promise<RepositoryListResult<GastoImplementacionWithItems>> {
-  const { data: gastos, error: gastosError } = await supabase
+/**
+ * Obtiene todos los gastos de implementación (desde la vista)
+ */
+export async function findAll(): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
+  const { data, error } = await supabase
     .from(VIEW_NAME)
     .select('*')
-    .order('fecha_creacion', { ascending: false });
+    .order('created_at', { ascending: false });
 
-  if (gastosError) {
-    return { data: [], error: mapSupabaseError(gastosError) };
+  if (error) {
+    return { data: [], error: mapSupabaseError(error) };
   }
 
-  const gastoIds = gastos.map(g => g.id);
-  if (gastoIds.length === 0) {
-    return { data: [], error: null };
-  }
-
-  const { data: items, error: itemsError } = await supabase
-    .from(ITEMS_TABLE_NAME)
-    .select('*')
-    .in('gasto_id', gastoIds);
-
-  if (itemsError) {
-    return { data: [], error: mapSupabaseError(itemsError) };
-  }
-
-  const itemsByGastoId = new Map<string, ItemGastoImplementacionRow[]>();
-  for (const item of items) {
-    const existing = itemsByGastoId.get(item.gasto_id) || [];
-    existing.push(item as ItemGastoImplementacionRow);
-    itemsByGastoId.set(item.gasto_id, existing);
-  }
-
-  const result: GastoImplementacionWithItems[] = gastos.map(g => ({
-    ...g as GastoImplementacionFullRow,
-    items_gasto_implementacion: itemsByGastoId.get(g.id) || [],
-  }));
-
-  return { data: result, error: null };
+  return { data: data as ImplementacionGastoFullRow[], error: null };
 }
 
-export async function findById(id: string): Promise<RepositoryResult<GastoImplementacionWithItems>> {
-  const { data: gasto, error: gastoError } = await supabase
+/**
+ * Obtiene un gasto por ID (desde la vista)
+ */
+export async function findById(id: string): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+  const { data, error } = await supabase
     .from(VIEW_NAME)
     .select('*')
     .eq('id', id)
     .single();
 
-  if (gastoError) {
-    return { data: null, error: mapSupabaseError(gastoError) };
+  if (error) {
+    return { data: null, error: mapSupabaseError(error) };
   }
 
-  const { data: items, error: itemsError } = await supabase
-    .from(ITEMS_TABLE_NAME)
-    .select('*')
-    .eq('gasto_id', id);
-
-  if (itemsError) {
-    return { data: null, error: mapSupabaseError(itemsError) };
-  }
-
-  return {
-    data: {
-      ...gasto as GastoImplementacionFullRow,
-      items_gasto_implementacion: items as ItemGastoImplementacionRow[],
-    },
-    error: null,
-  };
+  return { data: data as ImplementacionGastoFullRow, error: null };
 }
 
-export async function findByFormItemId(
-  formId: string,
-  itemId: string
-): Promise<RepositoryResult<GastoImplementacionWithItems>> {
-  const { data: gasto, error: gastoError } = await supabase
+/**
+ * Obtiene todos los gastos de una orden de publicidad
+ */
+export async function findByOrdenId(ordenId: string): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
+  const { data, error } = await supabase
     .from(VIEW_NAME)
     .select('*')
-    .eq('id_formulario_comercial', formId)
-    .eq('item_orden_publicidad_id', itemId)
-    .single();
+    .eq('orden_publicidad_id', ordenId)
+    .order('created_at', { ascending: false });
 
-  if (gastoError) {
-    if (gastoError.code === 'PGRST116') {
-      return { data: null, error: null };
-    }
-    return { data: null, error: mapSupabaseError(gastoError) };
+  if (error) {
+    return { data: [], error: mapSupabaseError(error) };
   }
 
-  const { data: items, error: itemsError } = await supabase
-    .from(ITEMS_TABLE_NAME)
-    .select('*')
-    .eq('gasto_id', gasto.id);
-
-  if (itemsError) {
-    return { data: null, error: mapSupabaseError(itemsError) };
-  }
-
-  return {
-    data: {
-      ...gasto as GastoImplementacionFullRow,
-      items_gasto_implementacion: items as ItemGastoImplementacionRow[],
-    },
-    error: null,
-  };
+  return { data: data as ImplementacionGastoFullRow[], error: null };
 }
 
-export async function create(gasto: GastoImplementacionInsert): Promise<RepositoryResult<GastoImplementacionRow>> {
+/**
+ * Obtiene todos los gastos de un item de orden de publicidad
+ */
+export async function findByItemOrdenId(itemId: string): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
   const { data, error } = await supabase
-    .from(TABLE_NAME)
+    .from(VIEW_NAME)
+    .select('*')
+    .eq('item_orden_publicidad_id', itemId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return { data: [], error: mapSupabaseError(error) };
+  }
+
+  return { data: data as ImplementacionGastoFullRow[], error: null };
+}
+
+/**
+ * Crea un nuevo gasto de implementación
+ * Inserta en gastos (core) y luego en implementacion_gastos (contexto)
+ */
+export async function create(
+  gasto: GastoInsert,
+  context: Omit<ImplementacionGastoInsert, 'gasto_id'>
+): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+  // 1. Insert into gastos (core)
+  const { data: gastoData, error: gastoError } = await supabase
+    .from(GASTOS_TABLE)
     .insert(gasto)
     .select()
     .single();
 
-  if (error) {
-    return { data: null, error: mapSupabaseError(error) };
+  if (gastoError || !gastoData) {
+    return { data: null, error: mapSupabaseError(gastoError || { message: 'Error al crear gasto' }) };
   }
 
-  return { data: data as GastoImplementacionRow, error: null };
-}
+  // 2. Insert into implementacion_gastos (context)
+  const contextInsert: ImplementacionGastoInsert = {
+    ...context,
+    gasto_id: gastoData.id,
+  };
 
-export async function update(id: string, gasto: GastoImplementacionUpdate): Promise<RepositoryResult<GastoImplementacionRow>> {
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .update({ ...gasto, fecha_actualizacion: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
+  const { error: contextError } = await supabase
+    .from(CONTEXT_TABLE)
+    .insert(contextInsert);
 
-  if (error) {
-    return { data: null, error: mapSupabaseError(error) };
+  if (contextError) {
+    // Rollback: delete the gasto we just created
+    await supabase.from(GASTOS_TABLE).delete().eq('id', gastoData.id);
+    return { data: null, error: mapSupabaseError(contextError) };
   }
 
-  return { data: data as GastoImplementacionRow, error: null };
+  // 3. Return full record from view
+  return findById(gastoData.id);
 }
 
+/**
+ * Crea múltiples gastos de implementación
+ */
+export async function createMultiple(
+  items: Array<{ gasto: GastoInsert; context: Omit<ImplementacionGastoInsert, 'gasto_id'> }>
+): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
+  const results: ImplementacionGastoFullRow[] = [];
+  const errors: RepositoryError[] = [];
+
+  for (const item of items) {
+    const result = await create(item.gasto, item.context);
+    if (result.error) {
+      errors.push(result.error);
+    } else if (result.data) {
+      results.push(result.data);
+    }
+  }
+
+  if (errors.length > 0) {
+    return { data: results, error: errors[0] };
+  }
+
+  return { data: results, error: null };
+}
+
+/**
+ * Actualiza un gasto de implementación
+ */
+export async function update(
+  id: string,
+  gastoUpdate?: GastoUpdate,
+  contextUpdate?: ImplementacionGastoUpdate
+): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+  // 1. Update gastos (core) if provided
+  if (gastoUpdate && Object.keys(gastoUpdate).length > 0) {
+    const { error: gastoError } = await supabase
+      .from(GASTOS_TABLE)
+      .update({ ...gastoUpdate, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (gastoError) {
+      return { data: null, error: mapSupabaseError(gastoError) };
+    }
+  }
+
+  // 2. Update implementacion_gastos (context) if provided
+  if (contextUpdate && Object.keys(contextUpdate).length > 0) {
+    const { error: contextError } = await supabase
+      .from(CONTEXT_TABLE)
+      .update(contextUpdate)
+      .eq('gasto_id', id);
+
+    if (contextError) {
+      return { data: null, error: mapSupabaseError(contextError) };
+    }
+  }
+
+  // 3. Return updated record from view
+  return findById(id);
+}
+
+/**
+ * Elimina un gasto de implementación
+ * El CASCADE en implementacion_gastos eliminará automáticamente el contexto
+ */
 export async function remove(id: string): Promise<RepositoryResult<null>> {
   const { error } = await supabase
-    .from(TABLE_NAME)
+    .from(GASTOS_TABLE)
     .delete()
     .eq('id', id);
 
@@ -170,32 +208,16 @@ export async function remove(id: string): Promise<RepositoryResult<null>> {
   return { data: null, error: null };
 }
 
-export async function createItems(items: ItemGastoImplementacionInsert[]): Promise<RepositoryListResult<ItemGastoImplementacionRow>> {
-  if (items.length === 0) {
-    return { data: [], error: null };
-  }
-
-  const { data, error } = await supabase
-    .from(ITEMS_TABLE_NAME)
-    .insert(items)
-    .select();
-
-  if (error) {
-    return { data: [], error: mapSupabaseError(error) };
-  }
-
-  return { data: data as ItemGastoImplementacionRow[], error: null };
+/**
+ * Actualiza el estado de un gasto (pendiente, activo, cerrado, anulado)
+ */
+export async function updateEstado(id: string, estado: string): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+  return update(id, { estado });
 }
 
-export async function deleteItemsByGastoId(gastoId: string): Promise<RepositoryResult<null>> {
-  const { error } = await supabase
-    .from(ITEMS_TABLE_NAME)
-    .delete()
-    .eq('gasto_id', gastoId);
-
-  if (error) {
-    return { data: null, error: mapSupabaseError(error) };
-  }
-
-  return { data: null, error: null };
+/**
+ * Actualiza el estado de pago de un gasto
+ */
+export async function updateEstadoPago(id: string, estadoPago: string): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+  return update(id, { estado_pago: estadoPago });
 }

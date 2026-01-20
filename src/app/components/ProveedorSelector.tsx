@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Search, Plus } from 'lucide-react';
 import { DialogNuevoProveedor } from './DialogNuevoProveedor';
@@ -68,34 +67,10 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
 
   return (
     <div className={className}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label className="flex items-center gap-1">Proveedor</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              value={localProveedor}
-              onChange={(e) => {
-                const v = e.target.value;
-                setLocalProveedor(v);
-              }}
-              onBlur={(e) => selectByEmpresa(e.target.value)}
-              placeholder="Buscar proveedor (empresa)"
-              list="proveedores-empresas"
-              disabled={disabled}
-              className="pl-10"
-            />
-            <datalist id="proveedores-empresas">
-              {[...new Set(proveedores.map(p => p.empresa || p.razonSocial))].map((empresa) => (
-                <option key={empresa} value={empresa} />
-              ))}
-            </datalist>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="flex items-center gap-1">Razon Social</Label>
-          <div className="relative">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left half: Razón Social + Plus button */}
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               value={localRazonSocial}
@@ -104,10 +79,10 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
                 setLocalRazonSocial(v);
               }}
               onBlur={(e) => selectByRazonSocial(e.target.value)}
-              placeholder="Buscar razon social"
+              placeholder="Buscar por nombre o cuit"
               list="proveedores-razon-social"
               disabled={disabled}
-              className="pl-10"
+              className="pl-10 h-10 bg-white"
             />
             <datalist id="proveedores-razon-social">
               {proveedores.map((p) => (
@@ -115,24 +90,47 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
               ))}
             </datalist>
           </div>
+          {allowCreate && (
+            <Button
+              onClick={() => setShowCreate(true)}
+              size="icon"
+              className="h-10 w-10 bg-[#0070ff] hover:bg-[#0060dd] text-white rounded-lg shrink-0"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
+
+        {/* Right half: Proveedor */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            value={localProveedor}
+            onChange={(e) => {
+              const v = e.target.value;
+              setLocalProveedor(v);
+            }}
+            onBlur={(e) => selectByEmpresa(e.target.value)}
+            placeholder="Buscar proveedor"
+            list="proveedores-empresas"
+            disabled={disabled}
+            className="pl-10 h-10 bg-white"
+          />
+          <datalist id="proveedores-empresas">
+            {[...new Set(proveedores.map(p => p.empresa || p.razonSocial))].map((empresa) => (
+              <option key={empresa} value={empresa} />
+            ))}
+          </datalist>
         </div>
       </div>
 
-      {allowCreate && (
-        <div className="mt-3">
-          <Button onClick={() => setShowCreate(true)} size="icon" className="bg-[#0070ff] hover:bg-[#0060dd] text-white">
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+      {showCreate && (
+        <DialogNuevoProveedor
+          open={showCreate}
+          onOpenChange={setShowCreate}
+          onProveedorCreado={(created) => onCreatedProveedor(created)}
+        />
       )}
-
-       {showCreate && (
-         <DialogNuevoProveedor
-           open={showCreate}
-           onOpenChange={setShowCreate}
-           onProveedorCreado={(created) => onCreatedProveedor(created)}
-         />
-       )}
     </div>
   );
 }

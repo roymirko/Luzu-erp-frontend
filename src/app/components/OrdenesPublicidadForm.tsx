@@ -31,6 +31,7 @@ import { ProgramasList } from './comercial/ProgramasList';
 
 interface OrdenesPublicidadFormProps {
   onFormularioGuardado?: () => void;
+  onCancel?: () => void;
   formularioId?: string | null;
 }
 
@@ -52,7 +53,7 @@ const PROGRAMAS_LUZU = [
 const MAX_CHARS_CAMPANA = 100;
 const MAX_CHARS_OBSERVACIONES = 500;
 
-export function OrdenesPublicidadForm({ onFormularioGuardado, formularioId }: OrdenesPublicidadFormProps = {}) {
+export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formularioId }: OrdenesPublicidadFormProps = {}) {
   const { isDark } = useTheme();
   const { addFormulario, formularios, updateFormulario } = useFormularios();
   const { fieldsConfig } = useFormFields();
@@ -656,6 +657,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, formularioId }: Or
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pb-6">
             <Button
               variant="outline"
+              onClick={onCancel}
               className={isDark
                 ? 'border-gray-700 text-gray-400 hover:bg-[#1e1e1e] hover:text-white'
                 : 'border-gray-300 text-gray-700 hover:bg-gray-50'

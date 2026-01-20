@@ -1,65 +1,87 @@
 export type EstadoGasto = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPago = 'pendiente-pago' | 'pagado' | 'anulado';
+export type EstadoPago = 'pendiente' | 'pagado' | 'anulado';
 
+/**
+ * Domain model for a gasto de implementacion
+ * Flattened structure combining gastos (core) + implementacion_gastos (context)
+ */
 export interface GastoImplementacion {
+  // Core gasto fields (from gastos table)
   id: string;
-  fechaRegistro: string;
-  estadoGasto: EstadoGasto;
-  idFormularioComercial?: string;
-  itemOrdenPublicidadId?: string;
-  facturaEmitidaA: string;
+  proveedor: string;
+  razonSocial: string;
+  tipoFactura?: string;
+  numeroFactura?: string;
+  fechaFactura?: string;
+  moneda: string;
+  neto: number;
+  iva: number;
+  importeTotal: number;
   empresa: string;
   conceptoGasto: string;
   observaciones: string;
-  items: ItemGastoImplementacion[];
+  estado: EstadoGasto;
+  estadoPago: EstadoPago;
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;
+  // Implementacion context fields (from implementacion_gastos table)
+  ordenPublicidadId?: string;
+  itemOrdenPublicidadId?: string;
+  facturaEmitidaA: string;
+  sector?: string;
+  rubroGasto?: string;
+  subRubro?: string;
+  condicionPago?: string;
+  fechaPago?: string;
+  adjuntos?: string[];
+  // Joined fields from ordenes_publicidad
   ordenPublicidad?: string;
   responsable?: string;
   unidadNegocio?: string;
   categoriaNegocio?: string;
   nombreCampana?: string;
+  marca?: string;
+  mesServicio?: string;
+  acuerdoPago?: string;
 }
 
-export interface ItemGastoImplementacion {
-  id: string;
-  empresaPgm: string;
-  fechaComprobante: string;
-  proveedor: string;
-  razonSocial: string;
-  condicionPago: string;
-  neto: number;
-  iva: number;
-  importeTotal: number;
-  estadoPago: EstadoPago;
-  adjuntos?: string[];
-}
-
+/**
+ * Input for creating a new gasto de implementacion
+ */
 export interface CreateGastoImplementacionInput {
-  fechaRegistro: string;
-  idFormularioComercial?: string;
-  itemOrdenPublicidadId?: string;
-  facturaEmitidaA: string;
+  // Core gasto fields
+  proveedor: string;
+  razonSocial?: string;
+  tipoFactura?: string;
+  numeroFactura?: string;
+  fechaFactura?: string;
+  moneda?: string;
+  neto: number;
+  iva?: number;
   empresa: string;
   conceptoGasto: string;
   observaciones?: string;
-  items: CreateItemGastoInput[];
   createdBy?: string;
+  // Implementacion context fields
+  ordenPublicidadId?: string;
+  itemOrdenPublicidadId?: string;
+  facturaEmitidaA: string;
+  sector?: string;
+  rubroGasto?: string;
+  subRubro?: string;
+  condicionPago?: string;
+  fechaPago?: string;
+  adjuntos?: string[];
 }
 
-export interface CreateItemGastoInput {
-  empresaPgm: string;
-  fechaComprobante: string;
-  proveedor: string;
-  razonSocial: string;
-  condicionPago: string;
-  neto: number;
-}
-
+/**
+ * Input for updating a gasto de implementacion
+ */
 export interface UpdateGastoImplementacionInput extends Partial<CreateGastoImplementacionInput> {
   id: string;
-  estadoGasto?: EstadoGasto;
+  estado?: EstadoGasto;
+  estadoPago?: EstadoPago;
 }
 
 export interface GastoValidationError {
@@ -70,15 +92,4 @@ export interface GastoValidationError {
 export interface GastoValidationResult {
   valid: boolean;
   errors: GastoValidationError[];
-}
-
-export interface GastoConOrdenPublicidad extends GastoImplementacion {
-  ordenPublicidad: string;
-  unidadNegocio: string;
-  categoriaNegocio: string;
-  nombreCampana: string;
-  acuerdoPago: string;
-  presupuesto: number;
-  programasDisponibles: string[];
-  responsable: string;
 }

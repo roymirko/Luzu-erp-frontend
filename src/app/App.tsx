@@ -17,6 +17,9 @@ import { ProfilePanel } from './components/ProfilePanel';
 import { TablaFormularios } from './components/TablaFormularios';
 import { Implementaciones } from './components/Implementaciones';
 import { FormularioImplementacion } from './components/FormularioImplementacion';
+import { Programacion } from './components/Programacion';
+import { FormularioProgramacion } from './components/programacion/FormularioProgramacion';
+import { ProgramacionProvider } from './contexts/ProgramacionContext';
 import { Avatar, AvatarFallback } from './components/ui/avatar';
 import { Button } from './components/ui/button';
 import { Toaster } from 'sonner';
@@ -25,7 +28,7 @@ import imgLogoLuzuSmall from "../assets/loguito.png";
 import imgContainer from "../assets/Container.png";
 
 // Luzu ERP - Sistema de gestión empresarial
-type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implementacion' | 'gasto-implementacion' | 'editar-gasto-implementacion' | 'programacion' | 'configuraciones' | 'editar-formulario';
+type View = 'dashboard' | 'formulario' | 'formbuilder' | 'comercial' | 'implementacion' | 'gasto-implementacion' | 'editar-gasto-implementacion' | 'programacion' | 'nuevo-gasto-programacion' | 'editar-gasto-programacion' | 'configuraciones' | 'editar-formulario';
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -42,6 +45,7 @@ function AppContent() {
   const [editingFormularioId, setEditingFormularioId] = useState<string | null>(null);
   const [editingGastoId, setEditingGastoId] = useState<string | null>(null);
   const [selectedImplementation, setSelectedImplementation] = useState<{ formId: string; itemId?: string } | null>(null);
+  const [editingGastoProgramacionId, setEditingGastoProgramacionId] = useState<string | null>(null);
   const [profilePanelOpen, setProfilePanelOpen] = useState(false);
 
   // Control de tema basado en isDark
@@ -130,6 +134,10 @@ function AppContent() {
         return ['Inicio', 'Implementación', 'Editar Gasto'];
       case 'programacion':
         return ['Inicio', 'Dir. de Programación'];
+      case 'nuevo-gasto-programacion':
+        return ['Inicio', 'Dir. de Programación', 'Nuevo Gasto'];
+      case 'editar-gasto-programacion':
+        return ['Inicio', 'Dir. de Programación', 'Editar Gasto'];
       case 'configuraciones':
         return ['Inicio', 'Configuraciones'];
       default:
@@ -155,6 +163,10 @@ function AppContent() {
         return [null, 'implementacion', null];
       case 'programacion':
         return [null, null];
+      case 'nuevo-gasto-programacion':
+        return [null, 'programacion', null];
+      case 'editar-gasto-programacion':
+        return [null, 'programacion', null];
       case 'configuraciones':
         return [null, null];
       default:
@@ -173,9 +185,9 @@ function AppContent() {
       case 'dashboard':
         return <Dashboard />;
       case 'formulario':
-        return <OrdenesPublicidadForm onFormularioGuardado={() => setActiveView('comercial')} />;
+        return <OrdenesPublicidadForm onFormularioGuardado={() => setActiveView('comercial')} onCancel={() => setActiveView('comercial')} />;
       case 'editar-formulario':
-        return <OrdenesPublicidadForm onFormularioGuardado={() => setActiveView('comercial')} formularioId={editingFormularioId} />;
+        return <OrdenesPublicidadForm onFormularioGuardado={() => setActiveView('comercial')} onCancel={() => setActiveView('comercial')} formularioId={editingFormularioId} />;
       case 'formbuilder':
         return <FormBuilder />;
       case 'comercial':
@@ -232,13 +244,26 @@ function AppContent() {
         );
       case 'programacion':
         return (
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center">
-              <TrendingUp className="h-16 w-16 text-gray-700 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-white mb-2">Dirección de Programación</h3>
-              <p className="text-gray-500">Módulo en desarrollo</p>
-            </div>
-          </div>
+          <Programacion
+            onOpen={(gastoId) => {
+              setEditingGastoProgramacionId(gastoId);
+              setActiveView('editar-gasto-programacion');
+            }}
+            onNew={() => setActiveView('nuevo-gasto-programacion')}
+          />
+        );
+      case 'nuevo-gasto-programacion':
+        return (
+          <FormularioProgramacion
+            onClose={() => setActiveView('programacion')}
+          />
+        );
+      case 'editar-gasto-programacion':
+        return (
+          <FormularioProgramacion
+            gastoId={editingGastoProgramacionId || undefined}
+            onClose={() => setActiveView('programacion')}
+          />
         );
       case 'configuraciones':
         return <Configuraciones />;
@@ -425,8 +450,10 @@ export default function App() {
           <FormulariosProvider>
             <FormFieldsProvider>
               <ImplementacionProvider>
-                <AppContent />
-                <Toaster richColors position="top-right" />
+                <ProgramacionProvider>
+                  <AppContent />
+                  <Toaster richColors position="top-right" />
+                </ProgramacionProvider>
               </ImplementacionProvider>
             </FormFieldsProvider>
           </FormulariosProvider>
