@@ -206,6 +206,7 @@ export interface ProgramacionGastoRow {
   monto: number | null;
   valor_imponible: number | null;
   bonificacion: number | null;
+  factura_emitida_a: string | null;
 }
 
 export type ProgramacionGastoInsert = Omit<ProgramacionGastoRow, 'id'>;
@@ -243,6 +244,8 @@ export interface ProgramacionGastoFullRow {
   ejecutivo: string | null;
   sub_rubro_empresa: string | null;
   detalle_campana: string | null;
+  formulario_estado: string | null;
+  formulario_created_at: string | null;
   // Context fields
   programacion_gasto_id: string;
   categoria: string | null;
@@ -251,6 +254,7 @@ export interface ProgramacionGastoFullRow {
   monto: number | null;
   valor_imponible: number | null;
   bonificacion: number | null;
+  factura_emitida_a: string | null;
 }
 
 // Tabla implementacion_gastos (contexto implementación)

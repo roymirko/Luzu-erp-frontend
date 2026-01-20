@@ -78,6 +78,7 @@ CREATE TABLE programacion_gastos (
   monto DECIMAL(15,2),
   valor_imponible DECIMAL(15,2),
   bonificacion DECIMAL(15,2) DEFAULT 0,
+  factura_emitida_a TEXT,
   UNIQUE(gasto_id)
 );
 
@@ -151,6 +152,8 @@ SELECT
   pf.ejecutivo,
   pf.sub_rubro_empresa,
   pf.detalle_campana,
+  pf.estado AS formulario_estado,
+  pf.created_at AS formulario_created_at,
   -- Context fields
   pg.id AS programacion_gasto_id,
   pg.categoria,
@@ -158,7 +161,8 @@ SELECT
   pg.cliente,
   pg.monto,
   pg.valor_imponible,
-  pg.bonificacion
+  pg.bonificacion,
+  pg.factura_emitida_a
 FROM gastos g
 JOIN programacion_gastos pg ON g.id = pg.gasto_id
 JOIN programacion_formularios pf ON pg.formulario_id = pf.id;

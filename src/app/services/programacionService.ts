@@ -52,6 +52,8 @@ function mapFromDB(row: ProgramacionGastoFullRow): GastoProgramacion {
     ejecutivo: row.ejecutivo || '',
     subRubroEmpresa: row.sub_rubro_empresa || '',
     detalleCampana: row.detalle_campana || undefined,
+    formularioEstado: row.formulario_estado || undefined,
+    formularioCreatedAt: row.formulario_created_at ? new Date(row.formulario_created_at) : undefined,
     // Context
     programacionGastoId: row.programacion_gasto_id,
     categoria: row.categoria || '',
@@ -60,6 +62,7 @@ function mapFromDB(row: ProgramacionGastoFullRow): GastoProgramacion {
     monto: row.monto || 0,
     valorImponible: row.valor_imponible || 0,
     bonificacion: row.bonificacion || 0,
+    facturaEmitidaA: row.factura_emitida_a || undefined,
   };
 }
 
@@ -113,6 +116,7 @@ function mapToDBInserts(input: CreateGastoProgramacionInput): {
       monto: input.monto || null,
       valor_imponible: input.valorImponible || null,
       bonificacion: input.bonificacion || 0,
+      factura_emitida_a: input.facturaEmitidaA || null,
     },
   };
 }
@@ -248,6 +252,7 @@ export async function update(input: UpdateGastoProgramacionInput): Promise<{ dat
   if (fields.monto !== undefined) contextUpdate.monto = fields.monto;
   if (fields.valorImponible !== undefined) contextUpdate.valor_imponible = fields.valorImponible;
   if (fields.bonificacion !== undefined) contextUpdate.bonificacion = fields.bonificacion;
+  if (fields.facturaEmitidaA !== undefined) contextUpdate.factura_emitida_a = fields.facturaEmitidaA;
 
   const result = await programacionRepo.update(id, {
     gasto: Object.keys(gastoUpdate).length > 0 ? gastoUpdate : undefined,

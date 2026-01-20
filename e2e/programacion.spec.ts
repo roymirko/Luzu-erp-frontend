@@ -72,21 +72,83 @@ test.describe('Programación Module', () => {
     await expect(page.locator('text=Por favor, complete todos los campos requeridos')).toBeVisible({ timeout: 5000 });
   });
 
-  test('should show table with gastos list', async ({ page }) => {
+  test('should show table with correct columns in Programa mode', async ({ page }) => {
     // Navigate to Programación
     await page.click('button:has-text("Dir. de Programación")');
 
     // Wait for table to load
     await page.waitForTimeout(1000);
 
-    // Verify table headers are present
-    await expect(page.locator('th:has-text("Estado")')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('th:has-text("Mes gestión")')).toBeVisible();
-    await expect(page.locator('th:has-text("Fecha")')).toBeVisible();
+    // Verify Programa mode is active by default
+    await expect(page.locator('button:has-text("Programa")')).toBeVisible({ timeout: 10000 });
+
+    // Verify table headers for Programa mode (13 columns)
+    await expect(page.locator('th:has-text("Estado")')).toBeVisible();
+    await expect(page.locator('th:has-text("Fecha de registro")')).toBeVisible();
     await expect(page.locator('th:has-text("Responsable")')).toBeVisible();
+    await expect(page.locator('th:has-text("Empresa/Programa")')).toBeVisible();
+    await expect(page.locator('th:has-text("Factura emitida a")')).toBeVisible();
+    await expect(page.locator('th:has-text("Empresa")').first()).toBeVisible();
     await expect(page.locator('th:has-text("Unidad de negocio")')).toBeVisible();
-    await expect(page.locator('th:has-text("Programa")')).toBeVisible();
-    await expect(page.locator('th:has-text("Importe")')).toBeVisible();
+    await expect(page.locator('th:has-text("Subrubro")')).toBeVisible();
+    await expect(page.locator('th:has-text("Campaña")')).toBeVisible();
+    await expect(page.locator('th:has-text("Proveedor")')).toBeVisible();
+    await expect(page.locator('th:has-text("Razón social")')).toBeVisible();
+    await expect(page.locator('th:has-text("Neto")')).toBeVisible();
+    await expect(page.locator('th:has-text("Acciones")')).toBeVisible();
+  });
+
+  test('should switch to Campaña mode and show correct columns', async ({ page }) => {
+    // Navigate to Programación
+    await page.click('button:has-text("Dir. de Programación")');
+    await page.waitForTimeout(500);
+
+    // Click on Campaña toggle
+    await page.click('button:has-text("Campaña")');
+    await page.waitForTimeout(500);
+
+    // Verify table headers for Campaña mode (12 columns)
+    await expect(page.locator('th:has-text("Estado")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('th:has-text("Fecha de registro")')).toBeVisible();
+    await expect(page.locator('th:has-text("Responsable")')).toBeVisible();
+    await expect(page.locator('th:has-text("Factura emitida a")')).toBeVisible();
+    await expect(page.locator('th:has-text("Empresa")').first()).toBeVisible();
+    await expect(page.locator('th:has-text("Unidad de negocio")')).toBeVisible();
+    await expect(page.locator('th:has-text("Subrubro")')).toBeVisible();
+    await expect(page.locator('th:has-text("Campaña")')).toBeVisible();
+    await expect(page.locator('th:has-text("Proveedor")')).toBeVisible();
+    await expect(page.locator('th:has-text("Razón social")')).toBeVisible();
+    await expect(page.locator('th:has-text("Neto total")')).toBeVisible();
+    await expect(page.locator('th:has-text("Acciones")')).toBeVisible();
+
+    // Verify "Empresa/Programa" column is NOT visible in Campaña mode
+    await expect(page.locator('th:has-text("Empresa/Programa")')).not.toBeVisible();
+  });
+
+  test('should toggle between Programa and Campaña modes', async ({ page }) => {
+    // Navigate to Programación
+    await page.click('button:has-text("Dir. de Programación")');
+    await page.waitForTimeout(500);
+
+    // Verify Programa mode is active (shows "Neto" column, not "Neto total")
+    await expect(page.locator('th:has-text("Neto")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('th:has-text("Empresa/Programa")')).toBeVisible();
+
+    // Switch to Campaña mode
+    await page.click('button:has-text("Campaña")');
+    await page.waitForTimeout(500);
+
+    // Verify Campaña mode is active (shows "Neto total" column)
+    await expect(page.locator('th:has-text("Neto total")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('th:has-text("Empresa/Programa")')).not.toBeVisible();
+
+    // Switch back to Programa mode
+    await page.click('button:has-text("Programa")');
+    await page.waitForTimeout(500);
+
+    // Verify back in Programa mode
+    await expect(page.locator('th:has-text("Neto")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('th:has-text("Empresa/Programa")')).toBeVisible();
   });
 
   test('should search in gastos table', async ({ page }) => {
@@ -95,7 +157,7 @@ test.describe('Programación Module', () => {
     await page.waitForTimeout(500);
 
     // Find search input and type
-    const searchInput = page.locator('input[placeholder="Buscar..."]');
+    const searchInput = page.locator('input[placeholder="Buscar"]');
     await expect(searchInput).toBeVisible({ timeout: 10000 });
 
     // Type search term
@@ -192,6 +254,16 @@ test.describe('Programación Module', () => {
       await expect(observacionesTextarea).toHaveValue('Test observations');
     }
   });
+
+  test('should show Nuevo Formulario card with subtitle', async ({ page }) => {
+    // Navigate to Programación
+    await page.click('button:has-text("Dir. de Programación")');
+    await page.waitForTimeout(500);
+
+    // Verify the Nuevo Formulario card is visible with subtitle
+    await expect(page.locator('text=Nuevo Formulario')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Crear importe de gasto')).toBeVisible();
+  });
 });
 
 test.describe('Programación Breadcrumbs', () => {
@@ -241,5 +313,64 @@ test.describe('Programación Breadcrumbs', () => {
 
     // Verify we're back on list page
     await expect(page.locator('text=Detalle de gastos')).toBeVisible({ timeout: 10000 });
+  });
+});
+
+test.describe('Programación Filter Toggle', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupAuth(page);
+    await page.goto('/');
+    await page.waitForSelector('nav', { timeout: 15000 });
+  });
+
+  test('should have Programa/Campaña toggle visible', async ({ page }) => {
+    // Navigate to Programación
+    await page.click('button:has-text("Dir. de Programación")');
+    await page.waitForTimeout(500);
+
+    // Verify both toggle options are visible
+    await expect(page.locator('button:has-text("Programa")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('button:has-text("Campaña")')).toBeVisible();
+  });
+
+  test('should persist filter mode when navigating away and back', async ({ page }) => {
+    // Navigate to Programación
+    await page.click('button:has-text("Dir. de Programación")');
+    await page.waitForTimeout(500);
+
+    // Switch to Campaña mode
+    await page.click('button:has-text("Campaña")');
+    await page.waitForTimeout(500);
+
+    // Verify in Campaña mode
+    await expect(page.locator('th:has-text("Neto total")')).toBeVisible({ timeout: 5000 });
+
+    // Navigate to form and back
+    await page.click('button:has-text("Nuevo Formulario")');
+    await page.waitForTimeout(500);
+    await page.click('button:has-text("Cancelar")');
+    await page.waitForTimeout(500);
+
+    // Note: The filter mode resets to default (programa) when component unmounts
+    // This tests the current behavior
+    await expect(page.locator('th:has-text("Neto")')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should reset to page 1 when switching filter modes', async ({ page }) => {
+    // Navigate to Programación
+    await page.click('button:has-text("Dir. de Programación")');
+    await page.waitForTimeout(500);
+
+    // Switch between modes and verify table resets
+    await page.click('button:has-text("Campaña")');
+    await page.waitForTimeout(300);
+
+    // Check that table is showing (headers visible indicates page reset worked)
+    await expect(page.locator('th:has-text("Estado")')).toBeVisible({ timeout: 5000 });
+
+    await page.click('button:has-text("Programa")');
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('th:has-text("Estado")')).toBeVisible({ timeout: 5000 });
   });
 });

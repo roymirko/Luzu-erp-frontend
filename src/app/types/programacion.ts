@@ -37,6 +37,7 @@ export interface ProgramacionGastoContext {
   monto?: number;
   valorImponible?: number;
   bonificacion?: number;
+  facturaEmitidaA?: string;
 }
 
 /**
@@ -55,6 +56,8 @@ export interface GastoProgramacion extends Gasto {
   ejecutivo: string;
   subRubroEmpresa: string;
   detalleCampana?: string;
+  formularioEstado?: string;
+  formularioCreatedAt?: Date;
   // Context fields (programacion_gastos)
   programacionGastoId: string;
   categoria: string;
@@ -63,6 +66,7 @@ export interface GastoProgramacion extends Gasto {
   monto: number;
   valorImponible: number;
   bonificacion: number;
+  facturaEmitidaA?: string;
 }
 
 /**
@@ -99,6 +103,7 @@ export interface CreateGastoProgramacionInput {
   monto?: number;
   valorImponible?: number;
   bonificacion?: number;
+  facturaEmitidaA?: string;
   // Audit
   createdBy?: string;
 }
@@ -113,3 +118,23 @@ export interface UpdateGastoProgramacionInput extends Partial<CreateGastoProgram
 
 export type { GastoValidationError as GastoProgramacionValidationError };
 export type { GastoValidationResult as GastoProgramacionValidationResult };
+
+/**
+ * Vista agrupada de formulario para la tabla de Programación
+ * Agrupa datos de un formulario con info agregada de sus gastos
+ */
+export interface FormularioAgrupado {
+  id: string; // formularioId
+  estado: EstadoGasto;
+  createdAt: Date;
+  ejecutivo: string;
+  facturaEmitidaA?: string;
+  empresa?: string;
+  unidadNegocio: string;
+  subRubroEmpresa?: string;
+  detalleCampana?: string;
+  proveedor?: string;
+  razonSocial?: string;
+  netoTotal: number;
+  gastosCount: number;
+}

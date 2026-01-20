@@ -1,14 +1,16 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import * as programacionService from '../services/programacionService';
-import type { GastoProgramacion, CreateGastoProgramacionInput, UpdateGastoProgramacionInput } from '../types/programacion';
+import type { GastoProgramacion, CreateGastoProgramacionInput, UpdateGastoProgramacionInput, FormularioAgrupado } from '../types/programacion';
 
 interface ProgramacionContextType {
   gastos: GastoProgramacion[];
+  formulariosAgrupados: FormularioAgrupado[];
   loading: boolean;
   addGasto: (input: CreateGastoProgramacionInput) => Promise<boolean>;
   updateGasto: (input: UpdateGastoProgramacionInput) => Promise<boolean>;
   deleteGasto: (id: string) => Promise<boolean>;
   getGastoById: (id: string) => GastoProgramacion | undefined;
+  getGastosByFormularioId: (formularioId: string) => GastoProgramacion[];
   refetch: () => Promise<void>;
 }
 
@@ -78,15 +80,60 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
     return gastos.find((g) => g.id === id);
   };
 
+  const getGastosByFormularioId = (formularioId: string) => {
+    return gastos.filter((g) => g.formularioId === formularioId);
+  };
+
+  // Compute grouped formularios with aggregated data
+  const formulariosAgrupados = useMemo((): FormularioAgrupado[] => {
+    const groupedMap = new Map<string, GastoProgramacion[]>();
+
+    // Group gastos by formularioId
+    for (const gasto of gastos) {
+      const existing = groupedMap.get(gasto.formularioId) || [];
+      existing.push(gasto);
+      groupedMap.set(gasto.formularioId, existing);
+    }
+
+    // Convert to FormularioAgrupado array
+    const result: FormularioAgrupado[] = [];
+    for (const [formularioId, formularioGastos] of groupedMap) {
+      const firstGasto = formularioGastos[0];
+      const netoTotal = formularioGastos.reduce((sum, g) => sum + (g.neto || 0), 0);
+
+      result.push({
+        id: formularioId,
+        estado: firstGasto.formularioEstado as FormularioAgrupado['estado'] || firstGasto.estado,
+        createdAt: firstGasto.formularioCreatedAt || firstGasto.createdAt,
+        ejecutivo: firstGasto.ejecutivo || '',
+        facturaEmitidaA: firstGasto.facturaEmitidaA,
+        empresa: firstGasto.empresa,
+        unidadNegocio: firstGasto.unidadNegocio || '',
+        subRubroEmpresa: firstGasto.subRubroEmpresa,
+        detalleCampana: firstGasto.detalleCampana,
+        proveedor: firstGasto.proveedor,
+        razonSocial: firstGasto.razonSocial,
+        netoTotal,
+        gastosCount: formularioGastos.length,
+      });
+    }
+
+    // Sort by createdAt descending
+    result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return result;
+  }, [gastos]);
+
   return (
     <ProgramacionContext.Provider
       value={{
         gastos,
+        formulariosAgrupados,
         loading,
         addGasto,
         updateGasto,
         deleteGasto,
         getGastoById,
+        getGastosByFormularioId,
         refetch: fetchGastos,
       }}
     >
