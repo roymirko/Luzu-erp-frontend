@@ -29,8 +29,6 @@ interface FormularioImplementacionProps {
 
 interface FormErrors {
   cargaDatos: {
-    facturaEmitidaA?: string;
-    empresa?: string;
     conceptoGasto?: string;
   };
   importes: ImportesErrors;
@@ -48,6 +46,8 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
     programa: '',
     empresaPgm: gasto.sector || '',
     itemOrdenPublicidadId: gasto.itemOrdenPublicidadId,
+    facturaEmitidaA: gasto.facturaEmitidaA || '',
+    empresa: gasto.empresa || '',
     fechaComprobante: gasto.fechaFactura || new Date().toISOString().split('T')[0],
     proveedor: gasto.proveedor,
     razonSocial: gasto.razonSocial,
@@ -62,8 +62,6 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
 function bloqueToCreateInput(
   bloque: BloqueImporte,
   shared: {
-    facturaEmitidaA: string;
-    empresa: string;
     conceptoGasto: string;
     observaciones: string;
     ordenPublicidadId?: string;
@@ -77,13 +75,13 @@ function bloqueToCreateInput(
     razonSocial: bloque.razonSocial,
     fechaFactura: bloque.fechaComprobante,
     neto: parseFloat(bloque.neto) || 0,
-    empresa: shared.empresa,
+    empresa: bloque.empresa,
     conceptoGasto: shared.conceptoGasto,
     observaciones: shared.observaciones,
     ordenPublicidadId: shared.ordenPublicidadId,
     // Use the bloque's itemId if set (from program selection), otherwise use the default
     itemOrdenPublicidadId: bloque.itemOrdenPublicidadId || shared.defaultItemOrdenPublicidadId,
-    facturaEmitidaA: shared.facturaEmitidaA,
+    facturaEmitidaA: bloque.facturaEmitidaA,
     sector: bloque.empresaPgm,
     rubroGasto: shared.rubroGasto,
     subRubro: shared.subRubro,
@@ -204,6 +202,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           programa: '',
           empresaPgm: '',
           itemOrdenPublicidadId: itemId,
+          facturaEmitidaA: '',
+          empresa: '',
           fechaComprobante: new Date().toISOString().split('T')[0],
           proveedor: '',
           razonSocial: '',
@@ -227,12 +227,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       importes: {},
     };
 
-    if (!facturaEmitidaA) {
-      newErrors.cargaDatos.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
-    }
-    if (!empresa) {
-      newErrors.cargaDatos.empresa = 'Debe seleccionar una empresa';
-    }
+    // Concepto de gasto is still global
     if (!conceptoGasto.trim()) {
       newErrors.cargaDatos.conceptoGasto = 'Debe ingresar un concepto de gasto';
     }
@@ -240,6 +235,13 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
 
+      // Per-gasto validation for facturaEmitidaA and empresa
+      if (!imp.facturaEmitidaA) {
+        importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
+      }
+      if (!imp.empresa) {
+        importeErrors.empresa = 'Debe seleccionar una empresa';
+      }
       if (!imp.empresaPgm) {
         importeErrors.empresaPgm = 'Requerido';
       }
@@ -262,20 +264,24 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     }
 
     return newErrors;
-  }, [facturaEmitidaA, empresa, conceptoGasto, importes]);
+  }, [conceptoGasto, importes]);
 
   useEffect(() => {
     if (hasAttemptedSubmit) {
       setErrors(validateForm());
     }
-  }, [facturaEmitidaA, empresa, conceptoGasto, importes, hasAttemptedSubmit, validateForm]);
+  }, [conceptoGasto, importes, hasAttemptedSubmit, validateForm]);
 
   const addImporte = () => {
+    // For new gastos, inherit facturaEmitidaA and empresa from global state (or last importe)
+    const lastImporte = importes[importes.length - 1];
     const newImporte: BloqueImporte = {
       id: crypto.randomUUID(),
       programa: '',
       empresaPgm: '',
       itemOrdenPublicidadId: itemId,
+      facturaEmitidaA: lastImporte?.facturaEmitidaA || facturaEmitidaA || '',
+      empresa: lastImporte?.empresa || empresa || '',
       fechaComprobante: new Date().toISOString().split('T')[0],
       proveedor: '',
       razonSocial: '',
@@ -335,8 +341,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     setSaving(true);
     try {
       const sharedFields = {
-        facturaEmitidaA,
-        empresa,
         conceptoGasto,
         observaciones,
         ordenPublicidadId: formId,
@@ -364,10 +368,10 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           razonSocial: importe.razonSocial,
           fechaFactura: importe.fechaComprobante,
           neto: parseFloat(importe.neto) || 0,
-          empresa,
+          empresa: importe.empresa,
           conceptoGasto,
           observaciones,
-          facturaEmitidaA,
+          facturaEmitidaA: importe.facturaEmitidaA,
           sector: importe.empresaPgm,
           condicionPago: importe.condicionPago,
           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
@@ -488,13 +492,9 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             onSave={handleGuardar}
             onCancel={onClose}
             errors={errors.importes}
-            facturaEmitidaA={facturaEmitidaA}
-            setFacturaEmitidaA={setFacturaEmitidaA}
-            empresa={empresa}
-            setEmpresa={setEmpresa}
             conceptoGasto={conceptoGasto}
             setConceptoGasto={setConceptoGasto}
-            globalFieldsErrors={errors.cargaDatos}
+            conceptoGastoError={errors.cargaDatos.conceptoGasto}
             // Status props
             isNewGasto={isNewGasto}
             existingGastoIds={existingGastoIds}

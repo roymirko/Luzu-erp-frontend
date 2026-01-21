@@ -26,18 +26,10 @@ interface CargaImportesSectionProps {
   onSave?: () => void;
   onCancel?: () => void;
   errors?: ImportesErrors;
-  // Global fields
-  facturaEmitidaA: string;
-  setFacturaEmitidaA: (v: string) => void;
-  empresa: string;
-  setEmpresa: (v: string) => void;
+  // Concepto de gasto is still a shared field (shown only on first card)
   conceptoGasto: string;
   setConceptoGasto: (v: string) => void;
-  globalFieldsErrors?: {
-    facturaEmitidaA?: string;
-    empresa?: string;
-    conceptoGasto?: string;
-  };
+  conceptoGastoError?: string;
   // Status props
   isNewGasto?: boolean;
   existingGastoIds?: Set<string>;
@@ -56,13 +48,9 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     onSave,
     onCancel,
     errors = {},
-    facturaEmitidaA,
-    setFacturaEmitidaA,
-    empresa,
-    setEmpresa,
     conceptoGasto,
     setConceptoGasto,
-    globalFieldsErrors = {},
+    conceptoGastoError,
     // Status props with defaults
     isNewGasto = true,
     existingGastoIds = new Set(),
@@ -93,14 +81,10 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
               onSave={onSave}
               onCancel={onCancel}
               errors={errors[imp.id]}
-              facturaEmitidaA={facturaEmitidaA}
-              setFacturaEmitidaA={setFacturaEmitidaA}
-              empresa={empresa}
-              setEmpresa={setEmpresa}
               conceptoGasto={conceptoGasto}
               setConceptoGasto={setConceptoGasto}
-              showGlobalFields={idx === 0}
-              globalFieldsErrors={globalFieldsErrors}
+              showConceptoGasto={idx === 0}
+              conceptoGastoError={conceptoGastoError}
               // Status props
               isNew={isImporteNew}
               estadoOP={estadoOP}

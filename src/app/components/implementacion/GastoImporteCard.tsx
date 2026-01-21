@@ -25,6 +25,7 @@ export interface GastoImporteErrors {
   proveedor?: string;
   condicionPago?: string;
   neto?: string;
+  conceptoGasto?: string;
 }
 
 interface GastoImporteCardProps {
@@ -39,19 +40,11 @@ interface GastoImporteCardProps {
   onSave?: () => void;
   onCancel?: () => void;
   errors?: GastoImporteErrors;
-  // Global fields (shown in each card but controlled at parent level)
-  facturaEmitidaA: string;
-  setFacturaEmitidaA: (v: string) => void;
-  empresa: string;
-  setEmpresa: (v: string) => void;
+  // Concepto de gasto is still a shared/global field
   conceptoGasto: string;
   setConceptoGasto: (v: string) => void;
-  showGlobalFields?: boolean;
-  globalFieldsErrors?: {
-    facturaEmitidaA?: string;
-    empresa?: string;
-    conceptoGasto?: string;
-  };
+  showConceptoGasto?: boolean;
+  conceptoGastoError?: string;
   // Status props
   isNew?: boolean;
   estadoOP?: EstadoOP;
@@ -71,14 +64,10 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
     onSave,
     onCancel,
     errors = {},
-    facturaEmitidaA,
-    setFacturaEmitidaA,
-    empresa,
-    setEmpresa,
     conceptoGasto,
     setConceptoGasto,
-    showGlobalFields = true,
-    globalFieldsErrors = {},
+    showConceptoGasto = true,
+    conceptoGastoError,
     // Status props with defaults
     isNew = true,
     estadoOP = 'pendiente',
@@ -176,31 +165,29 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
       {/* Collapsible content */}
       {!isCollapsed && (
         <>
-          {/* Row 1: Factura emitida a / Empresa */}
-          {showGlobalFields && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormSelect
-                label="Factura emitida a"
-                value={facturaEmitidaA}
-                onChange={setFacturaEmitidaA}
-                options={FACTURAS_OPTIONS}
-                required
-                disabled={isCerrado || isReadOnly}
-                error={globalFieldsErrors.facturaEmitidaA}
-                isDark={isDark}
-              />
-              <FormSelect
-                label="Empresa"
-                value={empresa}
-                onChange={setEmpresa}
-                options={EMPRESAS_OPTIONS}
-                required
-                disabled={isCerrado || isReadOnly}
-                error={globalFieldsErrors.empresa}
-                isDark={isDark}
-              />
-            </div>
-          )}
+          {/* Row 1: Factura emitida a / Empresa - always shown, uses per-gasto values */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormSelect
+              label="Factura emitida a"
+              value={importe.facturaEmitidaA}
+              onChange={(v) => onUpdate('facturaEmitidaA', v)}
+              options={FACTURAS_OPTIONS}
+              required
+              disabled={isCerrado || isReadOnly}
+              error={errors.facturaEmitidaA}
+              isDark={isDark}
+            />
+            <FormSelect
+              label="Empresa"
+              value={importe.empresa}
+              onChange={(v) => onUpdate('empresa', v)}
+              options={EMPRESAS_OPTIONS}
+              required
+              disabled={isCerrado || isReadOnly}
+              error={errors.empresa}
+              isDark={isDark}
+            />
+          </div>
 
           {/* Row 2: Empresa/Programa / Fecha de comprobante */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -277,23 +264,25 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
             />
           </div>
 
-          {/* Concepto de Gasto */}
-          <div className="space-y-2">
-            <Label className={labelClass}>
-              Agrega un concepto de gasto <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              value={conceptoGasto}
-              onChange={(e) => setConceptoGasto(e.target.value)}
-              maxLength={FIELD_MAX_LENGTHS.conceptoGasto}
-              disabled={isCerrado || isReadOnly}
-              placeholder="Escribe aquí"
-              className={cn(textareaClass, globalFieldsErrors.conceptoGasto && 'border-red-500')}
-            />
-            {globalFieldsErrors.conceptoGasto && (
-              <p className="text-sm text-red-500">{globalFieldsErrors.conceptoGasto}</p>
-            )}
-          </div>
+          {/* Concepto de Gasto - only shown on first card */}
+          {showConceptoGasto && (
+            <div className="space-y-2">
+              <Label className={labelClass}>
+                Agrega un concepto de gasto <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                value={conceptoGasto}
+                onChange={(e) => setConceptoGasto(e.target.value)}
+                maxLength={FIELD_MAX_LENGTHS.conceptoGasto}
+                disabled={isCerrado || isReadOnly}
+                placeholder="Escribe aquí"
+                className={cn(textareaClass, conceptoGastoError && 'border-red-500')}
+              />
+              {conceptoGastoError && (
+                <p className="text-sm text-red-500">{conceptoGastoError}</p>
+              )}
+            </div>
+          )}
 
           {/* Agregar adjuntos link */}
           {!isCerrado && isNew && (

@@ -16,6 +16,8 @@ export interface BloqueImporte {
   programa: string;
   empresaPgm: string;
   itemOrdenPublicidadId?: string;
+  facturaEmitidaA: string;
+  empresa: string;
   fechaComprobante: string;
   proveedor: string;
   razonSocial: string;
