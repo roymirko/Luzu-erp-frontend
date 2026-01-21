@@ -17,6 +17,22 @@ import {
 import type { BloqueImporte, EstadoOP, EstadoPGM } from './index';
 import type { ProgramaConPresupuesto } from './CargaImportesSection';
 
+// Format number with thousand separators (Argentine format: 1.234.567)
+function formatNumberWithSeparators(value: string): string {
+  // Remove any non-digit characters except decimal separator
+  const cleanValue = value.replace(/[^\d]/g, '');
+  if (!cleanValue) return '';
+
+  // Add thousand separators
+  return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Parse formatted string back to raw number string
+function parseFormattedNumber(value: string): string {
+  // Remove thousand separators (dots)
+  return value.replace(/\./g, '');
+}
+
 export interface GastoImporteErrors {
   facturaEmitidaA?: string;
   empresa?: string;
@@ -253,9 +269,9 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
             />
             <FormInput
               label="Neto"
-              type="number"
-              value={importe.neto}
-              onChange={(v) => onUpdate('neto', v)}
+              type="text"
+              value={formatNumberWithSeparators(importe.neto)}
+              onChange={(v) => onUpdate('neto', parseFormattedNumber(v))}
               required
               disabled={isCerrado || isReadOnly}
               placeholder="$0"

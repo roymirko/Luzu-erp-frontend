@@ -161,6 +161,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
   // Track if data has been loaded to prevent resetting
   const dataLoadedRef = useRef(false);
   const lastLoadedItemIdRef = useRef<string | undefined>(undefined);
+  // Track the IDs of gastos that were originally loaded (for update vs create logic)
+  const loadedGastoIdsRef = useRef<Set<string>>(new Set());
 
   // Load existing gastos if editing
   useEffect(() => {
@@ -168,6 +170,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     if (itemId !== lastLoadedItemIdRef.current) {
       dataLoadedRef.current = false;
       lastLoadedItemIdRef.current = itemId;
+      loadedGastoIdsRef.current = new Set();
     }
 
     if (gastoId) {
@@ -180,6 +183,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         setObservaciones(existingGasto.observaciones);
         setEstadoOP(existingGasto.estado);
         setImportes([gastoToBloqueImporte(existingGasto)]);
+        loadedGastoIdsRef.current = new Set([existingGasto.id]);
         dataLoadedRef.current = true;
       }
     } else if (formId && itemId) {
@@ -194,6 +198,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         setObservaciones(first.observaciones);
         setEstadoOP(first.estado);
         setImportes(existingGastos.map(gastoToBloqueImporte));
+        // Store the IDs of loaded gastos for update logic
+        loadedGastoIdsRef.current = new Set(existingGastos.map(g => g.id));
         dataLoadedRef.current = true;
       } else if (!dataLoadedRef.current) {
         // Only initialize with defaults if we haven't loaded data yet
@@ -216,9 +222,9 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
   }, [gastoId, formId, itemId, getGastoById, getGastosByItemOrdenId]);
 
   const isCerrado = estadoOP === 'cerrado' || estadoOP === 'anulado';
-  const existingGastos = itemId ? getGastosByItemOrdenId(itemId) : [];
-  const existingGastoIds = useMemo(() => new Set(existingGastos.map(g => g.id)), [existingGastos]);
-  const isExistingGasto = existingGastos.length > 0 || !!gastoId;
+  // Use loaded gasto IDs from ref for determining existing vs new (not re-queried by itemId)
+  const existingGastoIds = loadedGastoIdsRef.current;
+  const isExistingGasto = existingGastoIds.size > 0 || !!gastoId;
   const isNewGasto = !isExistingGasto;
 
   const validateForm = useCallback((): FormErrors => {
@@ -349,12 +355,13 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
       };
 
-      // Get existing gasto IDs to distinguish between updates and creates
-      const existingGastoIds = new Set(existingGastos.map(g => g.id));
+      // Use the loaded gasto IDs to distinguish between updates and creates
+      // This ensures gastos are updated even if their itemOrdenPublicidadId changed
+      const loadedIds = loadedGastoIdsRef.current;
 
       // Separate importes into existing (to update) and new (to create)
-      const importesToUpdate = importes.filter(imp => existingGastoIds.has(imp.id));
-      const importesToCreate = importes.filter(imp => !existingGastoIds.has(imp.id));
+      const importesToUpdate = importes.filter(imp => loadedIds.has(imp.id));
+      const importesToCreate = importes.filter(imp => !loadedIds.has(imp.id));
 
       let updateCount = 0;
       let createCount = 0;
