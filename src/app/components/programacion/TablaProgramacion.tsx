@@ -11,8 +11,7 @@ const ITEMS_PER_PAGE = 10;
 type FilterMode = 'programa' | 'campana';
 
 interface TablaProgramacionProps {
-  onOpenGasto?: (gastoId: string) => void;
-  onOpenFormulario?: (formularioId: string) => void;
+  onOpen?: (gastoId: string) => void;
   onNew?: () => void;
 }
 
@@ -49,9 +48,9 @@ const CAMPANA_COLUMNS = [
   'Acciones',
 ];
 
-export function TablaProgramacion({ onOpenGasto, onOpenFormulario, onNew }: TablaProgramacionProps) {
+export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
   const { isDark } = useTheme();
-  const { gastos, formulariosAgrupados, loading } = useProgramacion();
+  const { gastos, formulariosAgrupados, getGastosByFormularioId, loading } = useProgramacion();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('programa');
@@ -167,9 +166,15 @@ export function TablaProgramacion({ onOpenGasto, onOpenFormulario, onNew }: Tabl
 
   const handleRowClick = (item: GastoProgramacion | FormularioAgrupado) => {
     if (filterMode === 'programa') {
-      onOpenGasto?.((item as GastoProgramacion).id);
+      // In Programa mode, open the gasto directly
+      onOpen?.((item as GastoProgramacion).id);
     } else {
-      onOpenFormulario?.((item as FormularioAgrupado).id);
+      // In Campaña mode, get the first gasto of the formulario and open it
+      const formulario = item as FormularioAgrupado;
+      const formularioGastos = getGastosByFormularioId(formulario.id);
+      if (formularioGastos.length > 0) {
+        onOpen?.(formularioGastos[0].id);
+      }
     }
   };
 

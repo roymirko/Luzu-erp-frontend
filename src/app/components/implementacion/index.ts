@@ -1,6 +1,6 @@
 export { CampaignInfoCard } from './CampaignInfoCard';
 export { CargaDatosSection, type CargaDatosSectionErrors } from './CargaDatosSection';
-export { CargaImportesSection, type ImportesErrors } from './CargaImportesSection';
+export { CargaImportesSection, type ImportesErrors, type ProgramaConPresupuesto } from './CargaImportesSection';
 export { GastoImporteCard, type GastoImporteErrors } from './GastoImporteCard';
 export { ObservacionesSection } from './ObservacionesSection';
 export { ResumenPresupuestario } from './ResumenPresupuestario';
@@ -15,6 +15,7 @@ export interface BloqueImporte {
   id: string;
   programa: string;
   empresaPgm: string;
+  itemOrdenPublicidadId?: string;
   fechaComprobante: string;
   proveedor: string;
   razonSocial: string;

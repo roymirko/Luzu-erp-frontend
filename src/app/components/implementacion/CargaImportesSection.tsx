@@ -8,11 +8,18 @@ export interface ImportesErrors {
   [importeId: string]: GastoImporteErrors;
 }
 
+export interface ProgramaConPresupuesto {
+  value: string;
+  label: string;
+  limite: number;
+  itemId: string;
+}
+
 interface CargaImportesSectionProps {
   isDark: boolean;
   isCerrado: boolean;
   importes: BloqueImporte[];
-  programasDisponibles: string[];
+  programasConPresupuesto: ProgramaConPresupuesto[];
   onUpdateImporte: (id: string, field: keyof BloqueImporte, value: string) => void;
   onAddImporte: () => void;
   onRemoveImporte: (id: string) => void;
@@ -31,14 +38,10 @@ interface CargaImportesSectionProps {
     empresa?: string;
     conceptoGasto?: string;
   };
-  // Approval workflow props
+  // Status props
   isNewGasto?: boolean;
-  gastoId?: string;
+  existingGastoIds?: Set<string>;
   estadoOP?: EstadoOP;
-  onApprove?: () => void;
-  onReject?: () => void;
-  onMarkPaid?: () => void;
-  approvalLoading?: boolean;
 }
 
 export function CargaImportesSection(props: CargaImportesSectionProps) {
@@ -46,7 +49,7 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     isDark,
     isCerrado,
     importes,
-    programasDisponibles,
+    programasConPresupuesto,
     onUpdateImporte,
     onAddImporte,
     onRemoveImporte,
@@ -60,14 +63,10 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     conceptoGasto,
     setConceptoGasto,
     globalFieldsErrors = {},
-    // Approval workflow props with defaults
+    // Status props with defaults
     isNewGasto = true,
-    gastoId,
+    existingGastoIds = new Set(),
     estadoOP = 'pendiente',
-    onApprove,
-    onReject,
-    onMarkPaid,
-    approvalLoading = false,
   } = props;
 
   return (
@@ -77,41 +76,40 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
       </h2>
 
       <div className="space-y-4">
-        {importes.map((imp, idx) => (
-          <GastoImporteCard
-            key={imp.id}
-            isDark={isDark}
-            isCerrado={isCerrado}
-            importe={imp}
-            index={idx}
-            programasDisponibles={programasDisponibles}
-            canRemove={importes.length > 1}
-            onUpdate={(field, value) => onUpdateImporte(imp.id, field, value)}
-            onRemove={() => onRemoveImporte(imp.id)}
-            onSave={isNewGasto ? onSave : undefined}
-            onCancel={isNewGasto ? onCancel : undefined}
-            errors={errors[imp.id]}
-            facturaEmitidaA={facturaEmitidaA}
-            setFacturaEmitidaA={setFacturaEmitidaA}
-            empresa={empresa}
-            setEmpresa={setEmpresa}
-            conceptoGasto={conceptoGasto}
-            setConceptoGasto={setConceptoGasto}
-            showGlobalFields={idx === 0}
-            globalFieldsErrors={globalFieldsErrors}
-            // Approval workflow props
-            isNew={isNewGasto}
-            gastoId={gastoId}
-            estadoOP={estadoOP}
-            estadoPGM={imp.estadoPgm}
-            onApprove={onApprove}
-            onReject={onReject}
-            onMarkPaid={onMarkPaid}
-            approvalLoading={approvalLoading}
-          />
-        ))}
+        {importes.map((imp, idx) => {
+          // Determine if this specific importe is new (not in existing gastos)
+          const isImporteNew = !existingGastoIds.has(imp.id);
+          return (
+            <GastoImporteCard
+              key={imp.id}
+              isDark={isDark}
+              isCerrado={isCerrado}
+              importe={imp}
+              index={idx}
+              programasConPresupuesto={programasConPresupuesto}
+              canRemove={importes.length > 1 && isImporteNew}
+              onUpdate={(field, value) => onUpdateImporte(imp.id, field, value)}
+              onRemove={() => onRemoveImporte(imp.id)}
+              onSave={onSave}
+              onCancel={onCancel}
+              errors={errors[imp.id]}
+              facturaEmitidaA={facturaEmitidaA}
+              setFacturaEmitidaA={setFacturaEmitidaA}
+              empresa={empresa}
+              setEmpresa={setEmpresa}
+              conceptoGasto={conceptoGasto}
+              setConceptoGasto={setConceptoGasto}
+              showGlobalFields={idx === 0}
+              globalFieldsErrors={globalFieldsErrors}
+              // Status props
+              isNew={isImporteNew}
+              estadoOP={estadoOP}
+              estadoPGM={imp.estadoPgm}
+            />
+          );
+        })}
 
-        {!isCerrado && isNewGasto && (
+        {!isCerrado && (
           <div className="flex justify-end">
             <Button
               onClick={onAddImporte}

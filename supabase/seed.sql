@@ -330,24 +330,27 @@ END $$;
 -- ============================================
 -- 8. GASTOS DE IMPLEMENTACIÓN (Unified Architecture)
 -- 6 gastos vinculados a órdenes OP-2024-001, OP-2024-003, y OP-2024-005
+-- factura_emitida_a debe ser 'Luzu TV' o 'Luzu TV SA' (valores del dropdown)
+-- sector debe ser el nombre del programa (ej: 'Nadie Dice Nada')
 -- ============================================
 DO $$
 DECLARE
   v_orden1 uuid; v_orden3 uuid; v_orden5 uuid;
   v_item1 uuid; v_item3 uuid; v_item5 uuid;
+  v_programa1 text; v_programa3 text; v_programa5 text;
   v_gasto uuid;
 BEGIN
-  -- Buscar orden OP-2024-001 (Coca Cola)
+  -- Buscar orden OP-2024-001 (Coca Cola) y su primer item con programa
   SELECT id INTO v_orden1 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-001';
-  SELECT id INTO v_item1 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden1 LIMIT 1;
+  SELECT id, programa INTO v_item1, v_programa1 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden1 LIMIT 1;
 
-  -- Buscar orden OP-2024-003 (MercadoPago)
+  -- Buscar orden OP-2024-003 (MercadoPago) y su primer item con programa
   SELECT id INTO v_orden3 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-003';
-  SELECT id INTO v_item3 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden3 LIMIT 1;
+  SELECT id, programa INTO v_item3, v_programa3 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden3 LIMIT 1;
 
-  -- Buscar orden OP-2024-005 (Quilmes)
+  -- Buscar orden OP-2024-005 (Quilmes) y su primer item con programa
   SELECT id INTO v_orden5 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-005';
-  SELECT id INTO v_item5 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden5 LIMIT 1;
+  SELECT id, programa INTO v_item5, v_programa5 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden5 LIMIT 1;
 
   -- Solo insertar si encontramos las órdenes
   IF v_orden1 IS NOT NULL AND v_item1 IS NOT NULL THEN
@@ -366,7 +369,7 @@ BEGIN
       factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
     ) VALUES (
       v_gasto, v_orden1, v_item1,
-      'Coca Cola Argentina', 'Implementación', 'Gasto de venta', 'Producción', '30'
+      'Luzu TV', v_programa1, 'Gasto de venta', 'Producción', '30'
     );
 
     -- Gasto Impl 2: Media Tech para Coca Cola (activo, pagado)
@@ -384,7 +387,7 @@ BEGIN
       factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
     ) VALUES (
       v_gasto, v_orden1, v_item1,
-      'Coca Cola Argentina', 'Implementación', 'Gasto de venta', 'Técnico', '30'
+      'Luzu TV SA', v_programa1, 'Gasto de venta', 'Técnico', '30'
     );
   END IF;
 
@@ -404,7 +407,7 @@ BEGIN
       factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
     ) VALUES (
       v_gasto, v_orden3, v_item3,
-      'Mercado Libre', 'Implementación', 'Gasto de venta', 'Talentos', '45'
+      'Luzu TV', v_programa3, 'Gasto de venta', 'Talentos', '45'
     );
 
     -- Gasto Impl 4: Equipamiento para MercadoPago (activo, pendiente)
@@ -422,7 +425,7 @@ BEGIN
       factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
     ) VALUES (
       v_gasto, v_orden3, v_item3,
-      'Mercado Libre', 'Implementación', 'Gasto de venta', 'Equipamiento', '30'
+      'Luzu TV SA', v_programa3, 'Gasto de venta', 'Equipamiento', '30'
     );
   END IF;
 
@@ -442,7 +445,7 @@ BEGIN
       factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
     ) VALUES (
       v_gasto, v_orden5, v_item5,
-      'Cervecería Quilmes', 'Implementación', 'Gasto de venta', 'Creatividad', '30'
+      'Luzu TV', v_programa5, 'Gasto de venta', 'Creatividad', '30'
     );
 
     -- Gasto Impl 6: Post Producción para Quilmes (activo, pagado)
@@ -460,7 +463,7 @@ BEGIN
       factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
     ) VALUES (
       v_gasto, v_orden5, v_item5,
-      'Cervecería Quilmes', 'Implementación', 'Gasto de venta', 'Post Producción', '45'
+      'Luzu TV SA', v_programa5, 'Gasto de venta', 'Post Producción', '45'
     );
   END IF;
 END $$;

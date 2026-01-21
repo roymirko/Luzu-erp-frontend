@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useImplementacion } from '../contexts/ImplementacionContext';
 import { useFormularios } from '../contexts/FormulariosContext';
 import { useData } from '../contexts/DataContext';
@@ -47,6 +47,7 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
     id: gasto.id,
     programa: '',
     empresaPgm: gasto.sector || '',
+    itemOrdenPublicidadId: gasto.itemOrdenPublicidadId,
     fechaComprobante: gasto.fechaFactura || new Date().toISOString().split('T')[0],
     proveedor: gasto.proveedor,
     razonSocial: gasto.razonSocial,
@@ -66,7 +67,7 @@ function bloqueToCreateInput(
     conceptoGasto: string;
     observaciones: string;
     ordenPublicidadId?: string;
-    itemOrdenPublicidadId?: string;
+    defaultItemOrdenPublicidadId?: string;
     rubroGasto?: string;
     subRubro?: string;
   }
@@ -80,7 +81,8 @@ function bloqueToCreateInput(
     conceptoGasto: shared.conceptoGasto,
     observaciones: shared.observaciones,
     ordenPublicidadId: shared.ordenPublicidadId,
-    itemOrdenPublicidadId: shared.itemOrdenPublicidadId,
+    // Use the bloque's itemId if set (from program selection), otherwise use the default
+    itemOrdenPublicidadId: bloque.itemOrdenPublicidadId || shared.defaultItemOrdenPublicidadId,
     facturaEmitidaA: shared.facturaEmitidaA,
     sector: bloque.empresaPgm,
     rubroGasto: shared.rubroGasto,
@@ -96,15 +98,14 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     updateGasto,
     getGastoById,
     getGastosByItemOrdenId,
-    approveGasto,
-    rejectGasto,
-    markGastoAsPaid,
-    getTotalEjecutadoByItem,
   } = useImplementacion();
   const { formularios } = useFormularios();
   const { currentUser } = useData();
 
   const ordenPublicidadData = useMemo(() => {
+    // Helper to format currency
+    const formatCurrency = (val: number) =>
+      new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
     if (!formId) return null;
     const formulario = formularios.find((f) => f.id === formId);
     if (!formulario) return null;
@@ -114,9 +115,23 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       ? parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''))
       : 0;
 
-    const programasDisponibles = formulario.importeRows
+    // Calculate remaining budget per program
+    const programasConPresupuesto = formulario.importeRows
       ?.filter((row) => row.programa)
-      .map((row) => row.programa) || [];
+      .map((row) => {
+        const presupuesto = parseFloat(String(row.implementacion || '0').replace(/[^0-9.-]/g, '')) || 0;
+        // Get all existing gastos for this program item
+        const gastosDelPrograma = getGastosByItemOrdenId(row.id);
+        const totalGastado = gastosDelPrograma.reduce((sum, g) => sum + (g.neto || 0), 0);
+        const limiteRestante = presupuesto - totalGastado;
+
+        return {
+          value: row.programa,
+          label: `${row.programa} - Limite: ${formatCurrency(limiteRestante)}`,
+          limite: limiteRestante,
+          itemId: row.id,
+        };
+      }) || [];
 
     return {
       ordenPublicidad: formulario.ordenPublicidad || '',
@@ -125,12 +140,14 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
       presupuesto: presupuestoImpl,
-      programasDisponibles: programasDisponibles.length > 0 ? programasDisponibles : ['Sin programas'],
+      programasConPresupuesto: programasConPresupuesto.length > 0
+        ? programasConPresupuesto
+        : [{ value: 'Sin programas', label: 'Sin programas', limite: 0, itemId: '' }],
       responsable: formulario.responsable || '',
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
     };
-  }, [formId, itemId, formularios]);
+  }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
   // Form state
   const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
@@ -139,15 +156,22 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
   const [observaciones, setObservaciones] = useState('');
   const [importes, setImportes] = useState<BloqueImporte[]>([]);
   const [estadoOP, setEstadoOP] = useState<EstadoOP>('pendiente');
-  const [selectedGastoId, setSelectedGastoId] = useState<string | undefined>(gastoId);
-
   const [saving, setSaving] = useState(false);
-  const [approvalLoading, setApprovalLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
+  // Track if data has been loaded to prevent resetting
+  const dataLoadedRef = useRef(false);
+  const lastLoadedItemIdRef = useRef<string | undefined>(undefined);
+
   // Load existing gastos if editing
   useEffect(() => {
+    // Reset tracking when itemId changes (user navigated to different item)
+    if (itemId !== lastLoadedItemIdRef.current) {
+      dataLoadedRef.current = false;
+      lastLoadedItemIdRef.current = itemId;
+    }
+
     if (gastoId) {
       // Editing a specific gasto
       const existingGasto = getGastoById(gastoId);
@@ -158,7 +182,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         setObservaciones(existingGasto.observaciones);
         setEstadoOP(existingGasto.estado);
         setImportes([gastoToBloqueImporte(existingGasto)]);
-        setSelectedGastoId(gastoId);
+        dataLoadedRef.current = true;
       }
     } else if (formId && itemId) {
       // Check for existing gastos for this item
@@ -172,13 +196,14 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         setObservaciones(first.observaciones);
         setEstadoOP(first.estado);
         setImportes(existingGastos.map(gastoToBloqueImporte));
-        setSelectedGastoId(first.id);
-      } else {
-        // New gasto - initialize with defaults
+        dataLoadedRef.current = true;
+      } else if (!dataLoadedRef.current) {
+        // Only initialize with defaults if we haven't loaded data yet
         setImportes([{
           id: crypto.randomUUID(),
           programa: '',
           empresaPgm: '',
+          itemOrdenPublicidadId: itemId,
           fechaComprobante: new Date().toISOString().split('T')[0],
           proveedor: '',
           razonSocial: '',
@@ -192,67 +217,9 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
   const isCerrado = estadoOP === 'cerrado' || estadoOP === 'anulado';
   const existingGastos = itemId ? getGastosByItemOrdenId(itemId) : [];
+  const existingGastoIds = useMemo(() => new Set(existingGastos.map(g => g.id)), [existingGastos]);
   const isExistingGasto = existingGastos.length > 0 || !!gastoId;
   const isNewGasto = !isExistingGasto;
-
-  const handleApprove = useCallback(async () => {
-    if (!selectedGastoId) return;
-    setApprovalLoading(true);
-    try {
-      const success = await approveGasto(selectedGastoId);
-      if (success) {
-        toast.success('Gasto aprobado correctamente');
-        setEstadoOP('activo');
-      } else {
-        toast.error('Error al aprobar el gasto');
-      }
-    } catch (err) {
-      console.error('Error approving gasto:', err);
-      toast.error('Error inesperado al aprobar');
-    } finally {
-      setApprovalLoading(false);
-    }
-  }, [selectedGastoId, approveGasto]);
-
-  const handleReject = useCallback(async () => {
-    if (!selectedGastoId) return;
-    setApprovalLoading(true);
-    try {
-      const success = await rejectGasto(selectedGastoId);
-      if (success) {
-        toast.success('Gasto rechazado');
-        setEstadoOP('anulado');
-      } else {
-        toast.error('Error al rechazar el gasto');
-      }
-    } catch (err) {
-      console.error('Error rejecting gasto:', err);
-      toast.error('Error inesperado al rechazar');
-    } finally {
-      setApprovalLoading(false);
-    }
-  }, [selectedGastoId, rejectGasto]);
-
-  const handleMarkPaid = useCallback(async () => {
-    if (!selectedGastoId) return;
-    setApprovalLoading(true);
-    try {
-      const success = await markGastoAsPaid(selectedGastoId);
-      if (success) {
-        toast.success('Gasto marcado como pagado');
-        setImportes((prev) =>
-          prev.map((imp) => ({ ...imp, estadoPgm: 'pagado' as const }))
-        );
-      } else {
-        toast.error('Error al marcar como pagado');
-      }
-    } catch (err) {
-      console.error('Error marking as paid:', err);
-      toast.error('Error inesperado');
-    } finally {
-      setApprovalLoading(false);
-    }
-  }, [selectedGastoId, markGastoAsPaid]);
 
   const validateForm = useCallback((): FormErrors => {
     const newErrors: FormErrors = {
@@ -308,6 +275,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       id: crypto.randomUUID(),
       programa: '',
       empresaPgm: '',
+      itemOrdenPublicidadId: itemId,
       fechaComprobante: new Date().toISOString().split('T')[0],
       proveedor: '',
       razonSocial: '',
@@ -328,7 +296,23 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
   const updateImporte = (id: string, field: keyof BloqueImporte, value: string) => {
     setImportes((prev) =>
-      prev.map((imp) => (imp.id === id ? { ...imp, [field]: value } : imp))
+      prev.map((imp) => {
+        if (imp.id !== id) return imp;
+
+        // When empresaPgm (program) is updated, also update the associated itemOrdenPublicidadId
+        if (field === 'empresaPgm' && ordenPublicidadData?.programasConPresupuesto) {
+          const selectedProgram = ordenPublicidadData.programasConPresupuesto.find(
+            (p) => p.value === value
+          );
+          return {
+            ...imp,
+            [field]: value,
+            itemOrdenPublicidadId: selectedProgram?.itemId || imp.itemOrdenPublicidadId,
+          };
+        }
+
+        return { ...imp, [field]: value };
+      })
     );
   };
 
@@ -356,48 +340,66 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         conceptoGasto,
         observaciones,
         ordenPublicidadId: formId,
-        itemOrdenPublicidadId: itemId,
+        defaultItemOrdenPublicidadId: itemId,
         rubroGasto: IMPLEMENTACION_DEFAULTS.rubroGasto,
         subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
       };
 
-      if (isExistingGasto) {
-        // Update existing gasto (only first one for now)
-        const firstImporte = importes[0];
-        if (firstImporte && selectedGastoId) {
-          const success = await updateGasto({
-            id: selectedGastoId,
-            proveedor: firstImporte.proveedor,
-            razonSocial: firstImporte.razonSocial,
-            fechaFactura: firstImporte.fechaComprobante,
-            neto: parseFloat(firstImporte.neto) || 0,
-            empresa,
-            conceptoGasto,
-            observaciones,
-            facturaEmitidaA,
-            sector: firstImporte.empresaPgm,
-            condicionPago: firstImporte.condicionPago,
-          });
-          if (success) {
-            toast.success('Gasto actualizado correctamente');
-            onClose();
-          } else {
-            toast.error('Error al actualizar el gasto');
-          }
+      // Get existing gasto IDs to distinguish between updates and creates
+      const existingGastoIds = new Set(existingGastos.map(g => g.id));
+
+      // Separate importes into existing (to update) and new (to create)
+      const importesToUpdate = importes.filter(imp => existingGastoIds.has(imp.id));
+      const importesToCreate = importes.filter(imp => !existingGastoIds.has(imp.id));
+
+      let updateCount = 0;
+      let createCount = 0;
+      let hasError = false;
+
+      // Update existing gastos
+      for (const importe of importesToUpdate) {
+        const success = await updateGasto({
+          id: importe.id,
+          proveedor: importe.proveedor,
+          razonSocial: importe.razonSocial,
+          fechaFactura: importe.fechaComprobante,
+          neto: parseFloat(importe.neto) || 0,
+          empresa,
+          conceptoGasto,
+          observaciones,
+          facturaEmitidaA,
+          sector: importe.empresaPgm,
+          condicionPago: importe.condicionPago,
+          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+        });
+        if (success) {
+          updateCount++;
+        } else {
+          hasError = true;
         }
-      } else {
-        // Create new gastos (one per importe)
-        const inputs: CreateGastoImplementacionInput[] = importes.map((imp) =>
+      }
+
+      // Create new gastos
+      if (importesToCreate.length > 0) {
+        const inputs: CreateGastoImplementacionInput[] = importesToCreate.map((imp) =>
           bloqueToCreateInput(imp, sharedFields)
         );
-
         const created = await addMultipleGastos(inputs);
-        if (created.length > 0) {
-          toast.success(`${created.length} gasto(s) creado(s) correctamente`);
-          onClose();
-        } else {
-          toast.error('Error al crear los gastos');
+        createCount = created.length;
+        if (created.length < importesToCreate.length) {
+          hasError = true;
         }
+      }
+
+      // Show result message
+      if (hasError) {
+        toast.error('Algunos gastos no pudieron ser guardados');
+      } else {
+        const messages = [];
+        if (updateCount > 0) messages.push(`${updateCount} actualizado(s)`);
+        if (createCount > 0) messages.push(`${createCount} creado(s)`);
+        toast.success(`Gasto(s) ${messages.join(' y ')} correctamente`);
+        onClose();
       }
     } catch (err) {
       console.error('Error saving gasto:', err);
@@ -407,9 +409,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     }
   };
 
-  const ejecutado = itemId ? getTotalEjecutadoByItem(itemId) : 0;
-  const nuevoEjecutado = importes.reduce((sum, imp) => sum + (parseFloat(imp.neto) || 0), 0);
-  const totalEjecutado = isNewGasto ? nuevoEjecutado : ejecutado;
+  // Calculate total from all importes in the form (both existing and new)
+  const totalEjecutado = importes.reduce((sum, imp) => sum + (parseFloat(imp.neto) || 0), 0);
   const asignado = ordenPublicidadData?.presupuesto || 0;
   const disponible = asignado - totalEjecutado;
   const excedido = totalEjecutado > asignado;
@@ -480,7 +481,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             isDark={isDark}
             isCerrado={isCerrado}
             importes={importes}
-            programasDisponibles={ordenPublicidadData?.programasDisponibles || []}
+            programasConPresupuesto={ordenPublicidadData?.programasConPresupuesto || []}
             onUpdateImporte={updateImporte}
             onAddImporte={addImporte}
             onRemoveImporte={removeImporte}
@@ -494,14 +495,10 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             conceptoGasto={conceptoGasto}
             setConceptoGasto={setConceptoGasto}
             globalFieldsErrors={errors.cargaDatos}
-            // Approval workflow props
+            // Status props
             isNewGasto={isNewGasto}
-            gastoId={selectedGastoId}
+            existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onMarkPaid={handleMarkPaid}
-            approvalLoading={approvalLoading}
           />
 
           {/* Observaciones */}

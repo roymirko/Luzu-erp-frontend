@@ -8,7 +8,6 @@ import { Button } from '@/app/components/ui/button';
 import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import { cn } from '@/app/components/ui/utils';
 import { StatusBadge } from './StatusBadge';
-import { ApprovalControls } from './ApprovalControls';
 import {
   FACTURAS_OPTIONS,
   EMPRESAS_OPTIONS,
@@ -16,6 +15,7 @@ import {
   FIELD_MAX_LENGTHS,
 } from '@/app/utils/implementacionConstants';
 import type { BloqueImporte, EstadoOP, EstadoPGM } from './index';
+import type { ProgramaConPresupuesto } from './CargaImportesSection';
 
 export interface GastoImporteErrors {
   facturaEmitidaA?: string;
@@ -32,7 +32,7 @@ interface GastoImporteCardProps {
   isCerrado: boolean;
   importe: BloqueImporte;
   index: number;
-  programasDisponibles: string[];
+  programasConPresupuesto: ProgramaConPresupuesto[];
   canRemove: boolean;
   onUpdate: (field: keyof BloqueImporte, value: string) => void;
   onRemove: () => void;
@@ -52,15 +52,10 @@ interface GastoImporteCardProps {
     empresa?: string;
     conceptoGasto?: string;
   };
-  // New props for approval workflow
+  // Status props
   isNew?: boolean;
-  gastoId?: string;
   estadoOP?: EstadoOP;
   estadoPGM?: EstadoPGM;
-  onApprove?: () => void;
-  onReject?: () => void;
-  onMarkPaid?: () => void;
-  approvalLoading?: boolean;
 }
 
 export function GastoImporteCard(props: GastoImporteCardProps) {
@@ -69,7 +64,7 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
     isCerrado,
     importe,
     index,
-    programasDisponibles,
+    programasConPresupuesto,
     canRemove,
     onUpdate,
     onRemove,
@@ -84,21 +79,17 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
     setConceptoGasto,
     showGlobalFields = true,
     globalFieldsErrors = {},
-    // New props with defaults
+    // Status props with defaults
     isNew = true,
-    gastoId,
     estadoOP = 'pendiente',
     estadoPGM = 'pendiente-pago',
-    onApprove,
-    onReject,
-    onMarkPaid,
-    approvalLoading = false,
   } = props;
 
   // Card is collapsed by default when it's a saved gasto (not new)
   const [isCollapsed, setIsCollapsed] = useState(!isNew);
 
-  const programOptions = programasDisponibles.map((p) => ({ value: p, label: p }));
+  // Program options already come with value/label format (label includes budget info)
+  const programOptions = programasConPresupuesto;
 
   const labelClass = cn(
     'flex items-center gap-1 text-sm font-semibold',
@@ -113,8 +104,8 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
     'disabled:opacity-60 disabled:cursor-not-allowed'
   );
 
-  // Determine if fields should be readonly (saved gasto, not in edit mode)
-  const isReadOnly = !isNew && !isCerrado;
+  // Fields are only readonly when the gasto is closed/anulado
+  const isReadOnly = isCerrado;
 
   // Handle header click for collapse toggle (only for saved gastos)
   const handleHeaderClick = () => {
@@ -339,17 +330,6 @@ export function GastoImporteCard(props: GastoImporteCardProps) {
             </div>
           )}
 
-          {/* Approval controls - for saved gastos */}
-          {!isNew && onApprove && onReject && onMarkPaid && (
-            <ApprovalControls
-              estado={estadoOP}
-              estadoPago={estadoPGM}
-              onApprove={onApprove}
-              onReject={onReject}
-              onMarkPaid={onMarkPaid}
-              loading={approvalLoading}
-            />
-          )}
         </>
       )}
     </div>

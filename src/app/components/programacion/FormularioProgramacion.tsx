@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useProgramacion } from '../../contexts/ProgramacionContext';
-import { useFormFields } from '../../contexts/FormFieldsContext';
 import { useData } from '../../contexts/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -17,7 +16,7 @@ import {
 } from '../ui/select';
 import { ProveedorSelector } from '../ProveedorSelector';
 import { toast } from 'sonner';
-import { Lock, Plus, Trash2, Calendar } from 'lucide-react';
+import { Lock, Plus, Trash2, ChevronDown, ChevronUp, Paperclip } from 'lucide-react';
 import { cn } from '../ui/utils';
 import type { GastoProgramacion, CreateGastoProgramacionInput } from '../../types/programacion';
 
@@ -50,38 +49,24 @@ interface GastoItem {
   estado: 'pendiente-pago' | 'pagado' | 'anulado';
 }
 
-const ACUERDOS_PAGO = ['15 días', '30 días', '45 días', '60 días', '90 días'];
-const FORMAS_PAGO = ['Transferencia', 'Cheque', 'Efectivo', 'Tarjeta'];
-const EMPRESAS = ['Luzu TV', 'Luzu Media', 'Luzu Experience'];
-const FACTURA_EMITIDA_A = ['Cliente', 'Agencia', 'Proveedor'];
+const ACUERDOS_PAGO = ['5 días', '30 días', '45 días', '60 días', '90 días'];
+const FORMAS_PAGO = ['eCheque', 'Transferencia', 'Efectivo'];
+const EMPRESAS = ['Luzu TV', 'Luzu TV SA'];
+const FACTURA_EMITIDA_A = ['Luzu TV', 'Luzu TV SA'];
+const MAX_OBSERVACIONES_LENGTH = 250;
 
-const SUB_RUBROS = [
-  'Producción',
-  'Marketing',
-  'Tecnología',
-  'Administración',
-  'Ventas',
-  'Recursos Humanos',
-  'Talentos',
-  'Técnica',
-];
+const SUB_RUBROS = ['Producción', 'Diseño', 'Edición', 'Técnica'];
+const UNIDADES_NEGOCIO = ['PE', 'Media'];
+const MAX_DETALLE_LENGTH = 250;
 
 export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramacionProps) {
   const { isDark } = useTheme();
   const { addGasto, updateGasto, getGastoById } = useProgramacion();
-  const { fieldsConfig } = useFormFields();
   const { currentUser } = useData();
-
-  const getFieldOptions = (fieldLabel: string, category: string) => {
-    const field = fieldsConfig.find(f => f.label === fieldLabel && f.category === category);
-    return field?.options.filter(opt => opt.active).map(opt => opt.value) || [];
-  };
-
-  const UNIDADES_NEGOCIO = getFieldOptions('Unidad de Negocio', 'Comercial');
 
   // Section 1: Cargar Datos
   const [unidadNegocio, setUnidadNegocio] = useState('');
-  const [rubroGasto] = useState('Gastos de Programación'); // readonly
+  const [rubroGasto] = useState('Gasto de programación'); // readonly
   const [subrubro, setSubrubro] = useState('');
   const [nombreCampana, setNombreCampana] = useState('');
   const [detalleCampana, setDetalleCampana] = useState('');
@@ -107,6 +92,7 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [collapsedGastos, setCollapsedGastos] = useState<Set<string>>(new Set());
 
   const isEditing = !!gastoId;
   const existingGasto = gastoId ? getGastoById(gastoId) : undefined;
@@ -206,6 +192,30 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
     setGastos(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
   };
 
+  const toggleGastoCollapse = (id: string) => {
+    setCollapsedGastos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  // Get already selected programs to prevent duplicates
+  const getSelectedPrograms = (excludeId: string) => {
+    return gastos
+      .filter(g => g.id !== excludeId && g.empresaPrograma)
+      .map(g => g.empresaPrograma);
+  };
+
+  // Check if a gasto is locked (pagado status)
+  const isGastoLocked = (gasto: GastoItem) => {
+    return gasto.estado === 'pagado';
+  };
+
   const hasErrors = (formErrors: FormErrors): boolean => {
     return Object.keys(formErrors).length > 0;
   };
@@ -276,6 +286,23 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
+
+  const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Get responsable name for edit mode
+  const responsableName = existingGasto?.createdBy
+    ? currentUser?.id === existingGasto.createdBy
+      ? `${currentUser.firstName} ${currentUser.lastName}`
+      : existingGasto.createdBy
+    : '';
+
+  // Format fecha de registro for edit mode
+  const fechaRegistro = existingGasto?.createdAt ? formatDate(existingGasto.createdAt) : '';
 
   const labelClass = cn(
     'flex items-center gap-1 text-sm font-semibold',
@@ -361,6 +388,39 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
             )}
           </div>
 
+          {/* Read-only fields - only visible when editing */}
+          {isEditing && (
+            <div className="grid grid-cols-3 gap-5">
+              <div className="space-y-1">
+                <Label className={labelClass}>Responsable</Label>
+                <Input
+                  type="text"
+                  value={responsableName}
+                  disabled
+                  className={cn(inputClass, 'bg-[#f3f4f6] text-gray-600 cursor-not-allowed')}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className={labelClass}>Fecha de Registro</Label>
+                <Input
+                  type="text"
+                  value={fechaRegistro}
+                  disabled
+                  className={cn(inputClass, 'bg-[#f3f4f6] text-gray-600 cursor-not-allowed')}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className={labelClass}>Sector</Label>
+                <Input
+                  type="text"
+                  value="Programación"
+                  disabled
+                  className={cn(inputClass, 'bg-[#f3f4f6] text-gray-600 cursor-not-allowed')}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Section 1: Cargar Datos */}
           <div className="space-y-4">
             {/* Row 1: Unidad de Negocio | Rubro del gasto */}
@@ -392,7 +452,7 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Gastos de Programación">Gastos de Programación</SelectItem>
+                    <SelectItem value="Gasto de programación">Gasto de programación</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -452,11 +512,19 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
               </Label>
               <Textarea
                 value={detalleCampana}
-                onChange={(e) => setDetalleCampana(e.target.value)}
-                placeholder="Concepto del gasto"
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_DETALLE_LENGTH) {
+                    setDetalleCampana(e.target.value);
+                  }
+                }}
+                placeholder="Concepto de gasto"
                 disabled={isCerrado}
+                maxLength={MAX_DETALLE_LENGTH}
                 className={cn(textareaClass, errors.detalleCampana && 'border-red-500')}
               />
+              <div className={cn('text-xs text-right', isDark ? 'text-gray-500' : 'text-gray-400')}>
+                {detalleCampana.length}/{MAX_DETALLE_LENGTH}
+              </div>
             </div>
           </div>
 
@@ -467,216 +535,312 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
             </h2>
 
             {/* Gastos Items */}
-            {gastos.map((gasto, index) => (
-              <div
-                key={gasto.id}
-                className={cn(
-                  'rounded-lg border-2 p-4 space-y-4',
-                  isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-[#f8f9fc] border-[#e6e7eb]'
-                )}
-              >
-                {/* Gasto Header */}
-                <div className="flex items-center justify-between">
-                  <h3 className={cn('text-base font-bold', isDark ? 'text-white' : 'text-[#101828]')}>
-                    Gasto #{index + 1}
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    <span className={`h-4 w-4 rounded-full ${getEstadoColor(gasto.estado)}`} />
-                    <span className={cn('text-sm font-medium', isDark ? 'text-gray-300' : 'text-black')}>
-                      {getEstadoLabel(gasto.estado)}
-                    </span>
-                    {gastos.length > 1 && (
-                      <Button
+            {gastos.map((gasto, index) => {
+              const isCollapsed = collapsedGastos.has(gasto.id);
+              const isLocked = isGastoLocked(gasto);
+              const isDisabled = isCerrado || isLocked;
+              const selectedPrograms = getSelectedPrograms(gasto.id);
+
+              return (
+                <div
+                  key={gasto.id}
+                  className={cn(
+                    'rounded-lg border-2 p-4',
+                    isCollapsed ? 'space-y-0' : 'space-y-4',
+                    isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-[#f8f9fc] border-[#e6e7eb]',
+                    isLocked && 'opacity-80'
+                  )}
+                >
+                  {/* Gasto Header - Always visible, clickable to collapse/expand */}
+                  <div
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={() => toggleGastoCollapse(gasto.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <h3 className={cn('text-lg font-bold', isDark ? 'text-blue-400' : 'text-[#165dfc]')}>
+                        Gasto #{index + 1}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <span className={`h-3 w-3 rounded-full ${getEstadoColor(gasto.estado)}`} />
+                        <span className={cn('text-sm font-medium', isDark ? 'text-gray-300' : 'text-gray-600')}>
+                          {getEstadoLabel(gasto.estado)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {gastos.length > 1 && !isLocked && !isCerrado && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeGastoItem(gasto.id);
+                          }}
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeGastoItem(gasto.id)}
-                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                        disabled={isCerrado}
+                        className={cn(
+                          'p-1 rounded transition-colors',
+                          isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleGastoCollapse(gasto.id);
+                        }}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Gasto #1 title (blue) */}
-                <h4 className="text-lg font-bold text-[#165dfc]">Gasto #{index + 1}</h4>
-
-                {/* Razón social | Proveedor - per gasto */}
-                <div className="space-y-1">
-                  <div className="grid grid-cols-2 gap-5">
-                    <Label className={labelClass}>
-                      Razón social<span className="text-red-500">*</span>
-                    </Label>
-                    <Label className={labelClass}>
-                      Proveedor<span className="text-red-500">*</span>
-                    </Label>
-                  </div>
-                  <ProveedorSelector
-                    value={{ proveedor: gasto.proveedor, razonSocial: gasto.razonSocial }}
-                    onChange={(data) => handleProveedorChange(gasto.id, data)}
-                    disabled={isCerrado}
-                    className={cn(
-                      index === 0 && (errors.proveedor || errors.razonSocial) ? '[&_input]:border-red-500' : ''
-                    )}
-                  />
-                </div>
-
-                {/* Row 1: Factura emitida a | Empresa */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className={labelClass}>
-                      Factura emitida a <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={gasto.facturaEmitidaA}
-                      onValueChange={(v) => updateGastoItem(gasto.id, 'facturaEmitidaA', v)}
-                      disabled={isCerrado}
-                    >
-                      <SelectTrigger className={selectTriggerClass}>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FACTURA_EMITIDA_A.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className={labelClass}>
-                      Empresa <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={gasto.empresa}
-                      onValueChange={(v) => updateGastoItem(gasto.id, 'empresa', v)}
-                      disabled={isCerrado}
-                    >
-                      <SelectTrigger className={selectTriggerClass}>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EMPRESAS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Row 2: Empresa/Programa | Fecha de comprobante */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className={labelClass}>
-                      Empresa/Programa <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={gasto.empresaPrograma}
-                      onValueChange={(v) => updateGastoItem(gasto.id, 'empresaPrograma', v)}
-                      disabled={isCerrado}
-                    >
-                      <SelectTrigger className={selectTriggerClass}>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EMPRESAS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className={labelClass}>
-                      Fecha de comprobante <span className="text-red-500">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        type="date"
-                        value={gasto.fechaComprobante}
-                        onChange={(e) => updateGastoItem(gasto.id, 'fechaComprobante', e.target.value)}
-                        disabled={isCerrado}
-                        className={inputClass}
-                      />
+                        {isCollapsed ? (
+                          <ChevronDown className="h-5 w-5" />
+                        ) : (
+                          <ChevronUp className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                   </div>
-                </div>
 
-                {/* Row 3: Acuerdo de pago | Forma de pago */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className={labelClass}>
-                      Acuerdo de pago <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={gasto.acuerdoPago}
-                      onValueChange={(v) => updateGastoItem(gasto.id, 'acuerdoPago', v)}
-                      disabled={isCerrado}
-                    >
-                      <SelectTrigger className={selectTriggerClass}>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ACUERDOS_PAGO.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Collapsible content */}
+                  {!isCollapsed && (
+                    <>
+                      {/* Proveedor | Razón social - per gasto */}
+                      <div className="space-y-1">
+                        <div className="grid grid-cols-2 gap-5">
+                          <Label className={labelClass}>
+                            Proveedor<span className="text-red-500">*</span>
+                          </Label>
+                          <Label className={labelClass}>
+                            Razón social<span className="text-red-500">*</span>
+                          </Label>
+                        </div>
+                        <ProveedorSelector
+                          value={{ proveedor: gasto.proveedor, razonSocial: gasto.razonSocial }}
+                          onChange={(data) => handleProveedorChange(gasto.id, data)}
+                          disabled={isDisabled}
+                          allowCreate={!isDisabled}
+                          className={cn(
+                            index === 0 && (errors.proveedor || errors.razonSocial) ? '[&_input]:border-red-500' : ''
+                          )}
+                        />
+                      </div>
 
-                  <div className="space-y-1">
-                    <Label className={labelClass}>
-                      Forma de pago <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={gasto.formaPago}
-                      onValueChange={(v) => updateGastoItem(gasto.id, 'formaPago', v)}
-                      disabled={isCerrado}
-                    >
-                      <SelectTrigger className={selectTriggerClass}>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FORMAS_PAGO.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                      {/* Row 1: Factura emitida a | Empresa */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className={labelClass}>
+                            Factura emitida a <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={gasto.facturaEmitidaA}
+                            onValueChange={(v) => updateGastoItem(gasto.id, 'facturaEmitidaA', v)}
+                            disabled={isDisabled}
+                          >
+                            <SelectTrigger className={selectTriggerClass}>
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FACTURA_EMITIDA_A.map((opt) => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                {/* Row 4: Neto */}
-                <div className="w-1/2 pr-2">
-                  <div className="space-y-1">
-                    <Label className={labelClass}>
-                      Neto <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      type="number"
-                      value={gasto.neto || ''}
-                      onChange={(e) => updateGastoItem(gasto.id, 'neto', parseFloat(e.target.value) || 0)}
-                      placeholder="$0"
-                      disabled={isCerrado}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
+                        <div className="space-y-1">
+                          <Label className={labelClass}>
+                            Empresa <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={gasto.empresa}
+                            onValueChange={(v) => updateGastoItem(gasto.id, 'empresa', v)}
+                            disabled={isDisabled}
+                          >
+                            <SelectTrigger className={selectTriggerClass}>
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {EMPRESAS.map((opt) => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
 
-                {/* Row 5: Observaciones */}
-                <div className="space-y-1">
-                  <Label className={labelClass}>Observaciones</Label>
-                  <Textarea
-                    value={gasto.observaciones}
-                    onChange={(e) => updateGastoItem(gasto.id, 'observaciones', e.target.value)}
-                    placeholder="Escribe aquí"
-                    disabled={isCerrado}
-                    className={textareaClass}
-                  />
+                      {/* Row 2: Empresa/PGM | Fecha de comprobante */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className={labelClass}>
+                            Empresa/PGM <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={gasto.empresaPrograma}
+                            onValueChange={(v) => updateGastoItem(gasto.id, 'empresaPrograma', v)}
+                            disabled={isDisabled}
+                          >
+                            <SelectTrigger className={selectTriggerClass}>
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {EMPRESAS.filter(opt => !selectedPrograms.includes(opt)).map((opt) => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                              {/* Show current selection even if it would be filtered */}
+                              {gasto.empresaPrograma && !EMPRESAS.filter(opt => !selectedPrograms.includes(opt)).includes(gasto.empresaPrograma) && (
+                                <SelectItem key={gasto.empresaPrograma} value={gasto.empresaPrograma}>
+                                  {gasto.empresaPrograma}
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className={labelClass}>
+                            Fecha de comprobante <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            type="date"
+                            value={gasto.fechaComprobante}
+                            onChange={(e) => updateGastoItem(gasto.id, 'fechaComprobante', e.target.value)}
+                            disabled={isDisabled}
+                            className={inputClass}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 3: Acuerdo de pago | Forma de pago */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className={labelClass}>
+                            Acuerdo de pago <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={gasto.acuerdoPago}
+                            onValueChange={(v) => updateGastoItem(gasto.id, 'acuerdoPago', v)}
+                            disabled={isDisabled}
+                          >
+                            <SelectTrigger className={selectTriggerClass}>
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ACUERDOS_PAGO.map((opt) => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className={labelClass}>
+                            Forma de pago <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={gasto.formaPago}
+                            onValueChange={(v) => updateGastoItem(gasto.id, 'formaPago', v)}
+                            disabled={isDisabled}
+                          >
+                            <SelectTrigger className={selectTriggerClass}>
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FORMAS_PAGO.map((opt) => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Row 4: Neto */}
+                      <div className="w-1/2 pr-2">
+                        <div className="space-y-1">
+                          <Label className={labelClass}>
+                            Neto <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            value={gasto.neto || ''}
+                            onChange={(e) => updateGastoItem(gasto.id, 'neto', parseFloat(e.target.value) || 0)}
+                            placeholder="$0"
+                            disabled={isDisabled}
+                            className={inputClass}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 5: Observaciones */}
+                      <div className="space-y-1">
+                        <Label className={labelClass}>Observaciones</Label>
+                        <Textarea
+                          value={gasto.observaciones}
+                          onChange={(e) => {
+                            if (e.target.value.length <= MAX_OBSERVACIONES_LENGTH) {
+                              updateGastoItem(gasto.id, 'observaciones', e.target.value);
+                            }
+                          }}
+                          placeholder="Escribe aquí"
+                          disabled={isDisabled}
+                          maxLength={MAX_OBSERVACIONES_LENGTH}
+                          className={textareaClass}
+                        />
+                        <div className={cn('text-xs text-right', isDark ? 'text-gray-500' : 'text-gray-400')}>
+                          {gasto.observaciones.length}/{MAX_OBSERVACIONES_LENGTH}
+                        </div>
+                      </div>
+
+                      {/* Adjuntar archivos link */}
+                      {!isDisabled && (
+                        <div>
+                          <button
+                            type="button"
+                            className="flex items-center gap-2 text-sm text-[#0070ff] hover:text-[#0060dd] font-medium"
+                          >
+                            <Paperclip className="h-4 w-4" />
+                            Adjuntar archivos
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Card action buttons - Cancelar / Guardar */}
+                      {!isDisabled && (
+                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // Reset this gasto to initial state
+                              if (gastos.length > 1) {
+                                removeGastoItem(gasto.id);
+                              }
+                            }}
+                            className="text-[#0070ff] hover:text-[#0060dd] text-xs"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Collapse this gasto to indicate it's "saved"
+                              toggleGastoCollapse(gasto.id);
+                              toast.success(`Gasto #${index + 1} guardado`);
+                            }}
+                            className="border-[#0070ff] text-[#0070ff] hover:bg-[#0070ff]/10 text-xs"
+                          >
+                            Guardar
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Add Importe Button */}
             <div className="flex justify-end">

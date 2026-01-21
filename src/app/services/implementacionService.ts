@@ -271,6 +271,7 @@ export async function update(input: UpdateGastoImplementacionInput): Promise<{ d
   if (fields.condicionPago !== undefined) contextUpdate.condicion_pago = fields.condicionPago;
   if (fields.fechaPago !== undefined) contextUpdate.fecha_pago = fields.fechaPago;
   if (fields.adjuntos !== undefined) contextUpdate.adjuntos = fields.adjuntos;
+  if (fields.itemOrdenPublicidadId !== undefined) contextUpdate.item_orden_publicidad_id = fields.itemOrdenPublicidadId;
 
   const result = await implementacionRepo.update(id, gastoUpdate, contextUpdate);
 

@@ -109,17 +109,17 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  const getGastoById = (id: string): GastoImplementacion | undefined => {
+  const getGastoById = useCallback((id: string): GastoImplementacion | undefined => {
     return gastos.find((g) => g.id === id);
-  };
+  }, [gastos]);
 
-  const getGastosByOrdenId = (ordenId: string): GastoImplementacion[] => {
+  const getGastosByOrdenId = useCallback((ordenId: string): GastoImplementacion[] => {
     return gastos.filter((g) => g.ordenPublicidadId === ordenId);
-  };
+  }, [gastos]);
 
-  const getGastosByItemOrdenId = (itemId: string): GastoImplementacion[] => {
+  const getGastosByItemOrdenId = useCallback((itemId: string): GastoImplementacion[] => {
     return gastos.filter((g) => g.itemOrdenPublicidadId === itemId);
-  };
+  }, [gastos]);
 
   const approveGastoFn = async (id: string): Promise<boolean> => {
     const result = await implementacionService.approveGasto(id);

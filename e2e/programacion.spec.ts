@@ -65,8 +65,9 @@ test.describe('Programación Module', () => {
     await page.click('button:has-text("Nuevo Formulario")');
     await page.waitForTimeout(500);
 
-    // Click save without filling required fields
-    await page.click('button:has-text("Guardar")');
+    // Click the main save button (not the gasto-level one) without filling required fields
+    // The main save button has px-8 class and is at the bottom of the form
+    await page.click('button.bg-\\[\\#0070ff\\]:has-text("Guardar")');
 
     // Verify validation error toast appears
     await expect(page.locator('text=Por favor, complete todos los campos requeridos')).toBeVisible({ timeout: 5000 });
@@ -79,8 +80,8 @@ test.describe('Programación Module', () => {
     // Wait for table to load
     await page.waitForTimeout(1000);
 
-    // Verify Programa mode is active by default
-    await expect(page.locator('button:has-text("Programa")')).toBeVisible({ timeout: 10000 });
+    // Verify Programa mode is active by default using exact match
+    await expect(page.getByRole('button', { name: 'Programa', exact: true })).toBeVisible({ timeout: 10000 });
 
     // Verify table headers for Programa mode (13 columns)
     await expect(page.locator('th:has-text("Estado")')).toBeVisible();
@@ -103,8 +104,8 @@ test.describe('Programación Module', () => {
     await page.click('button:has-text("Dir. de Programación")');
     await page.waitForTimeout(500);
 
-    // Click on Campaña toggle
-    await page.click('button:has-text("Campaña")');
+    // Click on Campaña toggle using exact match
+    await page.getByRole('button', { name: 'Campaña', exact: true }).click();
     await page.waitForTimeout(500);
 
     // Verify table headers for Campaña mode (12 columns)
@@ -130,25 +131,24 @@ test.describe('Programación Module', () => {
     await page.click('button:has-text("Dir. de Programación")');
     await page.waitForTimeout(500);
 
-    // Verify Programa mode is active (shows "Neto" column, not "Neto total")
+    // Verify Programa mode is active (shows "Neto" column and "Empresa/Programa")
     await expect(page.locator('th:has-text("Neto")')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('th:has-text("Empresa/Programa")')).toBeVisible();
 
-    // Switch to Campaña mode
-    await page.click('button:has-text("Campaña")');
+    // Switch to Campaña mode using exact match
+    await page.getByRole('button', { name: 'Campaña', exact: true }).click();
     await page.waitForTimeout(500);
 
     // Verify Campaña mode is active (shows "Neto total" column)
     await expect(page.locator('th:has-text("Neto total")')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('th:has-text("Empresa/Programa")')).not.toBeVisible();
 
-    // Switch back to Programa mode
-    await page.click('button:has-text("Programa")');
+    // Switch back to Programa mode using exact match
+    await page.getByRole('button', { name: 'Programa', exact: true }).click();
     await page.waitForTimeout(500);
 
     // Verify back in Programa mode
-    await expect(page.locator('th:has-text("Neto")')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('th:has-text("Empresa/Programa")')).toBeVisible();
+    await expect(page.locator('th:has-text("Empresa/Programa")')).toBeVisible({ timeout: 5000 });
   });
 
   test('should search in gastos table', async ({ page }) => {
@@ -178,8 +178,9 @@ test.describe('Programación Module', () => {
     // Verify we're on the form
     await expect(page.locator('h1:has-text("Cargar Datos")')).toBeVisible({ timeout: 10000 });
 
-    // Click cancel button
-    await page.click('button:has-text("Cancelar")');
+    // Click the main cancel button at the bottom (last Cancelar button on page)
+    const cancelButtons = page.locator('button:has-text("Cancelar")');
+    await cancelButtons.last().click();
 
     // Verify we're back to the list
     await expect(page.locator('text=Detalle de gastos')).toBeVisible({ timeout: 10000 });
@@ -195,13 +196,13 @@ test.describe('Programación Module', () => {
     await page.waitForTimeout(500);
 
     // Verify first gasto item is present
-    await expect(page.locator('h4:has-text("Gasto #1")')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h3:has-text("Gasto #1")')).toBeVisible({ timeout: 10000 });
 
     // Click "Agregar importe" button
     await page.click('button:has-text("Agregar importe")');
 
     // Verify second gasto item appears
-    await expect(page.locator('h4:has-text("Gasto #2")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('h3:has-text("Gasto #2")')).toBeVisible({ timeout: 5000 });
   });
 
   test('should display total in resumen section', async ({ page }) => {
@@ -243,7 +244,7 @@ test.describe('Programación Module', () => {
     await expect(campaignInput).toHaveValue('Test Campaign');
 
     // Fill Detalle/campaña
-    const detalleTextarea = page.locator('textarea[placeholder="Concepto del gasto"]');
+    const detalleTextarea = page.locator('textarea[placeholder="Concepto de gasto"]');
     await detalleTextarea.fill('Test campaign description');
     await expect(detalleTextarea).toHaveValue('Test campaign description');
 
@@ -328,9 +329,9 @@ test.describe('Programación Filter Toggle', () => {
     await page.click('button:has-text("Dir. de Programación")');
     await page.waitForTimeout(500);
 
-    // Verify both toggle options are visible
-    await expect(page.locator('button:has-text("Programa")')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('button:has-text("Campaña")')).toBeVisible();
+    // Verify both toggle options are visible using exact match to avoid sidebar button
+    await expect(page.getByRole('button', { name: 'Programa', exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: 'Campaña', exact: true })).toBeVisible();
   });
 
   test('should persist filter mode when navigating away and back', async ({ page }) => {
@@ -338,8 +339,8 @@ test.describe('Programación Filter Toggle', () => {
     await page.click('button:has-text("Dir. de Programación")');
     await page.waitForTimeout(500);
 
-    // Switch to Campaña mode
-    await page.click('button:has-text("Campaña")');
+    // Switch to Campaña mode using exact match
+    await page.getByRole('button', { name: 'Campaña', exact: true }).click();
     await page.waitForTimeout(500);
 
     // Verify in Campaña mode
@@ -348,7 +349,9 @@ test.describe('Programación Filter Toggle', () => {
     // Navigate to form and back
     await page.click('button:has-text("Nuevo Formulario")');
     await page.waitForTimeout(500);
-    await page.click('button:has-text("Cancelar")');
+    // Click the main cancel button at the bottom (last Cancelar button on page)
+    const cancelButtons = page.locator('button:has-text("Cancelar")');
+    await cancelButtons.last().click();
     await page.waitForTimeout(500);
 
     // Note: The filter mode resets to default (programa) when component unmounts
@@ -361,14 +364,14 @@ test.describe('Programación Filter Toggle', () => {
     await page.click('button:has-text("Dir. de Programación")');
     await page.waitForTimeout(500);
 
-    // Switch between modes and verify table resets
-    await page.click('button:has-text("Campaña")');
+    // Switch between modes and verify table resets using exact match
+    await page.getByRole('button', { name: 'Campaña', exact: true }).click();
     await page.waitForTimeout(300);
 
     // Check that table is showing (headers visible indicates page reset worked)
     await expect(page.locator('th:has-text("Estado")')).toBeVisible({ timeout: 5000 });
 
-    await page.click('button:has-text("Programa")');
+    await page.getByRole('button', { name: 'Programa', exact: true }).click();
     await page.waitForTimeout(300);
 
     await expect(page.locator('th:has-text("Estado")')).toBeVisible({ timeout: 5000 });
