@@ -160,6 +160,9 @@ export async function getAll(): Promise<{ data: GastoProgramacion[]; error: stri
     return { data: [], error: result.error.message };
   }
 
+  console.log('[getAll] Fetched gastos count:', result.data.length);
+  console.log('[getAll] Formulario IDs:', [...new Set(result.data.map(g => g.formulario_id))]);
+
   return { data: result.data.map(mapFromDB), error: null };
 }
 
@@ -195,6 +198,148 @@ export async function create(input: CreateGastoProgramacionInput): Promise<{ dat
   }
 
   return { data: mapFromDB(result.data), error: null };
+}
+
+/**
+ * Input for each gasto in a multi-gasto create
+ */
+export interface GastoItemInput {
+  proveedor: string;
+  razonSocial: string;
+  neto: number;
+  iva?: number;
+  empresa?: string;
+  observaciones?: string;
+  facturaEmitidaA?: string;
+  acuerdoPago?: string;
+  categoria?: string;
+}
+
+/**
+ * Input for creating multiple gastos under one formulario
+ */
+export interface CreateMultipleGastosInput {
+  // Formulario (header) fields - shared across all gastos
+  mesGestion: string;
+  mesVenta?: string;
+  mesInicio?: string;
+  unidadNegocio: string;
+  categoriaNegocio?: string;
+  programa: string;
+  ejecutivo?: string;
+  subRubroEmpresa?: string;
+  detalleCampana?: string;
+  createdBy?: string;
+  // Individual gastos
+  gastos: GastoItemInput[];
+}
+
+/**
+ * Crea múltiples gastos de programación bajo un mismo formulario
+ */
+export async function createMultiple(input: CreateMultipleGastosInput): Promise<{ data: GastoProgramacion[]; error: string | null }> {
+  console.log('[createMultiple] Input gastos count:', input.gastos?.length);
+  console.log('[createMultiple] Input gastos:', JSON.stringify(input.gastos, null, 2));
+
+  // Validate at least one gasto
+  if (!input.gastos || input.gastos.length === 0) {
+    return { data: [], error: 'Debe proporcionar al menos un gasto' };
+  }
+
+  // Validate required fields
+  if (!input.mesGestion?.trim()) {
+    return { data: [], error: 'Debe seleccionar un mes de gestión' };
+  }
+  if (!input.unidadNegocio?.trim()) {
+    return { data: [], error: 'Debe seleccionar una unidad de negocio' };
+  }
+  if (!input.programa?.trim()) {
+    return { data: [], error: 'Debe seleccionar un programa' };
+  }
+
+  // Validate each gasto
+  for (let i = 0; i < input.gastos.length; i++) {
+    const g = input.gastos[i];
+    if (!g.proveedor?.trim()) {
+      return { data: [], error: `Gasto #${i + 1}: Debe seleccionar un proveedor` };
+    }
+    if (!g.razonSocial?.trim()) {
+      return { data: [], error: `Gasto #${i + 1}: Debe ingresar una razón social` };
+    }
+    if (!g.neto || g.neto <= 0) {
+      return { data: [], error: `Gasto #${i + 1}: Debe ingresar un importe neto válido` };
+    }
+  }
+
+  // Build formulario insert
+  const formulario = {
+    mes_gestion: input.mesGestion || null,
+    mes_venta: input.mesVenta || null,
+    mes_inicio: input.mesInicio || null,
+    unidad_negocio: input.unidadNegocio || null,
+    categoria_negocio: input.categoriaNegocio || null,
+    programa: input.programa || null,
+    ejecutivo: input.ejecutivo || null,
+    sub_rubro_empresa: input.subRubroEmpresa || null,
+    detalle_campana: input.detalleCampana || null,
+    estado: 'pendiente',
+    created_by: input.createdBy || null,
+  };
+
+  // Build gastos inserts
+  const gastosData = input.gastos.map(g => {
+    const neto = g.neto || 0;
+    const iva = g.iva ?? DEFAULT_IVA;
+    const importeTotal = neto * (1 + iva / 100);
+
+    return {
+      gasto: {
+        proveedor: g.proveedor,
+        razon_social: g.razonSocial || null,
+        tipo_factura: null,
+        numero_factura: null,
+        fecha_factura: null,
+        moneda: DEFAULT_MONEDA,
+        neto,
+        iva,
+        importe_total: importeTotal,
+        empresa: g.empresa || null,
+        concepto_gasto: null,
+        observaciones: g.observaciones || null,
+        estado: 'pendiente',
+        estado_pago: 'pendiente',
+        created_by: input.createdBy || null,
+      },
+      context: {
+        categoria: g.categoria || null,
+        acuerdo_pago: g.acuerdoPago || null,
+        cliente: null,
+        monto: null,
+        valor_imponible: null,
+        bonificacion: 0,
+        factura_emitida_a: g.facturaEmitidaA || null,
+      },
+    };
+  });
+
+  console.log('[createMultiple] gastosData count:', gastosData.length);
+
+  const result = await programacionRepo.createWithMultipleGastos({
+    formulario,
+    gastos: gastosData,
+  });
+
+  console.log('[createMultiple] Repository result:', {
+    dataCount: result.data?.length,
+    error: result.error,
+  });
+
+  if (result.error) {
+    console.error('Error creating multiple gastos:', result.error);
+    return { data: [], error: result.error.message };
+  }
+
+  return { data: result.data.map(mapFromDB), error: null };
 }
 
 /**

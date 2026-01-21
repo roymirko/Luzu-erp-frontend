@@ -108,6 +108,95 @@ export async function create(input: {
 }
 
 /**
+ * Crea múltiples gastos de programación bajo un mismo formulario
+ */
+export async function createWithMultipleGastos(input: {
+  formulario: ProgramacionFormularioInsert;
+  gastos: Array<{
+    gasto: GastoInsert;
+    context: Omit<ProgramacionGastoInsert, 'gasto_id' | 'formulario_id'>;
+  }>;
+}): Promise<RepositoryListResult<ProgramacionGastoFullRow>> {
+  console.log('[createWithMultipleGastos] Input gastos count:', input.gastos.length);
+
+  if (input.gastos.length === 0) {
+    return { data: [], error: { code: 'INVALID_INPUT', message: 'Debe proporcionar al menos un gasto' } };
+  }
+
+  // 1. Crear formulario (header) - one per group
+  const { data: formularioData, error: formularioError } = await supabase
+    .from('programacion_formularios')
+    .insert(input.formulario)
+    .select()
+    .single();
+
+  if (formularioError || !formularioData) {
+    return { data: [], error: mapSupabaseError(formularioError || { message: 'Error al crear formulario' }) };
+  }
+
+  const createdGastoIds: string[] = [];
+
+  // 2. Create each gasto + context
+  for (let i = 0; i < input.gastos.length; i++) {
+    const item = input.gastos[i];
+    console.log(`[createWithMultipleGastos] Creating gasto ${i + 1}/${input.gastos.length}:`, item.gasto.neto);
+
+    // Create gasto base
+    const { data: gastoData, error: gastoError } = await supabase
+      .from('gastos')
+      .insert(item.gasto)
+      .select()
+      .single();
+
+    if (gastoError || !gastoData) {
+      console.error(`[createWithMultipleGastos] Error creating gasto ${i + 1}:`, gastoError);
+      // Rollback: delete all created gastos and the formulario
+      for (const gastoId of createdGastoIds) {
+        await supabase.from('gastos').delete().eq('id', gastoId);
+      }
+      await supabase.from('programacion_formularios').delete().eq('id', formularioData.id);
+      return { data: [], error: mapSupabaseError(gastoError || { message: 'Error al crear gasto' }) };
+    }
+
+    console.log(`[createWithMultipleGastos] Gasto ${i + 1} created with id:`, gastoData.id);
+    createdGastoIds.push(gastoData.id);
+
+    // Create context linking gasto to formulario
+    const { error: contextError } = await supabase
+      .from('programacion_gastos')
+      .insert({
+        gasto_id: gastoData.id,
+        formulario_id: formularioData.id,
+        ...item.context,
+      });
+
+    if (contextError) {
+      console.error(`[createWithMultipleGastos] Error creating context for gasto ${i + 1}:`, contextError);
+      // Rollback
+      for (const gastoId of createdGastoIds) {
+        await supabase.from('gastos').delete().eq('id', gastoId);
+      }
+      await supabase.from('programacion_formularios').delete().eq('id', formularioData.id);
+      return { data: [], error: mapSupabaseError(contextError) };
+    }
+    console.log(`[createWithMultipleGastos] Context for gasto ${i + 1} created`);
+  }
+
+  // 3. Fetch all created records from the view
+  console.log(`[createWithMultipleGastos] Fetching ${createdGastoIds.length} created gastos from view`);
+  const results: ProgramacionGastoFullRow[] = [];
+  for (const gastoId of createdGastoIds) {
+    const result = await findById(gastoId);
+    if (result.data) {
+      results.push(result.data);
+    }
+  }
+
+  console.log(`[createWithMultipleGastos] Returning ${results.length} gastos`);
+  return { data: results, error: null };
+}
+
+/**
  * Actualiza un gasto de programación (actualiza las 3 tablas según corresponda)
  */
 export async function update(

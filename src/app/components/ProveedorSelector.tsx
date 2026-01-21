@@ -82,7 +82,7 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
               placeholder="Buscar por nombre o cuit"
               list="proveedores-razon-social"
               disabled={disabled}
-              className="pl-10 h-10 bg-white"
+              className="pl-10 h-10 bg-white border border-[#d1d5db]"
             />
             <datalist id="proveedores-razon-social">
               {proveedores.map((p) => (
@@ -114,7 +114,7 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
             placeholder="Buscar proveedor"
             list="proveedores-empresas"
             disabled={disabled}
-            className="pl-10 h-10 bg-white"
+            className="pl-10 h-10 bg-white border border-[#d1d5db]"
           />
           <datalist id="proveedores-empresas">
             {[...new Set(proveedores.map(p => p.empresa || p.razonSocial))].map((empresa) => (

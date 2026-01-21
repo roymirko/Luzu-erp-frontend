@@ -36,8 +36,6 @@ interface FormErrors {
 
 interface GastoItem {
   id: string;
-  proveedor: string;
-  razonSocial: string;
   facturaEmitidaA: string;
   empresa: string;
   empresaPrograma: string;
@@ -61,7 +59,7 @@ const MAX_DETALLE_LENGTH = 250;
 
 export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramacionProps) {
   const { isDark } = useTheme();
-  const { addGasto, updateGasto, getGastoById } = useProgramacion();
+  const { addGasto, addMultipleGastos, updateGasto, getGastoById, getGastosByFormularioId } = useProgramacion();
   const { currentUser } = useData();
 
   // Section 1: Cargar Datos
@@ -71,12 +69,14 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
   const [nombreCampana, setNombreCampana] = useState('');
   const [detalleCampana, setDetalleCampana] = useState('');
 
-  // Section 2: Gastos (repeatable) - each gasto has its own proveedor
+  // Section 2: Carga de importes - shared proveedor for all gastos
+  const [razonSocial, setRazonSocial] = useState('');
+  const [proveedor, setProveedor] = useState('');
+
+  // Section 2: Gastos (repeatable)
   const [gastos, setGastos] = useState<GastoItem[]>([
     {
       id: crypto.randomUUID(),
-      proveedor: '',
-      razonSocial: '',
       facturaEmitidaA: '',
       empresa: '',
       empresaPrograma: '',
@@ -96,31 +96,36 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
 
   const isEditing = !!gastoId;
   const existingGasto = gastoId ? getGastoById(gastoId) : undefined;
+  // Get ALL gastos for this formulario (not just the clicked one)
+  const formularioGastos = existingGasto ? getGastosByFormularioId(existingGasto.formularioId) : [];
   const isCerrado = existingGasto?.estado === 'cerrado' || existingGasto?.estado === 'anulado';
 
   useEffect(() => {
-    if (existingGasto) {
-      setUnidadNegocio(existingGasto.unidadNegocio || '');
-      setSubrubro(existingGasto.subRubroEmpresa || '');
-      setNombreCampana(existingGasto.programa || '');
-      setDetalleCampana(existingGasto.conceptoGasto || '');
-      // Map existing data to gastos items - proveedor is now per-gasto
-      setGastos([{
-        id: existingGasto.id,
-        proveedor: existingGasto.proveedor || '',
-        razonSocial: existingGasto.razonSocial || '',
-        facturaEmitidaA: existingGasto.cliente || '',
-        empresa: existingGasto.empresa || '',
-        empresaPrograma: existingGasto.programa || '',
-        fechaComprobante: existingGasto.createdAt.toISOString().split('T')[0],
-        acuerdoPago: existingGasto.acuerdoPago || '',
+    if (existingGasto && formularioGastos.length > 0) {
+      // Use data from the first gasto for shared fields
+      const firstGasto = formularioGastos[0];
+      setUnidadNegocio(firstGasto.unidadNegocio || '');
+      setSubrubro(firstGasto.subRubroEmpresa || '');
+      setNombreCampana(firstGasto.programa || '');
+      setDetalleCampana(firstGasto.detalleCampana || firstGasto.conceptoGasto || '');
+      setRazonSocial(firstGasto.razonSocial || '');
+      setProveedor(firstGasto.proveedor || '');
+
+      // Map ALL gastos from this formulario
+      setGastos(formularioGastos.map(g => ({
+        id: g.id,
+        facturaEmitidaA: g.facturaEmitidaA || g.cliente || '',
+        empresa: g.empresa || '',
+        empresaPrograma: g.programa || '',
+        fechaComprobante: g.createdAt.toISOString().split('T')[0],
+        acuerdoPago: g.acuerdoPago || '',
         formaPago: '',
-        neto: existingGasto.neto || 0,
-        observaciones: existingGasto.observaciones || '',
+        neto: g.neto || 0,
+        observaciones: g.observaciones || '',
         estado: 'pendiente-pago',
-      }]);
+      })));
     }
-  }, [existingGasto]);
+  }, [existingGasto, formularioGastos.length]);
 
   const validateForm = useCallback((): FormErrors => {
     const newErrors: FormErrors = {};
@@ -137,37 +142,41 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
     if (!detalleCampana?.trim()) {
       newErrors.detalleCampana = 'Requerido';
     }
-    // Check if at least the first gasto has proveedor (for backward compatibility)
-    const firstGasto = gastos[0];
-    if (!firstGasto?.proveedor?.trim()) {
-      newErrors.proveedor = 'Requerido';
-    }
-    if (!firstGasto?.razonSocial?.trim()) {
+    if (!razonSocial?.trim()) {
       newErrors.razonSocial = 'Requerido';
+    }
+    if (!proveedor?.trim()) {
+      newErrors.proveedor = 'Requerido';
     }
 
     return newErrors;
-  }, [unidadNegocio, subrubro, nombreCampana, detalleCampana, gastos]);
+  }, [unidadNegocio, subrubro, nombreCampana, detalleCampana, razonSocial, proveedor]);
+
+  // Validate that all gastos have required fields
+  const validateGastos = useCallback((): string | null => {
+    for (let i = 0; i < gastos.length; i++) {
+      const g = gastos[i];
+      if (!g.neto || g.neto <= 0) {
+        return `Gasto #${i + 1}: Debe ingresar un importe neto válido`;
+      }
+    }
+    return null;
+  }, [gastos]);
 
   useEffect(() => {
     if (hasAttemptedSubmit) {
       setErrors(validateForm());
     }
-  }, [unidadNegocio, subrubro, nombreCampana, detalleCampana, gastos, hasAttemptedSubmit, validateForm]);
+  }, [unidadNegocio, subrubro, nombreCampana, detalleCampana, razonSocial, proveedor, hasAttemptedSubmit, validateForm]);
 
-  const handleProveedorChange = (gastoId: string, data: { proveedor: string; razonSocial: string }) => {
-    setGastos(prev => prev.map(g =>
-      g.id === gastoId
-        ? { ...g, proveedor: data.proveedor, razonSocial: data.razonSocial }
-        : g
-    ));
+  const handleProveedorChange = (data: { proveedor: string; razonSocial: string }) => {
+    setProveedor(data.proveedor);
+    setRazonSocial(data.razonSocial);
   };
 
   const addGastoItem = () => {
     setGastos(prev => [...prev, {
       id: crypto.randomUUID(),
-      proveedor: '',
-      razonSocial: '',
       facturaEmitidaA: '',
       empresa: '',
       empresaPrograma: '',
@@ -232,47 +241,65 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
       return;
     }
 
+    // Validate gastos
+    const gastosError = validateGastos();
+    if (gastosError) {
+      toast.error(gastosError);
+      return;
+    }
+
     setSaving(true);
     try {
       let success: boolean;
-      const mainGasto = gastos[0];
 
       if (isEditing && existingGasto) {
+        // Update existing gasto (only first one for now)
+        const mainGasto = gastos[0];
         success = await updateGasto({
           id: existingGasto.id,
           unidadNegocio,
           subRubroEmpresa: subrubro,
           programa: nombreCampana,
           conceptoGasto: detalleCampana,
-          proveedor: mainGasto.proveedor,
-          razonSocial: mainGasto.razonSocial,
+          proveedor,
+          razonSocial,
           cliente: mainGasto.facturaEmitidaA,
           empresa: mainGasto.empresa,
           acuerdoPago: mainGasto.acuerdoPago,
           neto: mainGasto.neto,
           observaciones: mainGasto.observaciones,
+          facturaEmitidaA: mainGasto.facturaEmitidaA,
         });
         if (success) toast.success('Gasto actualizado correctamente');
         else toast.error('Error al actualizar el gasto');
       } else {
-        const input: CreateGastoProgramacionInput = {
+        // Create all gastos under one formulario (shared proveedor/razonSocial)
+        const gastosToCreate = gastos.map(g => ({
+          proveedor,
+          razonSocial,
+          neto: g.neto,
+          empresa: g.empresa,
+          observaciones: g.observaciones,
+          facturaEmitidaA: g.facturaEmitidaA,
+          acuerdoPago: g.acuerdoPago,
+        }));
+        console.log('[FormularioProgramacion] Creating gastos:', gastosToCreate.length, gastosToCreate);
+
+        const result = await addMultipleGastos({
           mesGestion: new Date().toISOString().slice(0, 7),
           unidadNegocio,
           programa: nombreCampana,
-          proveedor: mainGasto.proveedor,
-          razonSocial: mainGasto.razonSocial,
           subRubroEmpresa: subrubro,
-          conceptoGasto: detalleCampana,
-          cliente: mainGasto.facturaEmitidaA,
-          empresa: mainGasto.empresa,
-          acuerdoPago: mainGasto.acuerdoPago,
-          neto: mainGasto.neto,
-          observaciones: mainGasto.observaciones,
+          detalleCampana,
           createdBy: currentUser?.id,
-        };
-        success = await addGasto(input);
-        if (success) toast.success('Gasto creado correctamente');
-        else toast.error('Error al crear el gasto');
+          gastos: gastosToCreate,
+        });
+        success = result.success;
+        if (success) {
+          toast.success(`${gastos.length} gasto(s) creado(s) correctamente`);
+        } else {
+          toast.error(result.error || 'Error al crear los gastos');
+        }
       }
 
       if (success) onClose();
@@ -534,6 +561,27 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
               Carga de importes
             </h2>
 
+            {/* Razón social | Proveedor - shared for all gastos */}
+            <div className="space-y-1">
+              <div className="grid grid-cols-2 gap-5">
+                <Label className={labelClass}>
+                  Razón social<span className="text-red-500">*</span>
+                </Label>
+                <Label className={labelClass}>
+                  Proveedor<span className="text-red-500">*</span>
+                </Label>
+              </div>
+              <ProveedorSelector
+                value={{ proveedor, razonSocial }}
+                onChange={handleProveedorChange}
+                disabled={isCerrado}
+                allowCreate={!isCerrado}
+                className={cn(
+                  (errors.proveedor || errors.razonSocial) ? '[&_input]:border-red-500' : ''
+                )}
+              />
+            </div>
+
             {/* Gastos Items */}
             {gastos.map((gasto, index) => {
               const isCollapsed = collapsedGastos.has(gasto.id);
@@ -605,27 +653,6 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                   {/* Collapsible content */}
                   {!isCollapsed && (
                     <>
-                      {/* Proveedor | Razón social - per gasto */}
-                      <div className="space-y-1">
-                        <div className="grid grid-cols-2 gap-5">
-                          <Label className={labelClass}>
-                            Proveedor<span className="text-red-500">*</span>
-                          </Label>
-                          <Label className={labelClass}>
-                            Razón social<span className="text-red-500">*</span>
-                          </Label>
-                        </div>
-                        <ProveedorSelector
-                          value={{ proveedor: gasto.proveedor, razonSocial: gasto.razonSocial }}
-                          onChange={(data) => handleProveedorChange(gasto.id, data)}
-                          disabled={isDisabled}
-                          allowCreate={!isDisabled}
-                          className={cn(
-                            index === 0 && (errors.proveedor || errors.razonSocial) ? '[&_input]:border-red-500' : ''
-                          )}
-                        />
-                      </div>
-
                       {/* Row 1: Factura emitida a | Empresa */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">

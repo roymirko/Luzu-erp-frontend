@@ -55,6 +55,11 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('programa');
 
+  // Debug logging
+  console.log('[TablaProgramacion] gastos count:', gastos.length);
+  console.log('[TablaProgramacion] formulariosAgrupados count:', formulariosAgrupados.length);
+  console.log('[TablaProgramacion] filterMode:', filterMode);
+
   const formatPesos = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(value);
   };

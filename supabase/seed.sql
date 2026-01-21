@@ -220,9 +220,9 @@ DECLARE
 BEGIN
   -- Formulario 1: Nadie Dice Nada - Enero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-01', 'Media', 'Nadie Dice Nada', 'Gabriela Riero', 'activo', 'system'
+    '2024-01', 'Media', 'Nadie Dice Nada', 'Gabriela Riero', 'Entretenimiento', 'Campaña NDD Enero', 'activo', 'system'
   ) RETURNING id INTO v_form1;
 
   -- Gasto 1.1: Producción general
@@ -232,8 +232,8 @@ BEGIN
     'Producciones Audiovisuales S.A.', 'Producciones Audiovisuales S.A.',
     25000, 21, 30250, 'ARS', 'activo', 'pendiente', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form1, 'Producción', 30250);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form1, 'Producción', 30250, 'Luzu TV');
 
   -- Gasto 1.2: Equipamiento técnico
   INSERT INTO public.gastos (
@@ -242,14 +242,14 @@ BEGIN
     'Equipamiento Técnico S.R.L.', 'Equipamiento Técnico S.R.L.',
     18000, 21, 21780, 'ARS', 'activo', 'pagado', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form1, 'Técnico', 21780);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form1, 'Técnico', 21780, 'Luzu TV SA');
 
   -- Formulario 2: Antes Que Nadie - Enero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-01', 'Media', 'Antes Que Nadie', 'Gabriela Riero', 'activo', 'system'
+    '2024-01', 'Media', 'Antes Que Nadie', 'Gabriela Riero', 'Noticias', 'Campaña AQN Enero', 'activo', 'system'
   ) RETURNING id INTO v_form2;
 
   -- Gasto 2.1: Talentos
@@ -259,8 +259,8 @@ BEGIN
     'Talentos y Producción S.A.', 'Talentos y Producción S.A.',
     35000, 21, 42350, 'ARS', 'activo', 'pendiente', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form2, 'Talentos', 42350);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form2, 'Talentos', 42350, 'Luzu TV');
 
   -- Gasto 2.2: Post producción
   INSERT INTO public.gastos (
@@ -269,14 +269,14 @@ BEGIN
     'Post Producción Argentina S.A.', 'Post Producción Argentina S.A.',
     22000, 21, 26620, 'ARS', 'activo', 'pagado', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form2, 'Post Producción', 26620);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form2, 'Post Producción', 26620, 'Luzu TV SA');
 
   -- Formulario 3: Se Fue Larga - Febrero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-02', 'Media', 'Se Fue Larga', 'Gabriela Riero', 'activo', 'system'
+    '2024-02', 'Media', 'Se Fue Larga', 'Gabriela Riero', 'Deportes', 'Campaña SFL Febrero', 'activo', 'system'
   ) RETURNING id INTO v_form3;
 
   -- Gasto 3.1: Sonido
@@ -286,8 +286,8 @@ BEGIN
     'Sonido Profesional S.R.L.', 'Sonido Profesional S.R.L.',
     28000, 21, 33880, 'ARS', 'activo', 'pendiente', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form3, 'Sonido', 33880);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form3, 'Sonido', 33880, 'Luzu TV');
 
   -- Gasto 3.2: Iluminación
   INSERT INTO public.gastos (
@@ -296,14 +296,14 @@ BEGIN
     'Iluminación y Escenografía S.A.', 'Iluminación y Escenografía S.A.',
     32000, 21, 38720, 'ARS', 'activo', 'parcial', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form3, 'Escenografía', 38720);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form3, 'Escenografía', 38720, 'Luzu TV SA');
 
   -- Formulario 4: Patria y Familia - Febrero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-02', 'Media', 'Patria y Familia', 'Gabriela Riero', 'activo', 'system'
+    '2024-02', 'Media', 'Patria y Familia', 'Gabriela Riero', 'Entretenimiento', 'Campaña PyF Febrero', 'activo', 'system'
   ) RETURNING id INTO v_form4;
 
   -- Gasto 4.1: Contenido digital
@@ -313,8 +313,8 @@ BEGIN
     'Servicios de Contenido Digital S.A.', 'Servicios de Contenido Digital S.A.',
     45000, 21, 54450, 'ARS', 'activo', 'pendiente', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form4, 'Contenido Digital', 54450);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form4, 'Contenido Digital', 54450, 'Luzu TV');
 
   -- Gasto 4.2: Logística
   INSERT INTO public.gastos (
@@ -323,8 +323,8 @@ BEGIN
     'Logística Medios S.R.L.', 'Logística Medios S.R.L.',
     15000, 21, 18150, 'ARS', 'activo', 'pagado', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto)
-  VALUES (v_gasto, v_form4, 'Logística', 18150);
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
+  VALUES (v_gasto, v_form4, 'Logística', 18150, 'Luzu TV SA');
 END $$;
 
 -- ============================================

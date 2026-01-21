@@ -1,12 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import * as programacionService from '../services/programacionService';
 import type { GastoProgramacion, CreateGastoProgramacionInput, UpdateGastoProgramacionInput, FormularioAgrupado } from '../types/programacion';
+import type { CreateMultipleGastosInput } from '../services/programacionService';
 
 interface ProgramacionContextType {
   gastos: GastoProgramacion[];
   formulariosAgrupados: FormularioAgrupado[];
   loading: boolean;
   addGasto: (input: CreateGastoProgramacionInput) => Promise<boolean>;
+  addMultipleGastos: (input: CreateMultipleGastosInput) => Promise<{ success: boolean; error?: string }>;
   updateGasto: (input: UpdateGastoProgramacionInput) => Promise<boolean>;
   deleteGasto: (id: string) => Promise<boolean>;
   getGastoById: (id: string) => GastoProgramacion | undefined;
@@ -28,6 +30,13 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching gastos programacion:', result.error);
         return;
       }
+      console.log('[ProgramacionContext] Fetched gastos:', result.data.length);
+      console.log('[ProgramacionContext] Gastos by formularioId:',
+        result.data.reduce((acc, g) => {
+          acc[g.formularioId] = (acc[g.formularioId] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      );
       setGastos(result.data);
     } catch (err) {
       console.error('Error in fetchGastos:', err);
@@ -50,6 +59,18 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
 
     await fetchGastos();
     return true;
+  };
+
+  const addMultipleGastos = async (input: CreateMultipleGastosInput): Promise<{ success: boolean; error?: string }> => {
+    const result = await programacionService.createMultiple(input);
+
+    if (result.error || result.data.length === 0) {
+      console.error('Error adding multiple gastos:', result.error);
+      return { success: false, error: result.error || 'Error desconocido al crear gastos' };
+    }
+
+    await fetchGastos();
+    return { success: true };
   };
 
   const updateGasto = async (input: UpdateGastoProgramacionInput): Promise<boolean> => {
@@ -130,6 +151,7 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
         formulariosAgrupados,
         loading,
         addGasto,
+        addMultipleGastos,
         updateGasto,
         deleteGasto,
         getGastoById,
