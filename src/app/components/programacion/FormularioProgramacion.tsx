@@ -727,28 +727,17 @@ export function FormularioProgramacion({
               Carga de importes
             </h2>
 
-            {/* Razón social | Proveedor - shared for all gastos */}
-            <div className="space-y-1">
-              <div className="grid grid-cols-2 gap-5">
-                <Label className={labelClass}>
-                  Razón social<span className="text-red-500">*</span>
-                </Label>
-                <Label className={labelClass}>
-                  Proveedor<span className="text-red-500">*</span>
-                </Label>
-              </div>
-              <ProveedorSelector
-                value={{ proveedor, razonSocial }}
-                onChange={handleProveedorChange}
-                disabled={isFormularioCerrado}
-                allowCreate={!isFormularioCerrado}
-                className={cn(
-                  errors.proveedor || errors.razonSocial
-                    ? "[&_input]:border-red-500"
-                    : "",
-                )}
-              />
-            </div>
+            <ProveedorSelector
+              value={{ proveedor, razonSocial }}
+              onChange={handleProveedorChange}
+              disabled={isFormularioCerrado}
+              allowCreate={!isFormularioCerrado}
+              className={cn(
+                errors.proveedor || errors.razonSocial
+                  ? "[&_input]:border-red-500"
+                  : "",
+              )}
+            />
 
             {/* Gastos Items */}
             {gastos.map((gasto, index) => {

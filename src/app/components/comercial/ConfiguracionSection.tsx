@@ -107,11 +107,7 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
         </div>
       </div>
 
-      <div className="space-y-2 md:col-span-2">
-        <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-          Proveedor y Razón Social
-          <span className="text-red-500">*</span>
-        </Label>
+      <div className="md:col-span-2">
         <ProveedorSelector
           value={proveedorValue}
           onChange={onProveedorChange}
