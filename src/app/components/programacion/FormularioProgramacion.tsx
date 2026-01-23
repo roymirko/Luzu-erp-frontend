@@ -5,6 +5,7 @@ import { useData } from "../../contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { CurrencyInput } from "../ui/currency-input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import {
@@ -194,16 +195,35 @@ export function FormularioProgramacion({
     proveedor,
   ]);
 
-  // Validate that all gastos have required fields
+  const validateSingleGasto = useCallback(
+    (g: GastoItem, index: number): string | null => {
+      if (!g.facturaEmitidaA?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
+      }
+      if (!g.empresa?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar una empresa`;
+      }
+      if (!g.acuerdoPago?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
+      }
+      if (!g.formaPago?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
+      }
+      if (!g.neto || g.neto <= 0) {
+        return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
+      }
+      return null;
+    },
+    [],
+  );
+
   const validateGastos = useCallback((): string | null => {
     for (let i = 0; i < gastos.length; i++) {
-      const g = gastos[i];
-      if (!g.neto || g.neto <= 0) {
-        return `Gasto #${i + 1}: Debe ingresar un importe neto válido`;
-      }
+      const error = validateSingleGasto(gastos[i], i);
+      if (error) return error;
     }
     return null;
-  }, [gastos]);
+  }, [gastos, validateSingleGasto]);
 
   useEffect(() => {
     if (hasAttemptedSubmit) {
@@ -314,25 +334,28 @@ export function FormularioProgramacion({
       let success: boolean;
 
       if (isEditing && existingGasto) {
-        // Update existing gasto (only first one for now)
-        const mainGasto = gastos[0];
-        success = await updateGasto({
-          id: existingGasto.id,
-          unidadNegocio,
-          subRubroEmpresa: subrubro,
-          programa: nombreCampana,
-          conceptoGasto: detalleCampana,
-          proveedor,
-          razonSocial,
-          cliente: mainGasto.facturaEmitidaA,
-          empresa: mainGasto.empresa,
-          acuerdoPago: mainGasto.acuerdoPago,
-          neto: mainGasto.neto,
-          observaciones: mainGasto.observaciones,
-          facturaEmitidaA: mainGasto.facturaEmitidaA,
-        });
-        if (success) toast.success("Gasto actualizado correctamente");
-        else toast.error("Error al actualizar el gasto");
+        const updatePromises = gastos.map((g) =>
+          updateGasto({
+            id: g.id,
+            unidadNegocio,
+            subRubroEmpresa: subrubro,
+            programa: nombreCampana,
+            conceptoGasto: detalleCampana,
+            proveedor,
+            razonSocial,
+            cliente: g.facturaEmitidaA,
+            empresa: g.empresa,
+            acuerdoPago: g.acuerdoPago,
+            formaPago: g.formaPago,
+            neto: g.neto,
+            observaciones: g.observaciones,
+            facturaEmitidaA: g.facturaEmitidaA,
+          })
+        );
+        const results = await Promise.all(updatePromises);
+        success = results.every((r) => r);
+        if (success) toast.success(`${gastos.length} gasto(s) actualizado(s) correctamente`);
+        else toast.error("Error al actualizar algunos gastos");
       } else {
         // Create all gastos under one formulario (shared proveedor/razonSocial)
         const gastosToCreate = gastos.map((g) => ({
@@ -968,15 +991,10 @@ export function FormularioProgramacion({
                           <Label className={labelClass}>
                             Neto <span className="text-red-500">*</span>
                           </Label>
-                          <Input
-                            type="number"
-                            value={gasto.neto || ""}
-                            onChange={(e) =>
-                              updateGastoItem(
-                                gasto.id,
-                                "neto",
-                                parseFloat(e.target.value) || 0,
-                              )
+                          <CurrencyInput
+                            value={gasto.neto}
+                            onChange={(val) =>
+                              updateGastoItem(gasto.id, "neto", val)
                             }
                             placeholder="$0"
                             disabled={isDisabled}
@@ -1052,7 +1070,11 @@ export function FormularioProgramacion({
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Collapse this gasto to indicate it's "saved"
+                              const error = validateSingleGasto(gasto, index);
+                              if (error) {
+                                toast.error(error);
+                                return;
+                              }
                               toggleGastoCollapse(gasto.id);
                               toast.success(`Gasto #${index + 1} guardado`);
                             }}

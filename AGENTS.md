@@ -78,6 +78,7 @@ When creating or modifying tables, forms, or any UI element:
 | `DataTableEmpty` | `ui/data-table.tsx` | Empty state row |
 | `DataTablePagination` | `ui/data-table-pagination.tsx` | Pagination controls |
 | `StatusBadge` | `ui/status-badge.tsx` | Status with colored circle |
+| `CurrencyInput` | `ui/currency-input.tsx` | Formatted peso input with thousands separators |
 
 **Example table structure:**
 ```tsx

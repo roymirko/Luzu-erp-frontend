@@ -21,7 +21,7 @@ interface TablaProgramacionProps {
 }
 
 const PROGRAMA_COLUMNS = [
-  'Estado', 'Campaña', 'Fecha de registro', 'Responsable', 'Empresa/Programa', 'Factura emitida a',
+  'Estado', 'Empresa/Programa', 'Campaña', 'Fecha de registro', 'Responsable', 'Factura emitida a',
   'Empresa', 'Unidad de negocio', 'Subrubro', 'Proveedor', 'Razón social', 'Neto', 'Acciones'
 ];
 
@@ -202,10 +202,10 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
                 <DataTableCell>
                   <StatusBadge label={getEstadoPagoLabel(gasto.estadoPago)} variant={getEstadoPagoVariant(gasto.estadoPago)} />
                 </DataTableCell>
+                <DataTableCell>{gasto.programa || gasto.empresa || '-'}</DataTableCell>
                 <DataTableCell>{gasto.detalleCampana || '-'}</DataTableCell>
                 <DataTableCell>{formatDate(gasto.createdAt)}</DataTableCell>
                 <DataTableCell>{gasto.ejecutivo || '-'}</DataTableCell>
-                <DataTableCell>{gasto.programa || gasto.empresa || '-'}</DataTableCell>
                 <DataTableCell>{gasto.facturaEmitidaA || '-'}</DataTableCell>
                 <DataTableCell>{gasto.empresa || '-'}</DataTableCell>
                 <DataTableCell>{gasto.unidadNegocio || '-'}</DataTableCell>
