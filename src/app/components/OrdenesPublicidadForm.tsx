@@ -85,7 +85,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   const [proyecto, setProyecto] = useState('');
   const [razonSocial, setRazonSocial] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [empresaAgencia, setEmpresaAgencia] = useState('');
   const [marca, setMarca] = useState('');
   const [nombreCampana, setNombreCampana] = useState('');
   const [acuerdoPago, setAcuerdoPago] = useState('');
@@ -179,7 +178,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
       setProyecto(formularioExistente.proyecto || '');
       setRazonSocial(formularioExistente.razonSocial || '');
       setCategoria(formularioExistente.categoria || '');
-      setEmpresaAgencia(formularioExistente.empresaAgencia || '');
       setMarca(formularioExistente.marca || '');
       setNombreCampana(formularioExistente.nombreCampana || '');
       setAcuerdoPago(formularioExistente.acuerdoPago || '');
@@ -415,7 +413,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
 
     if (!razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');
-    if (!empresaAgencia.trim()) camposFaltantes.push('Empresa/Agencia');
     if (!marca.trim()) camposFaltantes.push('Marca');
 
     return camposFaltantes;
@@ -478,9 +475,8 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                 isCategoriaNegocioDisabled={isCategoriaNegocioDisabled}
                 isProyectoDisabled={isProyectoDisabled}
                 ProveedorSelector={ProveedorSelector}
-                proveedorValue={{ proveedor: empresaAgencia || '', razonSocial: razonSocial || '', proveedorId: null }}
+                proveedorValue={{ proveedor: '', razonSocial: razonSocial || '', proveedorId: null }}
                 onProveedorChange={(next) => {
-                  setEmpresaAgencia(next.proveedor);
                   setRazonSocial(next.razonSocial);
                 }}
               />
@@ -490,9 +486,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                 categoria={categoria}
                 setCategoria={setCategoria}
                 categoriasMarca={CATEGORIAS_MARCA}
-                empresaAgencia={empresaAgencia}
-                setEmpresaAgencia={setEmpresaAgencia}
-                clientsCompanyNames={[...new Set(clients.map(c => c.companyName).filter(Boolean))]}
                 marca={marca}
                 setMarca={setMarca}
                 nombreCampana={nombreCampana}
@@ -730,7 +723,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   proyecto,
                   razonSocial,
                   categoria,
-                  empresaAgencia,
                   marca,
                   nombreCampana,
                   acuerdoPago,

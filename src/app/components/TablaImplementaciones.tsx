@@ -8,13 +8,14 @@ import { TableHeader } from './ui/table-header';
 import { DataTable, DataTableHead, DataTableHeaderCell, DataTableBody, DataTableRow, DataTableCell, DataTableEmpty } from './ui/data-table';
 import { DataTablePagination } from './ui/data-table-pagination';
 import { StatusBadge } from './ui/status-badge';
+import { formatDateDDMMYYYY, formatMesServicio } from '../utils/dateFormatters';
 
 const ITEMS_PER_PAGE = 10;
 
 const COLUMNS = [
-  'Estado', 'Fecha de registro', 'Responsable', 'Unidad de negocio', 'Categoría de negocio',
-  'Orden de Publicidad', 'Presupuesto', 'Cant. de programas', 'Sector', 'Rubro de gasto',
-  'Sub rubro', 'Nombre de campaña', 'Acuerdo de pago', 'Meta', 'Acciones'
+  'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
+  'Categoría de negocio', 'Marca', 'Orden de Publicidad', 'Presupuesto', 'Cant. de programas',
+  'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Neto Total', 'Acciones'
 ];
 
 interface TablaImplementacionesProps {
@@ -64,10 +65,12 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
             itemId: item.id,
             linkedGastoId: linkedGasto?.id,
             estado: linkedGasto ? 'Cargado' : 'Pendiente de carga',
-            fechaRegistro: linkedGasto?.fechaRegistro || form.fecha,
+            mesServicio: formatMesServicio(linkedGasto?.mesServicio || form.mesServicio),
+            fechaRegistro: formatDateDDMMYYYY(linkedGasto?.createdAt || form.fecha),
             responsable: linkedGasto?.responsable || form.responsable,
             unidadNegocio: form.unidadNegocio,
             categoriaNegocio: form.categoriaNegocio || 'N/A',
+            marca: linkedGasto?.marca || form.marca || '-',
             ordenPublicidad: form.ordenPublicidad,
             presupuesto: presupuestoImpl,
             cantidadProgramas: 1,
@@ -75,9 +78,8 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
             rubroGasto: linkedGasto?.rubroGasto || 'Gasto de venta',
             subRubro: linkedGasto?.subRubro || '-',
             nombreCampana: form.nombreCampana || '-',
-            acuerdoPago: form.acuerdoPago || '-',
+            netoTotal: linkedGasto?.neto || 0,
             programa: item.programa,
-            meta: '-',
           };
         });
     });
@@ -91,21 +93,22 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
         formId: gasto.id,
         itemId: undefined,
         linkedGastoId: gasto.id,
-        estado: gasto.estadoOP === 'pendiente' ? 'Pendiente' : gasto.estadoOP === 'activo' ? 'Activo' : gasto.estadoOP === 'cerrado' ? 'Cerrado' : 'Anulado',
-        fechaRegistro: gasto.fechaRegistro,
-        responsable: gasto.responsable,
-        unidadNegocio: gasto.unidadNegocio,
+        estado: gasto.estado === 'pendiente' ? 'Pendiente' : gasto.estado === 'activo' ? 'Activo' : gasto.estado === 'cerrado' ? 'Cerrado' : 'Anulado',
+        mesServicio: formatMesServicio(gasto.mesServicio),
+        fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
+        responsable: gasto.responsable || '-',
+        unidadNegocio: gasto.unidadNegocio || '-',
         categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-        ordenPublicidad: gasto.ordenPublicidad,
-        presupuesto: gasto.presupuesto,
-        cantidadProgramas: gasto.cantidadProgramas,
-        sector: gasto.sector,
-        rubroGasto: gasto.rubroGasto,
-        subRubro: gasto.subRubro,
-        nombreCampana: gasto.nombreCampana,
-        acuerdoPago: gasto.acuerdoPago,
+        marca: gasto.marca || '-',
+        ordenPublicidad: gasto.ordenPublicidad || '-',
+        presupuesto: gasto.neto || 0,
+        cantidadProgramas: 1,
+        sector: gasto.sector || '-',
+        rubroGasto: gasto.rubroGasto || '-',
+        subRubro: gasto.subRubro || '-',
+        nombreCampana: gasto.nombreCampana || '-',
+        netoTotal: gasto.neto || 0,
         programa: undefined,
-        meta: '-',
       }));
 
     const combined = [...fromFormularios, ...standaloneGastos];
@@ -119,7 +122,8 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
         row.unidadNegocio?.toLowerCase().includes(s) ||
         row.categoriaNegocio?.toLowerCase().includes(s) ||
         row.nombreCampana?.toLowerCase().includes(s) ||
-        row.sector?.toLowerCase().includes(s)
+        row.sector?.toLowerCase().includes(s) ||
+        row.marca?.toLowerCase().includes(s)
       );
     });
   }, [formularios, gastos, searchTerm]);
@@ -160,10 +164,12 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
                 <DataTableCell>
                   <StatusBadge label={row.estado} variant={getStatusVariant(row.estado)} />
                 </DataTableCell>
+                <DataTableCell>{row.mesServicio}</DataTableCell>
                 <DataTableCell>{row.fechaRegistro}</DataTableCell>
                 <DataTableCell>{row.responsable}</DataTableCell>
                 <DataTableCell>{row.unidadNegocio}</DataTableCell>
                 <DataTableCell>{row.categoriaNegocio}</DataTableCell>
+                <DataTableCell>{row.marca}</DataTableCell>
                 <DataTableCell>{row.ordenPublicidad}</DataTableCell>
                 <DataTableCell>{formatPesos(row.presupuesto)}</DataTableCell>
                 <DataTableCell>{row.cantidadProgramas}</DataTableCell>
@@ -171,8 +177,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
                 <DataTableCell muted>{row.rubroGasto}</DataTableCell>
                 <DataTableCell muted>{row.subRubro}</DataTableCell>
                 <DataTableCell muted>{row.nombreCampana}</DataTableCell>
-                <DataTableCell>{row.acuerdoPago}</DataTableCell>
-                <DataTableCell muted>{row.meta}</DataTableCell>
+                <DataTableCell>{formatPesos(row.netoTotal)}</DataTableCell>
                 <DataTableCell>
                   <div className="flex items-center justify-center">
                     <Button

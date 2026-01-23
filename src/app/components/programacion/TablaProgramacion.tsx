@@ -10,6 +10,7 @@ import { DataTablePagination } from '../ui/data-table-pagination';
 import { StatusBadge } from '../ui/status-badge';
 import { MoreVertical, Plus } from 'lucide-react';
 import type { FormularioAgrupado, GastoProgramacion } from '../../types/programacion';
+import { formatDateDDMMYYYY } from '../../utils/dateFormatters';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -46,11 +47,7 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(value);
   };
 
-  const formatDate = (date: Date) => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month} - ${year}`;
-  };
+
 
   const getEstadoPagoVariant = (estadoPago: string) => {
     switch (estadoPago) {
@@ -204,7 +201,7 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
                 </DataTableCell>
                 <DataTableCell>{gasto.programa || gasto.empresa || '-'}</DataTableCell>
                 <DataTableCell>{gasto.detalleCampana || '-'}</DataTableCell>
-                <DataTableCell>{formatDate(gasto.createdAt)}</DataTableCell>
+                <DataTableCell>{formatDateDDMMYYYY(gasto.createdAt)}</DataTableCell>
                 <DataTableCell>{gasto.ejecutivo || '-'}</DataTableCell>
                 <DataTableCell>{gasto.facturaEmitidaA || '-'}</DataTableCell>
                 <DataTableCell>{gasto.empresa || '-'}</DataTableCell>
@@ -234,7 +231,7 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
                   <StatusBadge label={getEstadoFormularioLabel(formulario.estado)} variant={getEstadoFormularioVariant(formulario.estado)} />
                 </DataTableCell>
                 <DataTableCell>{formulario.detalleCampana || '-'}</DataTableCell>
-                <DataTableCell>{formatDate(formulario.createdAt)}</DataTableCell>
+                <DataTableCell>{formatDateDDMMYYYY(formulario.createdAt)}</DataTableCell>
                 <DataTableCell>{formulario.ejecutivo || '-'}</DataTableCell>
                 <DataTableCell>{formulario.facturaEmitidaA || '-'}</DataTableCell>
                 <DataTableCell>{formulario.empresa || '-'}</DataTableCell>

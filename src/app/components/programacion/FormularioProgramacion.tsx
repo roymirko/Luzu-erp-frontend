@@ -19,13 +19,14 @@ import { ProveedorSelector } from "../ProveedorSelector";
 import { toast } from "sonner";
 import {
   Lock,
-  Plus,
+  Search,
   Trash2,
   ChevronDown,
   ChevronUp,
   Paperclip,
 } from "lucide-react";
 import { cn } from "../ui/utils";
+import { formatDateDDMMYYYY } from "../../utils/dateFormatters";
 import type {
   GastoProgramacion,
   CreateGastoProgramacionInput,
@@ -77,6 +78,7 @@ const PROGRAMAS_LUZU = [
 const MAX_OBSERVACIONES_LENGTH = 250;
 
 const SUB_RUBROS = ["Producción", "Diseño", "Edición", "Técnica"];
+const CATEGORIAS_NEGOCIO = ["PE", "Media"];
 const MAX_DETALLE_LENGTH = 250;
 
 export function FormularioProgramacion({
@@ -94,7 +96,8 @@ export function FormularioProgramacion({
   const { currentUser } = useData();
 
   // Section 1: Cargar Datos
-  const [unidadNegocio] = useState("Experience");
+  const [unidadNegocio] = useState("Media");
+  const [categoriaNegocio, setCategoriaNegocio] = useState("");
   const [rubroGasto] = useState("Gasto de programación"); // readonly
   const [subrubro, setSubrubro] = useState("");
   const [nombreCampana, setNombreCampana] = useState("");
@@ -141,6 +144,7 @@ export function FormularioProgramacion({
     if (existingGasto && formularioGastos.length > 0) {
       // Use data from the first gasto for shared fields
       const firstGasto = formularioGastos[0];
+      setCategoriaNegocio(firstGasto.categoriaNegocio || "");
       setSubrubro(firstGasto.subRubroEmpresa || "");
       setNombreCampana(firstGasto.programa || "");
       setDetalleCampana(
@@ -155,7 +159,7 @@ export function FormularioProgramacion({
           id: g.id,
           facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
           empresa: g.empresa || "",
-          empresaPrograma: g.programa || "",
+          empresaPrograma: g.categoria || "",
           fechaComprobante: g.createdAt.toISOString().split("T")[0],
           acuerdoPago: g.acuerdoPago || "",
           formaPago: g.formaPago || "",
@@ -202,6 +206,9 @@ export function FormularioProgramacion({
       }
       if (!g.empresa?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar una empresa`;
+      }
+      if (!g.empresaPrograma?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar un programa`;
       }
       if (!g.acuerdoPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
@@ -338,6 +345,7 @@ export function FormularioProgramacion({
           updateGasto({
             id: g.id,
             unidadNegocio,
+            categoriaNegocio,
             subRubroEmpresa: subrubro,
             programa: nombreCampana,
             conceptoGasto: detalleCampana,
@@ -350,6 +358,7 @@ export function FormularioProgramacion({
             neto: g.neto,
             observaciones: g.observaciones,
             facturaEmitidaA: g.facturaEmitidaA,
+            categoria: g.empresaPrograma,
           })
         );
         const results = await Promise.all(updatePromises);
@@ -357,7 +366,6 @@ export function FormularioProgramacion({
         if (success) toast.success(`${gastos.length} gasto(s) actualizado(s) correctamente`);
         else toast.error("Error al actualizar algunos gastos");
       } else {
-        // Create all gastos under one formulario (shared proveedor/razonSocial)
         const gastosToCreate = gastos.map((g) => ({
           proveedor,
           razonSocial,
@@ -367,16 +375,13 @@ export function FormularioProgramacion({
           facturaEmitidaA: g.facturaEmitidaA,
           acuerdoPago: g.acuerdoPago,
           formaPago: g.formaPago,
+          categoria: g.empresaPrograma,
         }));
-        console.log(
-          "[FormularioProgramacion] Creating gastos:",
-          gastosToCreate.length,
-          gastosToCreate,
-        );
 
         const result = await addMultipleGastos({
           mesGestion: new Date().toISOString().slice(0, 7),
           unidadNegocio,
+          categoriaNegocio,
           programa: nombreCampana,
           subRubroEmpresa: subrubro,
           detalleCampana,
@@ -410,12 +415,7 @@ export function FormularioProgramacion({
       minimumFractionDigits: 0,
     }).format(val);
 
-  const formatDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
+
 
   // Get responsable name for edit mode
   const responsableName = existingGasto?.createdBy
@@ -424,9 +424,8 @@ export function FormularioProgramacion({
       : existingGasto.createdBy
     : "";
 
-  // Format fecha de registro for edit mode
   const fechaRegistro = existingGasto?.createdAt
-    ? formatDate(existingGasto.createdAt)
+    ? formatDateDDMMYYYY(existingGasto.createdAt)
     : "";
 
   const labelClass = cn(
@@ -582,7 +581,7 @@ export function FormularioProgramacion({
 
           {/* Section 1: Cargar Datos */}
           <div className="space-y-4">
-            {/* Row 1: Unidad de Negocio | Rubro del gasto */}
+            {/* Row 1: Unidad de Negocio | Categoría de Negocio */}
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-1">
                 <Label className={labelClass}>Unidad de Negocio</Label>
@@ -594,6 +593,29 @@ export function FormularioProgramacion({
                 />
               </div>
 
+              <div className="space-y-1">
+                <Label className={labelClass}>Categoría de Negocio</Label>
+                <Select
+                  value={categoriaNegocio}
+                  onValueChange={setCategoriaNegocio}
+                  disabled={isFormularioCerrado}
+                >
+                  <SelectTrigger className={selectTriggerClass}>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIAS_NEGOCIO.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Row 2: Rubro del gasto | Subrubro */}
+            <div className="grid grid-cols-2 gap-5">
               <div className="space-y-1">
                 <Label className={labelClass}>Rubro del gasto</Label>
                 <Select value={rubroGasto} disabled>
@@ -607,10 +629,7 @@ export function FormularioProgramacion({
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            {/* Row 2: Subrubro | Nombre de Campaña */}
-            <div className="grid grid-cols-2 gap-5">
               <div className="space-y-1">
                 <Label className={labelClass}>
                   Subrubro<span className="text-red-500">*</span>
@@ -637,37 +656,36 @@ export function FormularioProgramacion({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              <div className="space-y-1">
-                <Label className={labelClass}>
-                  Nombre de Campaña<span className="text-red-500">*</span>
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={nombreCampana}
-                    onChange={(e) => setNombreCampana(e.target.value)}
-                    placeholder="Buscar"
-                    disabled={isFormularioCerrado}
-                    className={cn(
-                      inputClass,
-                      "flex-1",
-                      errors.nombreCampana && "border-red-500",
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    size="icon"
-                    className="h-[32px] w-[32px] bg-[#0070ff] hover:bg-[#0060dd] text-white shrink-0"
-                    disabled={isFormularioCerrado}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </div>
+            {/* Row 3: Nombre de Campaña (full width) */}
+            <div className="space-y-1">
+              <Label className={labelClass}>
+                Nombre de Campaña<span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Search
+                  className={cn(
+                    "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",
+                    isDark ? "text-gray-500" : "text-gray-400",
+                  )}
+                />
+                <Input
+                  type="text"
+                  value={nombreCampana}
+                  onChange={(e) => setNombreCampana(e.target.value)}
+                  placeholder="Buscar campaña"
+                  disabled={isFormularioCerrado}
+                  className={cn(
+                    inputClass,
+                    "pl-10",
+                    errors.nombreCampana && "border-red-500",
+                  )}
+                />
               </div>
             </div>
 
-            {/* Row 3: Detalle/campaña */}
+            {/* Row 4: Detalle/campaña */}
             <div className="space-y-1">
               <Label className={labelClass}>
                 Detalle/campaña<span className="text-red-500">*</span>

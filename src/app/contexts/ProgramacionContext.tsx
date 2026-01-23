@@ -30,13 +30,6 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching gastos programacion:', result.error);
         return;
       }
-      console.log('[ProgramacionContext] Fetched gastos:', result.data.length);
-      console.log('[ProgramacionContext] Gastos by formularioId:',
-        result.data.reduce((acc, g) => {
-          acc[g.formularioId] = (acc[g.formularioId] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      );
       setGastos(result.data);
     } catch (err) {
       console.error('Error in fetchGastos:', err);

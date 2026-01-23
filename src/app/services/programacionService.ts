@@ -162,9 +162,6 @@ export async function getAll(): Promise<{ data: GastoProgramacion[]; error: stri
     return { data: [], error: result.error.message };
   }
 
-  console.log('[getAll] Fetched gastos count:', result.data.length);
-  console.log('[getAll] Formulario IDs:', [...new Set(result.data.map(g => g.formulario_id))]);
-
   return { data: result.data.map(mapFromDB), error: null };
 }
 
@@ -241,9 +238,6 @@ export interface CreateMultipleGastosInput {
  * Crea múltiples gastos de programación bajo un mismo formulario
  */
 export async function createMultiple(input: CreateMultipleGastosInput): Promise<{ data: GastoProgramacion[]; error: string | null }> {
-  console.log('[createMultiple] Input gastos count:', input.gastos?.length);
-  console.log('[createMultiple] Input gastos:', JSON.stringify(input.gastos, null, 2));
-
   // Validate at least one gasto
   if (!input.gastos || input.gastos.length === 0) {
     return { data: [], error: 'Debe proporcionar al menos un gasto' };
@@ -326,16 +320,9 @@ export async function createMultiple(input: CreateMultipleGastosInput): Promise<
     };
   });
 
-  console.log('[createMultiple] gastosData count:', gastosData.length);
-
   const result = await programacionRepo.createWithMultipleGastos({
     formulario,
     gastos: gastosData,
-  });
-
-  console.log('[createMultiple] Repository result:', {
-    dataCount: result.data?.length,
-    error: result.error,
   });
 
   if (result.error) {

@@ -8,9 +8,6 @@ interface MarcaCategoriaSectionProps {
   categoria: string;
   setCategoria: (v: string) => void;
   categoriasMarca: string[];
-  empresaAgencia: string;
-  setEmpresaAgencia: (v: string) => void;
-  clientsCompanyNames: string[];
   marca: string;
   setMarca: (v: string) => void;
   nombreCampana: string;
@@ -24,9 +21,6 @@ export function MarcaCategoriaSection(props: MarcaCategoriaSectionProps) {
     categoria,
     setCategoria,
     categoriasMarca,
-    empresaAgencia,
-    setEmpresaAgencia,
-    clientsCompanyNames,
     marca,
     setMarca,
     nombreCampana,
@@ -35,76 +29,53 @@ export function MarcaCategoriaSection(props: MarcaCategoriaSectionProps) {
   } = props;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-2">
-        <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-          Categoría
-          <span className="text-red-500">*</span>
-        </Label>
-        <div className="relative">
-          <select
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-            className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
-              ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
-              : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
-              } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
-          >
-            <option value="">Seleccionar</option>
-            {categoriasMarca.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+            Categoría
+            <span className="text-red-500">*</span>
+          </Label>
+          <div className="relative">
+            <select
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
+                ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
+                : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
+                } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+            >
+              <option value="">Seleccionar</option>
+              {categoriasMarca.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-          Empresa/Agencia
-          <span className="text-red-500">*</span>
-        </Label>
-        <div className="relative">
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-          <Input
-            value={empresaAgencia}
-            onChange={(e) => setEmpresaAgencia(e.target.value)}
-            placeholder="Buscar empresa"
-            list="empresas"
-            className={`pl-10 ${isDark
-              ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-              : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-              }`}
-          />
-          <datalist id="empresas">
-            {clientsCompanyNames.map((company) => (
-              <option key={company} value={company} />
-            ))}
-          </datalist>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
-          Marca
-          <span className="text-red-500">*</span>
-        </Label>
-        <div className="relative">
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-          <Input
-            value={marca}
-            onChange={(e) => setMarca(e.target.value)}
-            placeholder="Buscar marca"
-            list="marcas"
-            className={`pl-10 ${isDark
-              ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-              : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-              }`}
-          />
-          <datalist id="marcas">
-            <option value="Lysoform" />
-            <option value="Dove" />
-            <option value="Coca-Cola" />
-          </datalist>
+        <div className="space-y-2">
+          <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
+            Marca
+            <span className="text-red-500">*</span>
+          </Label>
+          <div className="relative">
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+            <Input
+              value={marca}
+              onChange={(e) => setMarca(e.target.value)}
+              placeholder="Buscar marca"
+              list="marcas"
+              className={`pl-10 ${isDark
+                ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+                : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+                }`}
+            />
+            <datalist id="marcas">
+              <option value="Lysoform" />
+              <option value="Dove" />
+              <option value="Coca-Cola" />
+            </datalist>
+          </div>
         </div>
       </div>
 
@@ -112,19 +83,25 @@ export function MarcaCategoriaSection(props: MarcaCategoriaSectionProps) {
         <Label className={isDark ? 'text-gray-400' : 'text-gray-700'}>
           Nombre de Campaña
         </Label>
-        <Input
-          value={nombreCampana}
-          onChange={(e) => {
-            if (e.target.value.length <= maxCharsCampana) {
-              setNombreCampana(e.target.value);
-            }
-          }}
-          placeholder="Ej: Campaña Verano 2024"
-          className={isDark
-            ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-            : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-          }
-        />
+        <div className="relative">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+          <Input
+            value={nombreCampana}
+            onChange={(e) => {
+              if (e.target.value.length <= maxCharsCampana) {
+                setNombreCampana(e.target.value);
+              }
+            }}
+            placeholder="Buscar campaña"
+            list="campanas"
+            className={`pl-10 ${isDark
+              ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+              : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+              }`}
+          />
+          <datalist id="campanas">
+          </datalist>
+        </div>
         <p className={`text-xs text-right ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
           {nombreCampana.length}/{maxCharsCampana}
         </p>
