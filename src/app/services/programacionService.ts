@@ -63,6 +63,7 @@ function mapFromDB(row: ProgramacionGastoFullRow): GastoProgramacion {
     valorImponible: row.valor_imponible || 0,
     bonificacion: row.bonificacion || 0,
     facturaEmitidaA: row.factura_emitida_a || undefined,
+    formaPago: row.forma_pago || undefined,
   };
 }
 
@@ -106,7 +107,7 @@ function mapToDBInserts(input: CreateGastoProgramacionInput): {
       ejecutivo: input.ejecutivo || null,
       sub_rubro_empresa: input.subRubroEmpresa || null,
       detalle_campana: input.detalleCampana || null,
-      estado: 'pendiente',
+      estado: 'activo',
       created_by: input.createdBy || null,
     },
     context: {
@@ -117,6 +118,7 @@ function mapToDBInserts(input: CreateGastoProgramacionInput): {
       valor_imponible: input.valorImponible || null,
       bonificacion: input.bonificacion || 0,
       factura_emitida_a: input.facturaEmitidaA || null,
+      forma_pago: input.formaPago || null,
     },
   };
 }
@@ -213,6 +215,7 @@ export interface GastoItemInput {
   facturaEmitidaA?: string;
   acuerdoPago?: string;
   categoria?: string;
+  formaPago?: string;
 }
 
 /**
@@ -282,7 +285,7 @@ export async function createMultiple(input: CreateMultipleGastosInput): Promise<
     ejecutivo: input.ejecutivo || null,
     sub_rubro_empresa: input.subRubroEmpresa || null,
     detalle_campana: input.detalleCampana || null,
-    estado: 'pendiente',
+    estado: 'activo',
     created_by: input.createdBy || null,
   };
 
@@ -318,6 +321,7 @@ export async function createMultiple(input: CreateMultipleGastosInput): Promise<
         valor_imponible: null,
         bonificacion: 0,
         factura_emitida_a: g.facturaEmitidaA || null,
+        forma_pago: g.formaPago || null,
       },
     };
   });
@@ -398,6 +402,7 @@ export async function update(input: UpdateGastoProgramacionInput): Promise<{ dat
   if (fields.valorImponible !== undefined) contextUpdate.valor_imponible = fields.valorImponible;
   if (fields.bonificacion !== undefined) contextUpdate.bonificacion = fields.bonificacion;
   if (fields.facturaEmitidaA !== undefined) contextUpdate.factura_emitida_a = fields.facturaEmitidaA;
+  if (fields.formaPago !== undefined) contextUpdate.forma_pago = fields.formaPago;
 
   const result = await programacionRepo.update(id, {
     gasto: Object.keys(gastoUpdate).length > 0 ? gastoUpdate : undefined,

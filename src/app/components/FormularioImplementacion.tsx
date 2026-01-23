@@ -452,7 +452,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             <div className="flex justify-between items-start">
               <div>
                 <h1 className={cn('text-2xl font-bold mb-2', isDark ? 'text-white' : 'text-[#101828]')}>
-                  Informaci\u00f3n de campa\u00f1a
+                  Información de campaña
                 </h1>
                 <p className={cn('text-sm', isDark ? 'text-gray-500' : 'text-[#4a5565]')}>
                   Detalle de la orden y registro de importes operativos
@@ -467,7 +467,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             {isCerrado && (
               <div className="mt-4 p-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 flex items-center gap-2 text-red-700 dark:text-red-400">
                 <Lock className="w-4 h-4" />
-                <span className="text-sm">Este gasto est\u00e1 {estadoOP} y no puede ser editado.</span>
+                <span className="text-sm">Este gasto está {estadoOP} y no puede ser editado.</span>
               </div>
             )}
           </div>
@@ -516,7 +516,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
               onChange={(e) => setObservaciones(e.target.value)}
               maxLength={FIELD_MAX_LENGTHS.observaciones}
               disabled={isCerrado}
-              placeholder="Escribe aqu\u00ed"
+              placeholder="Escribe aquí"
               className={textareaClass}
             />
           </div>

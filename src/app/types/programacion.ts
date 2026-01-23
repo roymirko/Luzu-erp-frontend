@@ -1,6 +1,9 @@
-import type { Gasto, EstadoGasto, GastoValidationError, GastoValidationResult } from './gastos';
+import type { Gasto, EstadoGasto, GastoValidationError, GastoValidationResult, EstadoPago } from './gastos';
 
 export type { EstadoGasto as EstadoGastoProgramacion };
+export type { EstadoPago };
+
+export type EstadoFormularioProgramacion = 'activo' | 'cerrado' | 'anulado';
 
 /**
  * Formulario de programación (header que agrupa gastos)
@@ -38,6 +41,7 @@ export interface ProgramacionGastoContext {
   valorImponible?: number;
   bonificacion?: number;
   facturaEmitidaA?: string;
+  formaPago?: string;
 }
 
 /**
@@ -67,6 +71,7 @@ export interface GastoProgramacion extends Gasto {
   valorImponible: number;
   bonificacion: number;
   facturaEmitidaA?: string;
+  formaPago?: string;
 }
 
 /**
@@ -104,6 +109,7 @@ export interface CreateGastoProgramacionInput {
   valorImponible?: number;
   bonificacion?: number;
   facturaEmitidaA?: string;
+  formaPago?: string;
   // Audit
   createdBy?: string;
 }
@@ -125,7 +131,7 @@ export type { GastoValidationResult as GastoProgramacionValidationResult };
  */
 export interface FormularioAgrupado {
   id: string; // formularioId
-  estado: EstadoGasto;
+  estado: EstadoFormularioProgramacion;
   createdAt: Date;
   ejecutivo: string;
   facturaEmitidaA?: string;

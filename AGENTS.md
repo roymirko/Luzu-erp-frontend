@@ -55,6 +55,60 @@ supabase/
 - Components should have a maximum of 400 lines if possible
 - All business rules should be in a separate service file under app/services file
 
+### Component Reusability (MANDATORY)
+
+When creating or modifying tables, forms, or any UI element:
+
+1. **ALWAYS check existing components first** in `src/app/components/ui/`
+2. **ALWAYS reuse existing components** - never duplicate code
+3. **If a pattern repeats 2+ times, create a reusable component**
+4. **New tables MUST use these shared components:**
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `ActionCard` | `ui/action-card.tsx` | "Nuevo Formulario" cards |
+| `TableHeader` | `ui/table-header.tsx` | Title + Search + children slot |
+| `FilterToggle` | `ui/filter-toggle.tsx` | Animated toggle switch (Programa/Orden) |
+| `DataTable` | `ui/data-table.tsx` | Table wrapper with border/overflow |
+| `DataTableHead` | `ui/data-table.tsx` | Table header (`<thead>`) |
+| `DataTableHeaderCell` | `ui/data-table.tsx` | Header cell (`<th>`) |
+| `DataTableBody` | `ui/data-table.tsx` | Table body (`<tbody>`) |
+| `DataTableRow` | `ui/data-table.tsx` | Table row with hover/click |
+| `DataTableCell` | `ui/data-table.tsx` | Table cell (supports `muted` prop) |
+| `DataTableEmpty` | `ui/data-table.tsx` | Empty state row |
+| `DataTablePagination` | `ui/data-table-pagination.tsx` | Pagination controls |
+| `StatusBadge` | `ui/status-badge.tsx` | Status with colored circle |
+
+**Example table structure:**
+```tsx
+<div className="space-y-6">
+  <ActionCard title="..." description="..." icon={Icon} onClick={...} />
+  
+  <TableHeader title="..." searchValue={...} onSearchChange={...}>
+    <FilterToggle options={...} value={...} onChange={...} />
+  </TableHeader>
+  
+  <DataTable>
+    <DataTableHead>
+      <tr>{columns.map(col => <DataTableHeaderCell key={col}>{col}</DataTableHeaderCell>)}</tr>
+    </DataTableHead>
+    <DataTableBody>
+      {rows.map(row => (
+        <DataTableRow key={row.id} onClick={...}>
+          <DataTableCell><StatusBadge label="..." variant="..." /></DataTableCell>
+          <DataTableCell>...</DataTableCell>
+          <DataTableCell muted>...</DataTableCell>
+        </DataTableRow>
+      ))}
+    </DataTableBody>
+  </DataTable>
+  
+  <DataTablePagination currentPage={...} totalPages={...} onPageChange={...} />
+</div>
+```
+
+**StatusBadge variants:** `success`, `warning`, `error`, `neutral`, `info`
+
 ### Imports
 
 ```typescript

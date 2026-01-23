@@ -1,4 +1,3 @@
-import { useTheme } from '../contexts/ThemeContext';
 import { TablaImplementaciones } from './TablaImplementaciones';
 
 interface ImplementacionesProps {

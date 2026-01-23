@@ -124,7 +124,7 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
 
       result.push({
         id: formularioId,
-        estado: firstGasto.formularioEstado as FormularioAgrupado['estado'] || firstGasto.estado,
+        estado: (firstGasto.formularioEstado || 'activo') as FormularioAgrupado['estado'],
         createdAt: firstGasto.formularioCreatedAt || firstGasto.createdAt,
         ejecutivo: firstGasto.ejecutivo || '',
         facturaEmitidaA: firstGasto.facturaEmitidaA,

@@ -207,6 +207,7 @@ export interface ProgramacionGastoRow {
   valor_imponible: number | null;
   bonificacion: number | null;
   factura_emitida_a: string | null;
+  forma_pago: string | null;
 }
 
 export type ProgramacionGastoInsert = Omit<ProgramacionGastoRow, 'id'>;
@@ -255,6 +256,7 @@ export interface ProgramacionGastoFullRow {
   valor_imponible: number | null;
   bonificacion: number | null;
   factura_emitida_a: string | null;
+  forma_pago: string | null;
 }
 
 // Tabla implementacion_gastos (contexto implementación)

@@ -1,24 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useProgramacion } from '../../contexts/ProgramacionContext';
-import { useData } from '../../contexts/DataContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
+import { useState, useEffect, useCallback } from "react";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useProgramacion } from "../../contexts/ProgramacionContext";
+import { useData } from "../../contexts/DataContext";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select';
-import { ProveedorSelector } from '../ProveedorSelector';
-import { toast } from 'sonner';
-import { Lock, Plus, Trash2, ChevronDown, ChevronUp, Paperclip } from 'lucide-react';
-import { cn } from '../ui/utils';
-import type { GastoProgramacion, CreateGastoProgramacionInput } from '../../types/programacion';
+} from "../ui/select";
+import { ProveedorSelector } from "../ProveedorSelector";
+import { toast } from "sonner";
+import {
+  Lock,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Paperclip,
+} from "lucide-react";
+import { cn } from "../ui/utils";
+import type {
+  GastoProgramacion,
+  CreateGastoProgramacionInput,
+} from "../../types/programacion";
 
 interface FormularioProgramacionProps {
   gastoId?: string;
@@ -26,7 +36,6 @@ interface FormularioProgramacionProps {
 }
 
 interface FormErrors {
-  unidadNegocio?: string;
   subrubro?: string;
   nombreCampana?: string;
   detalleCampana?: string;
@@ -44,113 +53,146 @@ interface GastoItem {
   formaPago: string;
   neto: number;
   observaciones: string;
-  estado: 'pendiente-pago' | 'pagado' | 'anulado';
+  estado: "pendiente-pago" | "pagado" | "anulado";
 }
 
-const ACUERDOS_PAGO = ['5 días', '30 días', '45 días', '60 días', '90 días'];
-const FORMAS_PAGO = ['eCheque', 'Transferencia', 'Efectivo'];
-const EMPRESAS = ['Luzu TV', 'Luzu TV SA'];
-const FACTURA_EMITIDA_A = ['Luzu TV', 'Luzu TV SA'];
+const ACUERDOS_PAGO = ["5 días", "30 días", "45 días", "60 días", "90 días"];
+const FORMAS_PAGO = ["eCheque", "Transferencia", "Efectivo"];
+const EMPRESAS = ["Luzu TV", "Luzu TV SA"];
+const FACTURA_EMITIDA_A = ["Luzu TV", "Luzu TV SA"];
+const PROGRAMAS_LUZU = [
+  "FM Luzu",
+  "Antes Que Nadie",
+  "Nadie Dice Nada",
+  "Patria y Familia",
+  "Se Fue Larga",
+  "La Novela",
+  "Algo Va A Picar",
+  "Los No Talentos",
+  "Algo de Música",
+  "Xtream Master",
+  "Edición Especial",
+];
 const MAX_OBSERVACIONES_LENGTH = 250;
 
-const SUB_RUBROS = ['Producción', 'Diseño', 'Edición', 'Técnica'];
-const UNIDADES_NEGOCIO = ['PE', 'Media'];
+const SUB_RUBROS = ["Producción", "Diseño", "Edición", "Técnica"];
 const MAX_DETALLE_LENGTH = 250;
 
-export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramacionProps) {
+export function FormularioProgramacion({
+  gastoId,
+  onClose,
+}: FormularioProgramacionProps) {
   const { isDark } = useTheme();
-  const { addGasto, addMultipleGastos, updateGasto, getGastoById, getGastosByFormularioId } = useProgramacion();
+  const {
+    addGasto,
+    addMultipleGastos,
+    updateGasto,
+    getGastoById,
+    getGastosByFormularioId,
+  } = useProgramacion();
   const { currentUser } = useData();
 
   // Section 1: Cargar Datos
-  const [unidadNegocio, setUnidadNegocio] = useState('');
-  const [rubroGasto] = useState('Gasto de programación'); // readonly
-  const [subrubro, setSubrubro] = useState('');
-  const [nombreCampana, setNombreCampana] = useState('');
-  const [detalleCampana, setDetalleCampana] = useState('');
+  const [unidadNegocio] = useState("Experience");
+  const [rubroGasto] = useState("Gasto de programación"); // readonly
+  const [subrubro, setSubrubro] = useState("");
+  const [nombreCampana, setNombreCampana] = useState("");
+  const [detalleCampana, setDetalleCampana] = useState("");
 
   // Section 2: Carga de importes - shared proveedor for all gastos
-  const [razonSocial, setRazonSocial] = useState('');
-  const [proveedor, setProveedor] = useState('');
+  const [razonSocial, setRazonSocial] = useState("");
+  const [proveedor, setProveedor] = useState("");
 
   // Section 2: Gastos (repeatable)
   const [gastos, setGastos] = useState<GastoItem[]>([
     {
       id: crypto.randomUUID(),
-      facturaEmitidaA: '',
-      empresa: '',
-      empresaPrograma: '',
-      fechaComprobante: new Date().toISOString().split('T')[0],
-      acuerdoPago: '',
-      formaPago: '',
+      facturaEmitidaA: "",
+      empresa: "",
+      empresaPrograma: "",
+      fechaComprobante: new Date().toISOString().split("T")[0],
+      acuerdoPago: "",
+      formaPago: "",
       neto: 0,
-      observaciones: '',
-      estado: 'pendiente-pago',
+      observaciones: "",
+      estado: "pendiente-pago",
     },
   ]);
 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [collapsedGastos, setCollapsedGastos] = useState<Set<string>>(new Set());
+  const [collapsedGastos, setCollapsedGastos] = useState<Set<string>>(
+    new Set(),
+  );
 
   const isEditing = !!gastoId;
   const existingGasto = gastoId ? getGastoById(gastoId) : undefined;
   // Get ALL gastos for this formulario (not just the clicked one)
-  const formularioGastos = existingGasto ? getGastosByFormularioId(existingGasto.formularioId) : [];
-  const isCerrado = existingGasto?.estado === 'cerrado' || existingGasto?.estado === 'anulado';
+  const formularioGastos = existingGasto
+    ? getGastosByFormularioId(existingGasto.formularioId)
+    : [];
+  const isFormularioCerrado =
+    existingGasto?.formularioEstado === "cerrado" ||
+    existingGasto?.formularioEstado === "anulado";
 
   useEffect(() => {
     if (existingGasto && formularioGastos.length > 0) {
       // Use data from the first gasto for shared fields
       const firstGasto = formularioGastos[0];
-      setUnidadNegocio(firstGasto.unidadNegocio || '');
-      setSubrubro(firstGasto.subRubroEmpresa || '');
-      setNombreCampana(firstGasto.programa || '');
-      setDetalleCampana(firstGasto.detalleCampana || firstGasto.conceptoGasto || '');
-      setRazonSocial(firstGasto.razonSocial || '');
-      setProveedor(firstGasto.proveedor || '');
+      setSubrubro(firstGasto.subRubroEmpresa || "");
+      setNombreCampana(firstGasto.programa || "");
+      setDetalleCampana(
+        firstGasto.detalleCampana || firstGasto.conceptoGasto || "",
+      );
+      setRazonSocial(firstGasto.razonSocial || "");
+      setProveedor(firstGasto.proveedor || "");
 
       // Map ALL gastos from this formulario
-      setGastos(formularioGastos.map(g => ({
-        id: g.id,
-        facturaEmitidaA: g.facturaEmitidaA || g.cliente || '',
-        empresa: g.empresa || '',
-        empresaPrograma: g.programa || '',
-        fechaComprobante: g.createdAt.toISOString().split('T')[0],
-        acuerdoPago: g.acuerdoPago || '',
-        formaPago: '',
-        neto: g.neto || 0,
-        observaciones: g.observaciones || '',
-        estado: 'pendiente-pago',
-      })));
+      setGastos(
+        formularioGastos.map((g) => ({
+          id: g.id,
+          facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
+          empresa: g.empresa || "",
+          empresaPrograma: g.programa || "",
+          fechaComprobante: g.createdAt.toISOString().split("T")[0],
+          acuerdoPago: g.acuerdoPago || "",
+          formaPago: g.formaPago || "",
+          neto: g.neto || 0,
+          observaciones: g.observaciones || "",
+          estado: g.estadoPago === "pago" ? "pagado" : "pendiente-pago",
+        })),
+      );
     }
   }, [existingGasto, formularioGastos.length]);
 
   const validateForm = useCallback((): FormErrors => {
     const newErrors: FormErrors = {};
 
-    if (!unidadNegocio?.trim()) {
-      newErrors.unidadNegocio = 'Requerido';
-    }
     if (!subrubro?.trim()) {
-      newErrors.subrubro = 'Requerido';
+      newErrors.subrubro = "Requerido";
     }
     if (!nombreCampana?.trim()) {
-      newErrors.nombreCampana = 'Requerido';
+      newErrors.nombreCampana = "Requerido";
     }
     if (!detalleCampana?.trim()) {
-      newErrors.detalleCampana = 'Requerido';
+      newErrors.detalleCampana = "Requerido";
     }
     if (!razonSocial?.trim()) {
-      newErrors.razonSocial = 'Requerido';
+      newErrors.razonSocial = "Requerido";
     }
     if (!proveedor?.trim()) {
-      newErrors.proveedor = 'Requerido';
+      newErrors.proveedor = "Requerido";
     }
 
     return newErrors;
-  }, [unidadNegocio, subrubro, nombreCampana, detalleCampana, razonSocial, proveedor]);
+  }, [
+    subrubro,
+    nombreCampana,
+    detalleCampana,
+    razonSocial,
+    proveedor,
+  ]);
 
   // Validate that all gastos have required fields
   const validateGastos = useCallback((): string | null => {
@@ -167,42 +209,62 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
     if (hasAttemptedSubmit) {
       setErrors(validateForm());
     }
-  }, [unidadNegocio, subrubro, nombreCampana, detalleCampana, razonSocial, proveedor, hasAttemptedSubmit, validateForm]);
+  }, [
+    subrubro,
+    nombreCampana,
+    detalleCampana,
+    razonSocial,
+    proveedor,
+    hasAttemptedSubmit,
+    validateForm,
+  ]);
 
-  const handleProveedorChange = (data: { proveedor: string; razonSocial: string }) => {
+  const handleProveedorChange = (data: {
+    proveedor: string;
+    razonSocial: string;
+  }) => {
     setProveedor(data.proveedor);
     setRazonSocial(data.razonSocial);
   };
 
   const addGastoItem = () => {
-    setGastos(prev => [...prev, {
-      id: crypto.randomUUID(),
-      facturaEmitidaA: '',
-      empresa: '',
-      empresaPrograma: '',
-      fechaComprobante: new Date().toISOString().split('T')[0],
-      acuerdoPago: '',
-      formaPago: '',
-      neto: 0,
-      observaciones: '',
-      estado: 'pendiente-pago',
-    }]);
+    setGastos((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        facturaEmitidaA: "",
+        empresa: "",
+        empresaPrograma: "",
+        fechaComprobante: new Date().toISOString().split("T")[0],
+        acuerdoPago: "",
+        formaPago: "",
+        neto: 0,
+        observaciones: "",
+        estado: "pendiente-pago",
+      },
+    ]);
   };
 
   const removeGastoItem = (id: string) => {
     if (gastos.length === 1) {
-      toast.error('Debe haber al menos un gasto');
+      toast.error("Debe haber al menos un gasto");
       return;
     }
-    setGastos(prev => prev.filter(g => g.id !== id));
+    setGastos((prev) => prev.filter((g) => g.id !== id));
   };
 
-  const updateGastoItem = (id: string, field: keyof GastoItem, value: string | number) => {
-    setGastos(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
+  const updateGastoItem = (
+    id: string,
+    field: keyof GastoItem,
+    value: string | number,
+  ) => {
+    setGastos((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, [field]: value } : g)),
+    );
   };
 
   const toggleGastoCollapse = (id: string) => {
-    setCollapsedGastos(prev => {
+    setCollapsedGastos((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -216,13 +278,12 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
   // Get already selected programs to prevent duplicates
   const getSelectedPrograms = (excludeId: string) => {
     return gastos
-      .filter(g => g.id !== excludeId && g.empresaPrograma)
-      .map(g => g.empresaPrograma);
+      .filter((g) => g.id !== excludeId && g.empresaPrograma)
+      .map((g) => g.empresaPrograma);
   };
 
-  // Check if a gasto is locked (pagado status)
   const isGastoLocked = (gasto: GastoItem) => {
-    return gasto.estado === 'pagado';
+    return gasto.estado === "pagado";
   };
 
   const hasErrors = (formErrors: FormErrors): boolean => {
@@ -237,7 +298,7 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
     setErrors(validationErrors);
 
     if (hasErrors(validationErrors)) {
-      toast.error('Por favor, complete todos los campos requeridos');
+      toast.error("Por favor, complete todos los campos requeridos");
       return;
     }
 
@@ -270,11 +331,11 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
           observaciones: mainGasto.observaciones,
           facturaEmitidaA: mainGasto.facturaEmitidaA,
         });
-        if (success) toast.success('Gasto actualizado correctamente');
-        else toast.error('Error al actualizar el gasto');
+        if (success) toast.success("Gasto actualizado correctamente");
+        else toast.error("Error al actualizar el gasto");
       } else {
         // Create all gastos under one formulario (shared proveedor/razonSocial)
-        const gastosToCreate = gastos.map(g => ({
+        const gastosToCreate = gastos.map((g) => ({
           proveedor,
           razonSocial,
           neto: g.neto,
@@ -282,8 +343,13 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
           observaciones: g.observaciones,
           facturaEmitidaA: g.facturaEmitidaA,
           acuerdoPago: g.acuerdoPago,
+          formaPago: g.formaPago,
         }));
-        console.log('[FormularioProgramacion] Creating gastos:', gastosToCreate.length, gastosToCreate);
+        console.log(
+          "[FormularioProgramacion] Creating gastos:",
+          gastosToCreate.length,
+          gastosToCreate,
+        );
 
         const result = await addMultipleGastos({
           mesGestion: new Date().toISOString().slice(0, 7),
@@ -291,6 +357,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
           programa: nombreCampana,
           subRubroEmpresa: subrubro,
           detalleCampana,
+          ejecutivo: currentUser
+            ? `${currentUser.firstName} ${currentUser.lastName}`
+            : undefined,
           createdBy: currentUser?.id,
           gastos: gastosToCreate,
         });
@@ -298,25 +367,29 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
         if (success) {
           toast.success(`${gastos.length} gasto(s) creado(s) correctamente`);
         } else {
-          toast.error(result.error || 'Error al crear los gastos');
+          toast.error(result.error || "Error al crear los gastos");
         }
       }
 
       if (success) onClose();
     } catch (err) {
-      console.error('Error saving gasto:', err);
-      toast.error('Error inesperado al guardar');
+      console.error("Error saving gasto:", err);
+      toast.error("Error inesperado al guardar");
     } finally {
       setSaving(false);
     }
   };
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      minimumFractionDigits: 0,
+    }).format(val);
 
   const formatDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
@@ -326,91 +399,118 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
     ? currentUser?.id === existingGasto.createdBy
       ? `${currentUser.firstName} ${currentUser.lastName}`
       : existingGasto.createdBy
-    : '';
+    : "";
 
   // Format fecha de registro for edit mode
-  const fechaRegistro = existingGasto?.createdAt ? formatDate(existingGasto.createdAt) : '';
+  const fechaRegistro = existingGasto?.createdAt
+    ? formatDate(existingGasto.createdAt)
+    : "";
 
   const labelClass = cn(
-    'flex items-center gap-1 text-sm font-semibold',
-    isDark ? 'text-gray-400' : 'text-[#374151]'
+    "flex items-center gap-1 text-sm font-semibold",
+    isDark ? "text-gray-400" : "text-[#374151]",
   );
 
   const inputClass = cn(
-    'h-[32px] transition-colors text-sm',
+    "h-[32px] transition-colors text-sm",
     isDark
-      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600'
-      : 'bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]',
-    'disabled:opacity-60 disabled:cursor-not-allowed'
+      ? "bg-[#141414] border-gray-800 text-white placeholder:text-gray-600"
+      : "bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]",
+    "disabled:opacity-60 disabled:cursor-not-allowed",
   );
 
   const selectTriggerClass = cn(
-    'h-[32px] w-full transition-colors text-sm',
+    "h-[32px] w-full transition-colors text-sm",
     isDark
-      ? 'bg-[#141414] border-gray-800 text-white'
-      : 'bg-white border-[#d1d5db] text-gray-900',
-    'disabled:opacity-60 disabled:cursor-not-allowed'
+      ? "bg-[#141414] border-gray-800 text-white"
+      : "bg-white border-[#d1d5db] text-gray-900",
+    "disabled:opacity-60 disabled:cursor-not-allowed",
   );
 
   const disabledSelectClass = cn(
-    'h-[32px] w-full transition-colors text-sm',
+    "h-[32px] w-full transition-colors text-sm",
     isDark
-      ? 'bg-[#1e1e1e] border-gray-800 text-gray-400'
-      : 'bg-[#f3f4f6] border-[#d1d5db] text-gray-600',
-    'cursor-not-allowed'
+      ? "bg-[#1e1e1e] border-gray-800 text-gray-400"
+      : "bg-[#f3f4f6] border-[#d1d5db] text-gray-600",
+    "cursor-not-allowed",
   );
 
   const textareaClass = cn(
-    'min-h-[72px] resize-none transition-colors text-sm',
+    "min-h-[72px] resize-none transition-colors text-sm",
     isDark
-      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600'
-      : 'bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]',
-    'disabled:opacity-60 disabled:cursor-not-allowed'
+      ? "bg-[#141414] border-gray-800 text-white placeholder:text-gray-600"
+      : "bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]",
+    "disabled:opacity-60 disabled:cursor-not-allowed",
   );
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
-      case 'pendiente-pago': return 'bg-yellow-400';
-      case 'pagado': return 'bg-green-400';
-      case 'anulado': return 'bg-red-400';
-      default: return 'bg-gray-400';
+      case "pendiente-pago":
+        return "bg-yellow-400";
+      case "pagado":
+        return "bg-green-400";
+      case "anulado":
+        return "bg-red-400";
+      default:
+        return "bg-gray-400";
     }
   };
 
   const getEstadoLabel = (estado: string) => {
     switch (estado) {
-      case 'pendiente-pago': return 'Pendiente de pago';
-      case 'pagado': return 'Pagado';
-      case 'anulado': return 'Anulado';
-      default: return estado;
+      case "pendiente-pago":
+        return "Pendiente de pago";
+      case "pagado":
+        return "Pagado";
+      case "anulado":
+        return "Anulado";
+      default:
+        return estado;
     }
   };
 
   return (
-    <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
+    <div
+      className={cn(
+        "min-h-screen py-4 sm:py-6",
+        isDark ? "bg-transparent" : "bg-white",
+      )}
+    >
       <div className="max-w-[660px] mx-auto px-6 sm:px-8 lg:px-0">
         <div className="space-y-6 sm:space-y-8">
           {/* Header */}
           <div className="mb-6">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className={cn('text-2xl font-bold mb-2', isDark ? 'text-white' : 'text-[#101828]')}>
+                <h1
+                  className={cn(
+                    "text-2xl font-bold mb-2",
+                    isDark ? "text-white" : "text-[#101828]",
+                  )}
+                >
                   Cargar Datos
                 </h1>
-                <p className={cn('text-sm', isDark ? 'text-gray-500' : 'text-[#4a5565]')}>
+                <p
+                  className={cn(
+                    "text-sm",
+                    isDark ? "text-gray-500" : "text-[#4a5565]",
+                  )}
+                >
                   Complete la información del nuevo formulario de Programación
                 </p>
               </div>
-              {isCerrado && (
+              {isFormularioCerrado && (
                 <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300 border border-gray-500">
                   Gasto Cerrado
                 </span>
               )}
             </div>
-            {isCerrado && (
+            {isFormularioCerrado && (
               <div className="mt-4 p-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 flex items-center gap-2 text-red-700 dark:text-red-400">
                 <Lock className="w-4 h-4" />
-                <span className="text-sm">Este gasto está cerrado y no puede ser editado.</span>
+                <span className="text-sm">
+                  Este gasto está cerrado y no puede ser editado.
+                </span>
               </div>
             )}
           </div>
@@ -424,7 +524,10 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                   type="text"
                   value={responsableName}
                   disabled
-                  className={cn(inputClass, 'bg-[#f3f4f6] text-gray-600 cursor-not-allowed')}
+                  className={cn(
+                    inputClass,
+                    "bg-[#f3f4f6] text-gray-600 cursor-not-allowed",
+                  )}
                 />
               </div>
               <div className="space-y-1">
@@ -433,7 +536,10 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                   type="text"
                   value={fechaRegistro}
                   disabled
-                  className={cn(inputClass, 'bg-[#f3f4f6] text-gray-600 cursor-not-allowed')}
+                  className={cn(
+                    inputClass,
+                    "bg-[#f3f4f6] text-gray-600 cursor-not-allowed",
+                  )}
                 />
               </div>
               <div className="space-y-1">
@@ -442,7 +548,10 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                   type="text"
                   value="Programación"
                   disabled
-                  className={cn(inputClass, 'bg-[#f3f4f6] text-gray-600 cursor-not-allowed')}
+                  className={cn(
+                    inputClass,
+                    "bg-[#f3f4f6] text-gray-600 cursor-not-allowed",
+                  )}
                 />
               </div>
             </div>
@@ -453,23 +562,13 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
             {/* Row 1: Unidad de Negocio | Rubro del gasto */}
             <div className="grid grid-cols-2 gap-5">
               <div className="space-y-1">
-                <Label className={labelClass}>
-                  Unidad de Negocio<span className="text-red-500">*</span>
-                </Label>
-                <Select
+                <Label className={labelClass}>Unidad de Negocio</Label>
+                <Input
+                  type="text"
                   value={unidadNegocio}
-                  onValueChange={setUnidadNegocio}
-                  disabled={isCerrado}
-                >
-                  <SelectTrigger className={cn(selectTriggerClass, errors.unidadNegocio && 'border-red-500')}>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNIDADES_NEGOCIO.map((opt) => (
-                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  disabled
+                  className={disabledSelectClass}
+                />
               </div>
 
               <div className="space-y-1">
@@ -479,7 +578,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Gasto de programación">Gasto de programación</SelectItem>
+                    <SelectItem value="Gasto de programación">
+                      Gasto de programación
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -494,14 +595,21 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                 <Select
                   value={subrubro}
                   onValueChange={setSubrubro}
-                  disabled={isCerrado}
+                  disabled={isFormularioCerrado}
                 >
-                  <SelectTrigger className={cn(selectTriggerClass, errors.subrubro && 'border-red-500')}>
+                  <SelectTrigger
+                    className={cn(
+                      selectTriggerClass,
+                      errors.subrubro && "border-red-500",
+                    )}
+                  >
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
                   <SelectContent>
                     {SUB_RUBROS.map((opt) => (
-                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -517,14 +625,18 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                     value={nombreCampana}
                     onChange={(e) => setNombreCampana(e.target.value)}
                     placeholder="Buscar"
-                    disabled={isCerrado}
-                    className={cn(inputClass, 'flex-1', errors.nombreCampana && 'border-red-500')}
+                    disabled={isFormularioCerrado}
+                    className={cn(
+                      inputClass,
+                      "flex-1",
+                      errors.nombreCampana && "border-red-500",
+                    )}
                   />
                   <Button
                     type="button"
                     size="icon"
                     className="h-[32px] w-[32px] bg-[#0070ff] hover:bg-[#0060dd] text-white shrink-0"
-                    disabled={isCerrado}
+                    disabled={isFormularioCerrado}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
@@ -545,11 +657,19 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                   }
                 }}
                 placeholder="Concepto de gasto"
-                disabled={isCerrado}
+                disabled={isFormularioCerrado}
                 maxLength={MAX_DETALLE_LENGTH}
-                className={cn(textareaClass, errors.detalleCampana && 'border-red-500')}
+                className={cn(
+                  textareaClass,
+                  errors.detalleCampana && "border-red-500",
+                )}
               />
-              <div className={cn('text-xs text-right', isDark ? 'text-gray-500' : 'text-gray-400')}>
+              <div
+                className={cn(
+                  "text-xs text-right",
+                  isDark ? "text-gray-500" : "text-gray-400",
+                )}
+              >
                 {detalleCampana.length}/{MAX_DETALLE_LENGTH}
               </div>
             </div>
@@ -557,7 +677,12 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
 
           {/* Section 2: Carga de importes */}
           <div className="space-y-4">
-            <h2 className={cn('text-xl font-bold', isDark ? 'text-white' : 'text-[#101828]')}>
+            <h2
+              className={cn(
+                "text-xl font-bold",
+                isDark ? "text-white" : "text-[#101828]",
+              )}
+            >
               Carga de importes
             </h2>
 
@@ -574,10 +699,12 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
               <ProveedorSelector
                 value={{ proveedor, razonSocial }}
                 onChange={handleProveedorChange}
-                disabled={isCerrado}
-                allowCreate={!isCerrado}
+                disabled={isFormularioCerrado}
+                allowCreate={!isFormularioCerrado}
                 className={cn(
-                  (errors.proveedor || errors.razonSocial) ? '[&_input]:border-red-500' : ''
+                  errors.proveedor || errors.razonSocial
+                    ? "[&_input]:border-red-500"
+                    : "",
                 )}
               />
             </div>
@@ -586,17 +713,19 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
             {gastos.map((gasto, index) => {
               const isCollapsed = collapsedGastos.has(gasto.id);
               const isLocked = isGastoLocked(gasto);
-              const isDisabled = isCerrado || isLocked;
+              const isDisabled = isFormularioCerrado || isLocked;
               const selectedPrograms = getSelectedPrograms(gasto.id);
 
               return (
                 <div
                   key={gasto.id}
                   className={cn(
-                    'rounded-lg border-2 p-4',
-                    isCollapsed ? 'space-y-0' : 'space-y-4',
-                    isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-[#f8f9fc] border-[#e6e7eb]',
-                    isLocked && 'opacity-80'
+                    "rounded-lg border-2 p-4",
+                    isCollapsed ? "space-y-0" : "space-y-4",
+                    isDark
+                      ? "bg-[#1a1a1a] border-gray-800"
+                      : "bg-[#f8f9fc] border-[#e6e7eb]",
+                    isLocked && "opacity-80",
                   )}
                 >
                   {/* Gasto Header - Always visible, clickable to collapse/expand */}
@@ -605,18 +734,30 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                     onClick={() => toggleGastoCollapse(gasto.id)}
                   >
                     <div className="flex items-center gap-3">
-                      <h3 className={cn('text-lg font-bold', isDark ? 'text-blue-400' : 'text-[#165dfc]')}>
+                      <h3
+                        className={cn(
+                          "text-lg font-bold",
+                          isDark ? "text-blue-400" : "text-[#165dfc]",
+                        )}
+                      >
                         Gasto #{index + 1}
                       </h3>
                       <div className="flex items-center gap-2">
-                        <span className={`h-3 w-3 rounded-full ${getEstadoColor(gasto.estado)}`} />
-                        <span className={cn('text-sm font-medium', isDark ? 'text-gray-300' : 'text-gray-600')}>
+                        <span
+                          className={`h-3 w-3 rounded-full ${getEstadoColor(gasto.estado)}`}
+                        />
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            isDark ? "text-gray-300" : "text-gray-600",
+                          )}
+                        >
                           {getEstadoLabel(gasto.estado)}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {gastos.length > 1 && !isLocked && !isCerrado && (
+                      {gastos.length > 1 && !isLocked && !isFormularioCerrado && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -633,8 +774,10 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                       <button
                         type="button"
                         className={cn(
-                          'p-1 rounded transition-colors',
-                          isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
+                          "p-1 rounded transition-colors",
+                          isDark
+                            ? "text-gray-400 hover:text-gray-200"
+                            : "text-gray-500 hover:text-gray-700",
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -657,11 +800,14 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <Label className={labelClass}>
-                            Factura emitida a <span className="text-red-500">*</span>
+                            Factura emitida a{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <Select
                             value={gasto.facturaEmitidaA}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'facturaEmitidaA', v)}
+                            onValueChange={(v) =>
+                              updateGastoItem(gasto.id, "facturaEmitidaA", v)
+                            }
                             disabled={isDisabled}
                           >
                             <SelectTrigger className={selectTriggerClass}>
@@ -669,7 +815,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                             </SelectTrigger>
                             <SelectContent>
                               {FACTURA_EMITIDA_A.map((opt) => (
-                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                <SelectItem key={opt} value={opt}>
+                                  {opt}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -681,7 +829,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                           </Label>
                           <Select
                             value={gasto.empresa}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'empresa', v)}
+                            onValueChange={(v) =>
+                              updateGastoItem(gasto.id, "empresa", v)
+                            }
                             disabled={isDisabled}
                           >
                             <SelectTrigger className={selectTriggerClass}>
@@ -689,7 +839,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                             </SelectTrigger>
                             <SelectContent>
                               {EMPRESAS.map((opt) => (
-                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                <SelectItem key={opt} value={opt}>
+                                  {opt}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -704,34 +856,53 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                           </Label>
                           <Select
                             value={gasto.empresaPrograma}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'empresaPrograma', v)}
+                            onValueChange={(v) =>
+                              updateGastoItem(gasto.id, "empresaPrograma", v)
+                            }
                             disabled={isDisabled}
                           >
                             <SelectTrigger className={selectTriggerClass}>
                               <SelectValue placeholder="Seleccionar" />
                             </SelectTrigger>
                             <SelectContent>
-                              {EMPRESAS.filter(opt => !selectedPrograms.includes(opt)).map((opt) => (
-                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              {PROGRAMAS_LUZU.filter(
+                                (opt) => !selectedPrograms.includes(opt),
+                              ).map((opt) => (
+                                <SelectItem key={opt} value={opt}>
+                                  {opt}
+                                </SelectItem>
                               ))}
                               {/* Show current selection even if it would be filtered */}
-                              {gasto.empresaPrograma && !EMPRESAS.filter(opt => !selectedPrograms.includes(opt)).includes(gasto.empresaPrograma) && (
-                                <SelectItem key={gasto.empresaPrograma} value={gasto.empresaPrograma}>
-                                  {gasto.empresaPrograma}
-                                </SelectItem>
-                              )}
+                              {gasto.empresaPrograma &&
+                                !PROGRAMAS_LUZU.filter(
+                                  (opt) => !selectedPrograms.includes(opt),
+                                ).includes(gasto.empresaPrograma) && (
+                                  <SelectItem
+                                    key={gasto.empresaPrograma}
+                                    value={gasto.empresaPrograma}
+                                  >
+                                    {gasto.empresaPrograma}
+                                  </SelectItem>
+                                )}
                             </SelectContent>
                           </Select>
                         </div>
 
                         <div className="space-y-1">
                           <Label className={labelClass}>
-                            Fecha de comprobante <span className="text-red-500">*</span>
+                            Fecha de comprobante{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <Input
                             type="date"
                             value={gasto.fechaComprobante}
-                            onChange={(e) => updateGastoItem(gasto.id, 'fechaComprobante', e.target.value)}
+                            onChange={(e) =>
+                              updateGastoItem(
+                                gasto.id,
+                                "fechaComprobante",
+                                e.target.value,
+                              )
+                            }
                             disabled={isDisabled}
                             className={inputClass}
                           />
@@ -742,11 +913,14 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <Label className={labelClass}>
-                            Acuerdo de pago <span className="text-red-500">*</span>
+                            Acuerdo de pago{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <Select
                             value={gasto.acuerdoPago}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'acuerdoPago', v)}
+                            onValueChange={(v) =>
+                              updateGastoItem(gasto.id, "acuerdoPago", v)
+                            }
                             disabled={isDisabled}
                           >
                             <SelectTrigger className={selectTriggerClass}>
@@ -754,7 +928,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                             </SelectTrigger>
                             <SelectContent>
                               {ACUERDOS_PAGO.map((opt) => (
-                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                <SelectItem key={opt} value={opt}>
+                                  {opt}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -762,11 +938,14 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
 
                         <div className="space-y-1">
                           <Label className={labelClass}>
-                            Forma de pago <span className="text-red-500">*</span>
+                            Forma de pago{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                           <Select
                             value={gasto.formaPago}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'formaPago', v)}
+                            onValueChange={(v) =>
+                              updateGastoItem(gasto.id, "formaPago", v)
+                            }
                             disabled={isDisabled}
                           >
                             <SelectTrigger className={selectTriggerClass}>
@@ -774,7 +953,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                             </SelectTrigger>
                             <SelectContent>
                               {FORMAS_PAGO.map((opt) => (
-                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                <SelectItem key={opt} value={opt}>
+                                  {opt}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -789,8 +970,14 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                           </Label>
                           <Input
                             type="number"
-                            value={gasto.neto || ''}
-                            onChange={(e) => updateGastoItem(gasto.id, 'neto', parseFloat(e.target.value) || 0)}
+                            value={gasto.neto || ""}
+                            onChange={(e) =>
+                              updateGastoItem(
+                                gasto.id,
+                                "neto",
+                                parseFloat(e.target.value) || 0,
+                              )
+                            }
                             placeholder="$0"
                             disabled={isDisabled}
                             className={inputClass}
@@ -804,8 +991,14 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                         <Textarea
                           value={gasto.observaciones}
                           onChange={(e) => {
-                            if (e.target.value.length <= MAX_OBSERVACIONES_LENGTH) {
-                              updateGastoItem(gasto.id, 'observaciones', e.target.value);
+                            if (
+                              e.target.value.length <= MAX_OBSERVACIONES_LENGTH
+                            ) {
+                              updateGastoItem(
+                                gasto.id,
+                                "observaciones",
+                                e.target.value,
+                              );
                             }
                           }}
                           placeholder="Escribe aquí"
@@ -813,8 +1006,14 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                           maxLength={MAX_OBSERVACIONES_LENGTH}
                           className={textareaClass}
                         />
-                        <div className={cn('text-xs text-right', isDark ? 'text-gray-500' : 'text-gray-400')}>
-                          {gasto.observaciones.length}/{MAX_OBSERVACIONES_LENGTH}
+                        <div
+                          className={cn(
+                            "text-xs text-right",
+                            isDark ? "text-gray-500" : "text-gray-400",
+                          )}
+                        >
+                          {gasto.observaciones.length}/
+                          {MAX_OBSERVACIONES_LENGTH}
                         </div>
                       </div>
 
@@ -875,7 +1074,7 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
                 type="button"
                 onClick={addGastoItem}
                 className="bg-[#0070ff] hover:bg-[#0060dd] text-white"
-                disabled={isCerrado}
+                disabled={isFormularioCerrado}
               >
                 + Agregar importe
               </Button>
@@ -883,21 +1082,46 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
           </div>
 
           {/* Section 3: Resumen */}
-          <Card className={isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-[#e5e7eb]'}>
+          <Card
+            className={
+              isDark
+                ? "bg-[#141414] border-gray-800"
+                : "bg-white border-[#e5e7eb]"
+            }
+          >
             <CardHeader className="pb-4">
-              <CardTitle className={cn('text-xl font-medium', isDark ? 'text-white' : 'text-[#101828]')}>
+              <CardTitle
+                className={cn(
+                  "text-xl font-medium",
+                  isDark ? "text-white" : "text-[#101828]",
+                )}
+              >
                 Resumen
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={cn(
-                'p-4 rounded-lg border w-[163px]',
-                isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-[#f3f5ff] border-[#e5e7eb]'
-              )}>
-                <p className={cn('text-xs text-center mb-1', isDark ? 'text-gray-400' : 'text-[#4a5565]')}>
+              <div
+                className={cn(
+                  "p-4 rounded-lg border w-[163px]",
+                  isDark
+                    ? "bg-[#1e1e1e] border-gray-800"
+                    : "bg-[#f3f5ff] border-[#e5e7eb]",
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-xs text-center mb-1",
+                    isDark ? "text-gray-400" : "text-[#4a5565]",
+                  )}
+                >
                   Total del gasto
                 </p>
-                <p className={cn('text-lg font-bold text-center', isDark ? 'text-white' : 'text-[#101828]')}>
+                <p
+                  className={cn(
+                    "text-lg font-bold text-center",
+                    isDark ? "text-white" : "text-[#101828]",
+                  )}
+                >
                   {formatCurrency(totalGasto)}
                 </p>
               </div>
@@ -917,9 +1141,9 @@ export function FormularioProgramacion({ gastoId, onClose }: FormularioProgramac
             <Button
               onClick={handleGuardar}
               className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8"
-              disabled={saving || isCerrado}
+              disabled={saving || isFormularioCerrado}
             >
-              {saving ? 'Guardando...' : 'Guardar'}
+              {saving ? "Guardando..." : "Guardar"}
             </Button>
           </div>
         </div>
