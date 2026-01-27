@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useExperience } from '../../contexts/ExperienceContext';
 import { Button } from '../ui/button';
 import { ActionCard } from '../ui/action-card';
 import { TableHeader } from '../ui/table-header';
@@ -7,27 +8,12 @@ import { FilterToggle } from '../ui/filter-toggle';
 import { DataTable, DataTableHead, DataTableHeaderCell, DataTableBody, DataTableRow, DataTableCell, DataTableEmpty } from '../ui/data-table';
 import { DataTablePagination } from '../ui/data-table-pagination';
 import { StatusBadge } from '../ui/status-badge';
-import { MoreVertical, Plus } from 'lucide-react';
+import { MoreVertical, Plus, Loader2 } from 'lucide-react';
+import { cn } from '../ui/utils';
 
 const ITEMS_PER_PAGE = 10;
 
 type FilterMode = 'programa' | 'campana';
-
-interface GastoExperience {
-  id: string;
-  estado: 'pendiente-pago' | 'pago' | 'anulado';
-  fechaRegistro: string;
-  responsable: string;
-  empresaPgm: string;
-  facturaEmitidaA: string;
-  empresa: string;
-  unidadNegocio: string;
-  subrubro: string;
-  campana: string;
-  proveedor: string;
-  razonSocial: string;
-  neto: number;
-}
 
 interface TablaExperienceProps {
   onOpen?: (gastoId: string) => void;
@@ -49,86 +35,9 @@ const FILTER_OPTIONS = [
   { value: 'campana', label: 'Campaña' },
 ];
 
-const MOCK_GASTOS: GastoExperience[] = [
-  {
-    id: '1',
-    estado: 'pendiente-pago',
-    fechaRegistro: '10 - 2025',
-    responsable: 'Gabriela Rivero',
-    empresaPgm: 'OMG Argentina SRL',
-    facturaEmitidaA: 'Luzu SA',
-    empresa: 'Luzu SA',
-    unidadNegocio: 'Experience',
-    subrubro: 'Diseño',
-    campana: 'Verano 2026',
-    proveedor: 'OMG Argentina SRL',
-    razonSocial: 'OMG Argentina SRL',
-    neto: 22500000,
-  },
-  {
-    id: '2',
-    estado: 'pago',
-    fechaRegistro: '09 - 2025',
-    responsable: 'Martín López',
-    empresaPgm: 'Media Interactive',
-    facturaEmitidaA: 'Luzu SA',
-    empresa: 'Luzu SA',
-    unidadNegocio: 'Experience',
-    subrubro: 'Producción',
-    campana: 'Navidad 2025',
-    proveedor: 'Media Interactive SA',
-    razonSocial: 'Media Interactive SA',
-    neto: 18750000,
-  },
-  {
-    id: '3',
-    estado: 'anulado',
-    fechaRegistro: '08 - 2025',
-    responsable: 'Ana García',
-    empresaPgm: 'Creative Studio',
-    facturaEmitidaA: 'Luzu SA',
-    empresa: 'Luzu SA',
-    unidadNegocio: 'Experience',
-    subrubro: 'Eventos',
-    campana: 'Primavera 2025',
-    proveedor: 'Creative Studio SRL',
-    razonSocial: 'Creative Studio SRL',
-    neto: 15000000,
-  },
-  {
-    id: '4',
-    estado: 'pendiente-pago',
-    fechaRegistro: '11 - 2025',
-    responsable: 'Carlos Rodríguez',
-    empresaPgm: 'Digital Ads',
-    facturaEmitidaA: 'Luzu SA',
-    empresa: 'Luzu SA',
-    unidadNegocio: 'Experience',
-    subrubro: 'Marketing',
-    campana: 'Black Friday 2025',
-    proveedor: 'Digital Ads SA',
-    razonSocial: 'Digital Ads SA',
-    neto: 35000000,
-  },
-  {
-    id: '5',
-    estado: 'pago',
-    fechaRegistro: '07 - 2025',
-    responsable: 'Laura Fernández',
-    empresaPgm: 'Brand Solutions',
-    facturaEmitidaA: 'Luzu SA',
-    empresa: 'Luzu SA',
-    unidadNegocio: 'Experience',
-    subrubro: 'Branding',
-    campana: 'Día del Padre 2025',
-    proveedor: 'Brand Solutions SRL',
-    razonSocial: 'Brand Solutions SRL',
-    neto: 12500000,
-  },
-];
-
 export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
   const { isDark } = useTheme();
+  const { gastos, formulariosAgrupados, loading } = useExperience();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('programa');
@@ -137,55 +46,76 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(value);
   };
 
+  const formatDate = (date: Date | string | undefined) => {
+    if (!date) return '-';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('es-AR', { month: '2-digit', year: 'numeric' });
+  };
+
   const getEstadoVariant = (estado: string) => {
     switch (estado) {
-      case 'pendiente-pago': return 'warning';
-      case 'pago': return 'success';
-      case 'anulado': return 'error';
-      default: return 'neutral';
+      case 'pendiente':
+      case 'pendiente-pago':
+        return 'warning';
+      case 'pagado':
+      case 'pago':
+        return 'success';
+      case 'anulado':
+        return 'error';
+      case 'activo':
+        return 'info';
+      default:
+        return 'neutral';
     }
   };
 
   const getEstadoLabel = (estado: string) => {
     switch (estado) {
-      case 'pendiente-pago': return 'Pendiente de pago';
-      case 'pago': return 'Pago';
-      case 'anulado': return 'Anulado';
-      default: return estado;
+      case 'pendiente':
+      case 'pendiente-pago':
+        return 'Pendiente de pago';
+      case 'pagado':
+      case 'pago':
+        return 'Pagado';
+      case 'anulado':
+        return 'Anulado';
+      case 'activo':
+        return 'Activo';
+      default:
+        return estado;
     }
   };
 
+  // Filter gastos based on search term
   const filteredGastos = useMemo(() => {
-    if (!searchTerm) return MOCK_GASTOS;
+    if (!searchTerm) return gastos;
     const s = searchTerm.toLowerCase();
-    return MOCK_GASTOS.filter((g) =>
-      g.responsable?.toLowerCase().includes(s) ||
-      g.empresaPgm?.toLowerCase().includes(s) ||
+    return gastos.filter((g) =>
+      g.createdBy?.toLowerCase().includes(s) ||
+      g.empresaPrograma?.toLowerCase().includes(s) ||
       g.facturaEmitidaA?.toLowerCase().includes(s) ||
-      g.empresa?.toLowerCase().includes(s) ||
-      g.unidadNegocio?.toLowerCase().includes(s) ||
+      g.empresaContext?.toLowerCase().includes(s) ||
       g.subrubro?.toLowerCase().includes(s) ||
-      g.campana?.toLowerCase().includes(s) ||
+      g.nombreCampana?.toLowerCase().includes(s) ||
       g.proveedor?.toLowerCase().includes(s) ||
       g.razonSocial?.toLowerCase().includes(s)
     );
-  }, [searchTerm]);
+  }, [gastos, searchTerm]);
 
-  // For campaña mode, group by campaign
-  const groupedByCampana = useMemo(() => {
-    const groups: Record<string, { campana: string; gastos: GastoExperience[]; netoTotal: number }> = {};
-    filteredGastos.forEach((g) => {
-      const key = g.campana;
-      if (!groups[key]) {
-        groups[key] = { campana: key, gastos: [], netoTotal: 0 };
-      }
-      groups[key].gastos.push(g);
-      groups[key].netoTotal += g.neto;
-    });
-    return Object.values(groups);
-  }, [filteredGastos]);
+  // Filter formulariosAgrupados based on search term
+  const filteredFormularios = useMemo(() => {
+    if (!searchTerm) return formulariosAgrupados;
+    const s = searchTerm.toLowerCase();
+    return formulariosAgrupados.filter((f) =>
+      f.createdBy?.toLowerCase().includes(s) ||
+      f.subrubro?.toLowerCase().includes(s) ||
+      f.nombreCampana?.toLowerCase().includes(s) ||
+      f.proveedor?.toLowerCase().includes(s) ||
+      f.razonSocial?.toLowerCase().includes(s)
+    );
+  }, [formulariosAgrupados, searchTerm]);
 
-  const currentData = filterMode === 'programa' ? filteredGastos : groupedByCampana;
+  const currentData = filterMode === 'programa' ? filteredGastos : filteredFormularios;
   const columns = filterMode === 'programa' ? PROGRAMA_COLUMNS : CAMPANA_COLUMNS;
 
   const totalPages = Math.max(1, Math.ceil(currentData.length / ITEMS_PER_PAGE));
@@ -202,21 +132,45 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
     setCurrentPage(1);
   };
 
-  const handleRowClick = (item: GastoExperience | typeof groupedByCampana[0]) => {
+  const handleRowClick = (item: typeof gastos[0] | typeof formulariosAgrupados[0]) => {
     if (filterMode === 'programa') {
-      onOpen?.((item as GastoExperience).id);
+      onOpen?.((item as typeof gastos[0]).id);
     } else {
-      const group = item as typeof groupedByCampana[0];
-      if (group.gastos.length > 0) {
-        onOpen?.(group.gastos[0].id);
+      // For campaña mode, open the first gasto of the formulario
+      const formulario = item as typeof formulariosAgrupados[0];
+      const firstGasto = gastos.find(g => g.formularioId === formulario.id);
+      if (firstGasto) {
+        onOpen?.(firstGasto.id);
       }
     }
   };
 
-  const handleActionClick = (e: React.MouseEvent, item: GastoExperience | typeof groupedByCampana[0]) => {
+  const handleActionClick = (e: React.MouseEvent, item: typeof gastos[0] | typeof formulariosAgrupados[0]) => {
     e.stopPropagation();
     handleRowClick(item);
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {onNew && (
+          <ActionCard
+            title="Nuevo Formulario"
+            description="Crear gasto de experience"
+            icon={Plus}
+            onClick={onNew}
+          />
+        )}
+        <div className={cn(
+          'flex items-center justify-center py-12 rounded-lg border',
+          isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
+        )}>
+          <Loader2 className={cn('h-8 w-8 animate-spin', isDark ? 'text-gray-400' : 'text-gray-500')} />
+          <span className={cn('ml-3', isDark ? 'text-gray-400' : 'text-gray-500')}>Cargando gastos...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -256,22 +210,22 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
               {searchTerm ? 'No se encontraron resultados' : 'Sin gastos registrados'}
             </DataTableEmpty>
           ) : filterMode === 'programa' ? (
-            (currentRows as GastoExperience[]).map((gasto) => (
+            (currentRows as typeof gastos).map((gasto) => (
               <DataTableRow key={gasto.id} onClick={() => handleRowClick(gasto)}>
                 <DataTableCell>
-                  <StatusBadge label={getEstadoLabel(gasto.estado)} variant={getEstadoVariant(gasto.estado)} />
+                  <StatusBadge label={getEstadoLabel(gasto.estadoPago || 'pendiente')} variant={getEstadoVariant(gasto.estadoPago || 'pendiente')} />
                 </DataTableCell>
-                <DataTableCell>{gasto.fechaRegistro}</DataTableCell>
-                <DataTableCell>{gasto.responsable}</DataTableCell>
-                <DataTableCell>{gasto.empresaPgm}</DataTableCell>
-                <DataTableCell>{gasto.facturaEmitidaA}</DataTableCell>
-                <DataTableCell>{gasto.empresa}</DataTableCell>
-                <DataTableCell>{gasto.unidadNegocio}</DataTableCell>
-                <DataTableCell>{gasto.subrubro}</DataTableCell>
-                <DataTableCell>{gasto.campana}</DataTableCell>
-                <DataTableCell>{gasto.proveedor}</DataTableCell>
-                <DataTableCell>{gasto.razonSocial}</DataTableCell>
-                <DataTableCell>{formatPesos(gasto.neto)}</DataTableCell>
+                <DataTableCell>{formatDate(gasto.createdAt)}</DataTableCell>
+                <DataTableCell>{gasto.formularioCreatedBy || gasto.createdBy || '-'}</DataTableCell>
+                <DataTableCell>{gasto.empresaPrograma || '-'}</DataTableCell>
+                <DataTableCell>{gasto.facturaEmitidaA || '-'}</DataTableCell>
+                <DataTableCell>{gasto.empresaContext || '-'}</DataTableCell>
+                <DataTableCell>Experience</DataTableCell>
+                <DataTableCell>{gasto.subrubro || '-'}</DataTableCell>
+                <DataTableCell>{gasto.nombreCampana || '-'}</DataTableCell>
+                <DataTableCell>{gasto.proveedor || '-'}</DataTableCell>
+                <DataTableCell>{gasto.razonSocial || '-'}</DataTableCell>
+                <DataTableCell>{formatPesos(gasto.neto || 0)}</DataTableCell>
                 <DataTableCell>
                   <div className="flex items-center justify-center">
                     <Button
@@ -287,38 +241,35 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
               </DataTableRow>
             ))
           ) : (
-            (currentRows as typeof groupedByCampana).map((group) => {
-              const firstGasto = group.gastos[0];
-              return (
-                <DataTableRow key={group.campana} onClick={() => handleRowClick(group)}>
-                  <DataTableCell>
-                    <StatusBadge label={getEstadoLabel(firstGasto.estado)} variant={getEstadoVariant(firstGasto.estado)} />
-                  </DataTableCell>
-                  <DataTableCell>{group.campana}</DataTableCell>
-                  <DataTableCell>{firstGasto.fechaRegistro}</DataTableCell>
-                  <DataTableCell>{firstGasto.responsable}</DataTableCell>
-                  <DataTableCell>{firstGasto.facturaEmitidaA}</DataTableCell>
-                  <DataTableCell>{firstGasto.empresa}</DataTableCell>
-                  <DataTableCell>{firstGasto.unidadNegocio}</DataTableCell>
-                  <DataTableCell>{firstGasto.subrubro}</DataTableCell>
-                  <DataTableCell>{firstGasto.proveedor}</DataTableCell>
-                  <DataTableCell>{firstGasto.razonSocial}</DataTableCell>
-                  <DataTableCell>{formatPesos(group.netoTotal)}</DataTableCell>
-                  <DataTableCell>
-                    <div className="flex items-center justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => handleActionClick(e, group)}
-                        className={isDark ? 'text-gray-400 hover:text-white hover:bg-[#1e1e1e]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}
-                      >
-                        <MoreVertical className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  </DataTableCell>
-                </DataTableRow>
-              );
-            })
+            (currentRows as typeof formulariosAgrupados).map((formulario) => (
+              <DataTableRow key={formulario.id} onClick={() => handleRowClick(formulario)}>
+                <DataTableCell>
+                  <StatusBadge label={getEstadoLabel(formulario.estado)} variant={getEstadoVariant(formulario.estado)} />
+                </DataTableCell>
+                <DataTableCell>{formulario.nombreCampana || '-'}</DataTableCell>
+                <DataTableCell>{formatDate(formulario.createdAt)}</DataTableCell>
+                <DataTableCell>{formulario.createdBy || '-'}</DataTableCell>
+                <DataTableCell>-</DataTableCell>
+                <DataTableCell>-</DataTableCell>
+                <DataTableCell>Experience</DataTableCell>
+                <DataTableCell>{formulario.subrubro || '-'}</DataTableCell>
+                <DataTableCell>{formulario.proveedor || '-'}</DataTableCell>
+                <DataTableCell>{formulario.razonSocial || '-'}</DataTableCell>
+                <DataTableCell>{formatPesos(formulario.netoTotal || 0)}</DataTableCell>
+                <DataTableCell>
+                  <div className="flex items-center justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleActionClick(e, formulario)}
+                      className={isDark ? 'text-gray-400 hover:text-white hover:bg-[#1e1e1e]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </DataTableCell>
+              </DataTableRow>
+            ))
           )}
         </DataTableBody>
       </DataTable>

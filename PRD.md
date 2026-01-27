@@ -1,6 +1,6 @@
 # LUZU ERP - Product Requirements Document (PRD)
 
-> **Version:** 1.0.0
+> **Version:** 1.1.0
 > **Last Updated:** January 2026
 > **Status:** Active Development (MVP Phase)
 
@@ -67,6 +67,12 @@ A unified platform where:
 - **Pain Points:** Manual expense tracking, lost invoices
 - **Needs:** Expense entry with invoice attachments, payment status tracking
 
+#### Experience Coordinator (Coordinador de Experience)
+
+- **Goals:** Manage event/experiential marketing expenses by campaign
+- **Pain Points:** Multiple providers per event, tracking payments across campaigns
+- **Needs:** Campaign-based expense grouping, multi-gasto forms, provider search
+
 #### Finance/Administration (Administración)
 
 - **Goals:** Verify transactions, manage clients, process payments
@@ -95,6 +101,7 @@ A unified platform where:
 | ------------------ | ----------------------------------------------------------------------------- |
 | **Comercial**      | Order creation, program assignments, financial calculations, client selection |
 | **Implementación** | Expense tracking, provider management, payment status, invoice attachments    |
+| **Experience**     | Event expense tracking, campaign management, multi-gasto forms, provider integration |
 | **Backoffice**     | User CRUD, area management, role assignments, field options configuration     |
 | **Auditoría**      | Action logging, log viewer with filters                                       |
 | **Dashboard**      | KPI display (mock data for MVP), notifications                                |
@@ -104,7 +111,6 @@ A unified platform where:
 - Full authentication with Supabase RLS enforcement
 - Report generation (PDF/Excel exports)
 - Real-time notifications (WebSockets)
-- Programming module (Dir. de Programación) - UI stub only
 - Mobile application
 - Multi-tenant support
 - API integrations with external systems
@@ -176,7 +182,85 @@ pending-payment → cancelled
 - Support file uploads attached to expense items
 - Store references in database (JSONB array)
 
-### 5.3 User Management
+### 5.3 Experience Module (Módulo de Experience)
+
+#### FR-EXP-01: Campaign-Based Expense Tracking
+
+- Create expense formularios grouped by campaign (nombre_campana)
+- Each formulario has: mes_gestion, nombre_campana, detalle_campana, subrubro
+- Formularios aggregate multiple gastos under a single campaign
+
+#### FR-EXP-02: Multi-Gasto Forms
+
+- Single formulario can contain multiple gasto line items
+- Each gasto has independent: factura_emitida_a, empresa, empresa_programa, neto, acuerdo_pago, forma_pago, pais
+- Gastos can be added/removed dynamically before save
+- Collapsible gasto cards with inline editing
+
+#### FR-EXP-03: Unified Gastos Architecture
+
+- Experience uses the shared `gastos` table for base expense data
+- Context-specific fields stored in `experience_gastos` join table
+- Formulario header stored in `experience_formularios` table
+- Full view `experience_gastos_full` combines all three tables
+
+#### FR-EXP-04: Field Options
+
+| Field           | Options                                                |
+| --------------- | ------------------------------------------------------ |
+| Subrubro        | Producción, Diseño, Edición, Técnica                   |
+| Factura emitida a | Luzu TV, Luzu TV SA                                  |
+| Empresa         | Luzu TV, Luzu TV SA                                    |
+| Empresa/PGM     | FM Luzu, Antes Que Nadie, Nadie Dice Nada, etc. (13 programs) |
+| Acuerdo de pago | 5, 30, 45, 60, 90 días                                |
+| Forma de pago   | eCheque, Transferencia, Efectivo                       |
+| País            | Argentina, Uruguay, Chile, Brasil                      |
+
+#### FR-EXP-05: Provider Integration
+
+- Shared provider selector with Implementación module
+- Search by razón social or CUIT
+- Auto-populate proveedor name from selection
+- Support creating new providers inline
+
+#### FR-EXP-06: Payment Status Workflow
+
+```
+pendiente → pagado
+pendiente → anulado
+```
+
+- Individual gastos can have different payment statuses within same formulario
+- Paid gastos are locked from editing
+
+#### FR-EXP-07: Table Views
+
+- **Programa view**: Individual gastos with all fields displayed
+- **Campaña view**: Grouped by formulario with aggregated totals
+- Search and filter across both views
+- Click row to edit formulario with all its gastos
+
+### 5.4 Programación Module (Módulo de Programación)
+
+#### FR-PRG-01: Program Expense Tracking
+
+- Create expense formularios for programming/production costs
+- Each formulario linked to: mes_gestion, unidad_negocio, programa, ejecutivo
+- Track sub_rubro_empresa and detalle_campana
+
+#### FR-PRG-02: Unified Gastos Architecture
+
+- Uses shared `gastos` table for base expense data
+- Context-specific fields in `programacion_gastos` join table
+- Formulario header in `programacion_formularios` table
+- Full view `programacion_gastos_full` combines all tables
+
+#### FR-PRG-03: Category Tracking
+
+- Categorize expenses by: Producción, Talentos, Técnica, Post Producción, etc.
+- Track factura_emitida_a for invoice assignment
+
+### 5.5 User Management
 
 #### FR-USR-01: User CRUD
 
@@ -196,7 +280,7 @@ pending-payment → cancelled
 - Cannot delete the last active Administrator
 - Deleting user removes all their assignments
 
-### 5.4 Area Management
+### 5.6 Area Management
 
 #### FR-AREA-01: Area CRUD
 
@@ -209,7 +293,7 @@ pending-payment → cancelled
 - Deleting area removes user assignments to that area
 - Users remain in system (may lose role if only assignment)
 
-### 5.5 Audit Logging
+### 5.7 Audit Logging
 
 #### FR-LOG-01: Automatic Logging
 
@@ -273,7 +357,7 @@ All critical actions logged with:
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│    users    │────<│user_area_   │>────│    areas    │
+│  usuarios   │────<│usuario_area_│>────│    areas    │
 │             │     │   roles     │     │             │
 └─────────────┘     └──────┬──────┘     └─────────────┘
                           │
@@ -281,20 +365,46 @@ All critical actions logged with:
                     │   roles   │
                     └───────────┘
 
-┌─────────────┐     ┌─────────────┐
-│    forms    │────<│ form_items  │
-│ (orders)    │     │ (programs)  │
-└─────────────┘     └─────────────┘
+┌───────────────────┐     ┌───────────────────────┐
+│ordenes_publicidad │────<│items_orden_publicidad │
+│    (orders)       │     │     (programs)        │
+└───────────────────┘     └───────────────────────┘
 
-┌─────────────────────┐     ┌─────────────────────────┐
-│implementation_      │────<│implementation_expense_  │
-│   expenses          │     │         items           │
-└─────────────────────┘     └─────────────────────────┘
+                    ┌─────────────────┐
+                    │     gastos      │ (unified base table)
+                    └────────┬────────┘
+           ┌─────────────────┼─────────────────┐
+           ▼                 ▼                 ▼
+┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+│implementacion_   │ │experience_       │ │programacion_     │
+│    gastos        │ │    gastos        │ │    gastos        │
+└────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
+         │                    │                    │
+         ▼                    ▼                    ▼
+┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+│(links to orden)  │ │experience_       │ │programacion_     │
+│                  │ │  formularios     │ │  formularios     │
+└──────────────────┘ └──────────────────┘ └──────────────────┘
 
-┌─────────────┐     ┌─────────────┐
-│   clients   │     │ audit_logs  │
-└─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ proveedores │     │ audit_logs  │     │   clientes  │
+└─────────────┘     └─────────────┘     └─────────────┘
 ```
+
+### Unified Gastos Architecture
+
+The system uses a unified architecture for expense tracking across modules:
+
+| Table                    | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `gastos`                 | Base expense data (proveedor, neto, iva, estado_pago) |
+| `implementacion_gastos`  | Context for Implementación (linked to orden) |
+| `experience_gastos`      | Context for Experience (empresa_programa, acuerdo_pago) |
+| `experience_formularios` | Header/grouping for Experience campaigns     |
+| `programacion_gastos`    | Context for Programación (categoria)         |
+| `programacion_formularios` | Header/grouping for Programación           |
+
+Each module has a `*_gastos_full` view that JOINs all relevant tables.
 
 ### Key Relationships
 
@@ -438,18 +548,25 @@ All critical actions logged with:
 
 ## 13. Glossary
 
-| Term                     | Definition                         |
-| ------------------------ | ---------------------------------- |
-| **Orden de Publicidad**  | Advertising order ID               |
-| **Razón Social**         | Business entity name (legal name)  |
-| **NC (Nota de Crédito)** | Credit note - discount/adjustment  |
-| **Fee**                  | Agency fee/commission              |
-| **Canje**                | Barter transaction (non-cash)      |
-| **Factura**              | Invoice                            |
-| **Implementación**       | Campaign execution costs           |
-| **Talentos**             | Talent/host fees                   |
-| **Técnica**              | Technical production costs         |
-| **Mes de Servicio**      | Service month (when campaign runs) |
+| Term                     | Definition                                    |
+| ------------------------ | --------------------------------------------- |
+| **Orden de Publicidad**  | Advertising order ID                          |
+| **Razón Social**         | Business entity name (legal name)             |
+| **NC (Nota de Crédito)** | Credit note - discount/adjustment             |
+| **Fee**                  | Agency fee/commission                         |
+| **Canje**                | Barter transaction (non-cash)                 |
+| **Factura**              | Invoice                                       |
+| **Implementación**       | Campaign execution costs                      |
+| **Talentos**             | Talent/host fees                              |
+| **Técnica**              | Technical production costs                    |
+| **Mes de Servicio**      | Service month (when campaign runs)            |
+| **Experience**           | Event/experiential marketing business unit    |
+| **Formulario**           | Form/header grouping multiple gastos          |
+| **Gasto**                | Individual expense record                     |
+| **Empresa/PGM**          | Program associated with expense               |
+| **Acuerdo de Pago**      | Payment agreement terms (5, 30, 45, 60, 90 días) |
+| **Forma de Pago**        | Payment method (eCheque, Transferencia, Efectivo) |
+| **Subrubro**             | Expense subcategory (Producción, Diseño, etc) |
 
 ---
 
@@ -467,27 +584,30 @@ All critical actions logged with:
 
 ## 15. Change Log
 
-| Version | Date     | Author  | Changes           |
-| ------- | -------- | ------- | ----------------- |
-| 1.0.0   | Jan 2026 | Initial | Document creation |
+| Version | Date     | Author  | Changes                                              |
+| ------- | -------- | ------- | ---------------------------------------------------- |
+| 1.1.0   | Jan 2026 | Claude  | Added Experience module (FR-EXP-01 to FR-EXP-07), Programación module (FR-PRG-01 to FR-PRG-03), unified gastos architecture |
+| 1.0.0   | Jan 2026 | Initial | Document creation                                    |
 
 ---
 
 ## 16. Appendix: Luzu TV Programs
 
-The system supports the following 11 programs:
+The system supports the following programs (used in Experience module Empresa/PGM field):
 
-1. Antes que Nadie
-2. Nadie Dice Nada
-3. El Loco y el Cuerdo
-4. Patria y Familia
-5. Sería Increíble
-6. Quedemos como Amigos
-7. Nos Tienen Mania
-8. Tarde de Vaguitos
-9. Luzu Radio
-10. LuzuFest
-11. Eventos Especiales
+1. FM Luzu
+2. Antes Que Nadie
+3. Nadie Dice Nada
+4. Vuelta y Media
+5. Seria Increíble
+6. Patria y Familia
+7. Podremos Hablar
+8. Óptimo
+9. Carajo
+10. Grande Pa
+11. Tenemos que Hablar
+12. Rumbo por la Noche
+13. Buenos Días Buenos Aires
 
 ---
 

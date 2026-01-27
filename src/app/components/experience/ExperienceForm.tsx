@@ -70,7 +70,7 @@ const MAX_OBSERVACIONES_LENGTH = 250;
 export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }: ExperienceFormProps) {
   const { isDark } = useTheme();
   const { currentUser } = useData();
-  const { addMultipleGastos, updateGasto, getGastosByFormularioId, getGastoById } = useExperience();
+  const { gastos: contextGastos, loading: contextLoading, addMultipleGastos, updateGasto, getGastosByFormularioId, getGastoById } = useExperience();
 
   // Form-level state
   const isEditing = !!gastoId;
@@ -131,16 +131,26 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
   const [errors, setErrors] = useState<FormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [collapsedGastos, setCollapsedGastos] = useState<Set<string>>(new Set());
-  const [loadingData, setLoadingData] = useState(false);
+  const [loadingData, setLoadingData] = useState(!!gastoId);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Load existing data when editing
+  // Load existing data when editing - wait for context to finish loading
   useEffect(() => {
-    if (!gastoId) return;
+    // Skip if not editing or already loaded
+    if (!gastoId || dataLoaded) return;
 
-    setLoadingData(true);
-    const existingGasto = getGastoById(gastoId);
+    // Wait for context to finish loading
+    if (contextLoading) {
+      setLoadingData(true);
+      return;
+    }
+
+    // Context is loaded, try to find the gasto
+    const existingGasto = contextGastos.find(g => g.id === gastoId);
 
     if (existingGasto) {
+      console.log('[ExperienceForm] Loading existing gasto:', existingGasto);
+
       // Load formulario-level fields
       setSubrubro(existingGasto.subrubro || '');
       setNombreCampana(existingGasto.nombreCampana || '');
@@ -149,7 +159,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       setRazonSocial(existingGasto.razonSocial || '');
 
       // Get all gastos from same formulario
-      const formularioGastos = getGastosByFormularioId(existingGasto.formularioId);
+      const formularioGastos = contextGastos.filter(g => g.formularioId === existingGasto.formularioId);
+      console.log('[ExperienceForm] Formulario gastos:', formularioGastos.length);
 
       if (formularioGastos.length > 0) {
         // Map existing gastos to GastoItem format
@@ -166,11 +177,15 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           observaciones: g.observaciones || '',
           estado: g.estadoPago === 'pagado' ? 'pagado' : g.estadoPago === 'anulado' ? 'anulado' : 'pendiente-pago',
         }));
+        console.log('[ExperienceForm] Mapped gastos:', mappedGastos);
         setGastos(mappedGastos);
       }
+
+      setDataLoaded(true);
     }
+
     setLoadingData(false);
-  }, [gastoId, getGastoById, getGastosByFormularioId]);
+  }, [gastoId, contextLoading, contextGastos, dataLoaded]);
 
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
@@ -443,8 +458,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     }
   };
 
-  // Show loading state while fetching data
-  if (loadingData) {
+  // Show loading state while fetching data (only for edit mode)
+  if (isEditing && (loadingData || contextLoading)) {
     return (
       <div className={cn('min-h-screen py-4 sm:py-6 flex items-center justify-center', isDark ? 'bg-transparent' : 'bg-white')}>
         <div className="text-center">
