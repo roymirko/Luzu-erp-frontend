@@ -356,3 +356,81 @@ export interface GastoProgramacionRow {
 
 export type GastoProgramacionInsert = Omit<GastoProgramacionRow, 'id' | 'fecha_creacion' | 'fecha_actualizacion'>;
 export type GastoProgramacionUpdate = Partial<Omit<GastoProgramacionRow, 'id' | 'fecha_creacion'>>;
+
+// ============================================
+// Experience Module Types
+// ============================================
+
+// Tabla experience_formularios (header)
+export interface ExperienceFormularioRow {
+  id: string;
+  mes_gestion: string | null;
+  nombre_campana: string | null;
+  detalle_campana: string | null;
+  subrubro: string | null;
+  estado: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export type ExperienceFormularioInsert = Omit<ExperienceFormularioRow, 'id' | 'created_at' | 'updated_at'>;
+export type ExperienceFormularioUpdate = Partial<Omit<ExperienceFormularioRow, 'id' | 'created_at'>>;
+
+// Tabla experience_gastos (contexto)
+export interface ExperienceGastoRow {
+  id: string;
+  gasto_id: string;
+  formulario_id: string;
+  factura_emitida_a: string | null;
+  empresa: string | null;
+  empresa_programa: string | null;
+  fecha_comprobante: string | null;
+  acuerdo_pago: string | null;
+  forma_pago: string | null;
+  pais: string | null;
+}
+
+export type ExperienceGastoInsert = Omit<ExperienceGastoRow, 'id'>;
+export type ExperienceGastoUpdate = Partial<Omit<ExperienceGastoRow, 'id' | 'gasto_id' | 'formulario_id'>>;
+
+// Vista experience_gastos_full (para queries)
+export interface ExperienceGastoFullRow {
+  // Gasto fields
+  id: string;
+  proveedor: string;
+  razon_social: string | null;
+  tipo_factura: string | null;
+  numero_factura: string | null;
+  fecha_factura: string | null;
+  moneda: string;
+  neto: number;
+  iva: number;
+  importe_total: number;
+  gasto_empresa: string | null;
+  concepto_gasto: string | null;
+  observaciones: string | null;
+  estado: string;
+  estado_pago: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  // Formulario fields
+  formulario_id: string;
+  mes_gestion: string | null;
+  nombre_campana: string | null;
+  detalle_campana: string | null;
+  subrubro: string | null;
+  formulario_estado: string | null;
+  formulario_created_at: string | null;
+  formulario_created_by: string | null;
+  // Context fields
+  experience_gasto_id: string;
+  factura_emitida_a: string | null;
+  empresa: string | null;
+  empresa_programa: string | null;
+  fecha_comprobante: string | null;
+  acuerdo_pago: string | null;
+  forma_pago: string | null;
+  pais: string | null;
+}

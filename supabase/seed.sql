@@ -469,6 +469,180 @@ BEGIN
 END $$;
 
 -- ============================================
+-- 9. GASTOS DE EXPERIENCE (Unified Architecture)
+-- 4 formularios con 2 gastos cada uno = 8 gastos totales
+-- ============================================
+DO $$
+DECLARE
+  v_form1 uuid; v_form2 uuid; v_form3 uuid; v_form4 uuid;
+  v_gasto uuid;
+BEGIN
+  -- Formulario 1: Campaña Experiencia Verano - Enero 2024
+  INSERT INTO public.experience_formularios (
+    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+  ) VALUES (
+    '2024-01', 'Experiencia Verano Luzu', 'Activaciones en playas y eventos de verano', 'Eventos', 'activo', 'system'
+  ) RETURNING id INTO v_form1;
+
+  -- Gasto 1.1: Producción evento playa
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Producciones Audiovisuales S.A.', 'Producciones Audiovisuales S.A.',
+    'A', '0001-00001234', '2024-01-10',
+    40000, 21, 48400, 'ARS', 'activo', 'pendiente', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form1, 'Luzu TV', 'Luzu TV', 'Nadie Dice Nada',
+    '2024-01-10', '30 días', 'Transferencia', 'argentina'
+  );
+
+  -- Gasto 1.2: Catering evento
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Logística Medios S.R.L.', 'Logística Medios S.R.L.',
+    'A', '0001-00005678', '2024-01-12',
+    15000, 21, 18150, 'ARS', 'activo', 'pagado', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form1, 'Luzu TV SA', 'Luzu TV SA', 'Nadie Dice Nada',
+    '2024-01-12', '15 días', 'Transferencia', 'argentina'
+  );
+
+  -- Formulario 2: Campaña Lanzamiento Producto - Febrero 2024
+  INSERT INTO public.experience_formularios (
+    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+  ) VALUES (
+    '2024-02', 'Lanzamiento Sponsor Tech', 'Evento de lanzamiento de producto tecnológico', 'Lanzamientos', 'activo', 'system'
+  ) RETURNING id INTO v_form2;
+
+  -- Gasto 2.1: Escenografía
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Iluminación y Escenografía S.A.', 'Iluminación y Escenografía S.A.',
+    'A', '0002-00001111', '2024-02-05',
+    55000, 21, 66550, 'ARS', 'activo', 'pendiente', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form2, 'Luzu TV', 'Luzu TV', 'Antes Que Nadie',
+    '2024-02-05', '45 días', 'Cheque', 'argentina'
+  );
+
+  -- Gasto 2.2: Equipamiento técnico
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Equipamiento Técnico S.R.L.', 'Equipamiento Técnico S.R.L.',
+    'A', '0002-00002222', '2024-02-08',
+    35000, 21, 42350, 'ARS', 'activo', 'pagado', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form2, 'Luzu TV SA', 'Luzu TV SA', 'Antes Que Nadie',
+    '2024-02-08', '30 días', 'Transferencia', 'argentina'
+  );
+
+  -- Formulario 3: Campaña Feria del Libro - Marzo 2024
+  INSERT INTO public.experience_formularios (
+    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+  ) VALUES (
+    '2024-03', 'Stand Feria del Libro', 'Presencia en Feria del Libro Buenos Aires', 'Ferias', 'activo', 'system'
+  ) RETURNING id INTO v_form3;
+
+  -- Gasto 3.1: Construcción stand
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Estudio Creativo Buenos Aires S.A.', 'Estudio Creativo Buenos Aires S.A.',
+    'A', '0003-00003333', '2024-03-01',
+    70000, 21, 84700, 'ARS', 'activo', 'parcial', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form3, 'Luzu TV', 'Luzu TV', 'Se Fue Larga',
+    '2024-03-01', '60 días', 'Transferencia', 'argentina'
+  );
+
+  -- Gasto 3.2: Personal para stand
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Talentos y Producción S.A.', 'Talentos y Producción S.A.',
+    'A', '0003-00004444', '2024-03-05',
+    28000, 21, 33880, 'ARS', 'activo', 'pendiente', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form3, 'Luzu TV SA', 'Luzu TV SA', 'Se Fue Larga',
+    '2024-03-05', '30 días', 'Transferencia', 'argentina'
+  );
+
+  -- Formulario 4: Campaña Evento Deportivo - Marzo 2024
+  INSERT INTO public.experience_formularios (
+    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+  ) VALUES (
+    '2024-03', 'Activación Maratón BA', 'Activación en Maratón de Buenos Aires', 'Deportes', 'activo', 'system'
+  ) RETURNING id INTO v_form4;
+
+  -- Gasto 4.1: Producción móvil
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Media Tech Argentina S.R.L.', 'Media Tech Argentina S.R.L.',
+    'A', '0004-00005555', '2024-03-15',
+    45000, 21, 54450, 'ARS', 'activo', 'pendiente', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form4, 'Luzu TV', 'Luzu TV', 'Patria y Familia',
+    '2024-03-15', '30 días', 'Transferencia', 'argentina'
+  );
+
+  -- Gasto 4.2: Sonido para evento
+  INSERT INTO public.gastos (
+    proveedor, razon_social, tipo_factura, numero_factura, fecha_factura,
+    neto, iva, importe_total, moneda, estado, estado_pago, created_by
+  ) VALUES (
+    'Sonido Profesional S.R.L.', 'Sonido Profesional S.R.L.',
+    'A', '0004-00006666', '2024-03-18',
+    22000, 21, 26620, 'ARS', 'activo', 'pagado', 'system'
+  ) RETURNING id INTO v_gasto;
+  INSERT INTO public.experience_gastos (
+    gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
+    fecha_comprobante, acuerdo_pago, forma_pago, pais
+  ) VALUES (
+    v_gasto, v_form4, 'Luzu TV SA', 'Luzu TV SA', 'Patria y Familia',
+    '2024-03-18', '15 días', 'Transferencia', 'argentina'
+  );
+END $$;
+
+-- ============================================
 -- VERIFICATION QUERIES (run after seeding)
 -- ============================================
 -- Uncomment and run these queries to verify seed data:
@@ -513,3 +687,12 @@ END $$;
 -- SELECT estado, estado_pago, COUNT(*)
 -- FROM gastos
 -- GROUP BY estado, estado_pago;
+
+-- Verificar gastos experience - unified (should be >= 4 forms, >= 8 gastos)
+-- SELECT COUNT(*) AS experience_formularios_count FROM experience_formularios;
+-- SELECT COUNT(*) AS experience_gastos_count FROM experience_gastos;
+
+-- Verificar detalle experience usando la vista
+-- SELECT nombre_campana, mes_gestion, proveedor, importe_total, estado, estado_pago
+-- FROM experience_gastos_full
+-- ORDER BY created_at DESC;

@@ -20,6 +20,7 @@ import {
   TrendingUp,
   Key,
   Plus,
+  Sparkles,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 import { OrdenesPublicidadForm } from "./components/OrdenesPublicidadForm";
@@ -35,6 +36,9 @@ import { FormularioImplementacion } from "./components/FormularioImplementacion"
 import { Programacion } from "./components/Programacion";
 import { FormularioProgramacion } from "./components/programacion/FormularioProgramacion";
 import { ProgramacionProvider } from "./contexts/ProgramacionContext";
+import { ExperienceProvider, useExperience } from "./contexts/ExperienceContext";
+import { Experience } from "./components/Experience";
+import { ExperienceForm } from "./components/experience/ExperienceForm";
 import { Avatar, AvatarFallback } from "./components/ui/avatar";
 import { Button } from "./components/ui/button";
 import { ActionCard } from "./components/ui/action-card";
@@ -123,6 +127,12 @@ function AppContent() {
       label: "Programación",
       icon: <TrendingUp className="h-5 w-5" />,
     },
+    {
+      id: "experience",
+      path: "/experience",
+      label: "Experience",
+      icon: <Sparkles className="h-5 w-5" />,
+    },
   ];
 
   const getBreadcrumbs = (): { label: string; path: string | null }[] => {
@@ -179,6 +189,26 @@ function AppContent() {
         { label: "Inicio", path: null },
         { label: "Programación", path: "/programacion" },
         { label: "Editar Gasto", path: null },
+      ];
+    }
+    if (path === "/experience") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Experience", path: null },
+      ];
+    }
+    if (path === "/experience/nuevo") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Experience", path: "/experience" },
+        { label: "Nuevo formulario", path: null },
+      ];
+    }
+    if (path.startsWith("/experience/editar/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Experience", path: "/experience" },
+        { label: "Editar formulario", path: null },
       ];
     }
     if (path === "/backoffice") {
@@ -390,6 +420,9 @@ function AppContent() {
               <Route path="/programacion" element={<ProgramacionPage />} />
               <Route path="/programacion/nuevo" element={<NuevoGastoProgramacionPage />} />
               <Route path="/programacion/editar/:id" element={<EditarGastoProgramacionPage />} />
+              <Route path="/experience" element={<ExperiencePage />} />
+              <Route path="/experience/nuevo" element={<ExperienceNuevoPage />} />
+              <Route path="/experience/editar/:id" element={<ExperienceEditarPage />} />
               <Route path="/backoffice" element={<FormBuilder />} />
             </Routes>
           </div>
@@ -500,6 +533,51 @@ function EditarGastoProgramacionPage() {
   );
 }
 
+function ExperiencePage() {
+  const navigate = useNavigate();
+  return (
+    <Experience
+      onNew={() => navigate("/experience/nuevo")}
+      onOpen={(id) => navigate(`/experience/editar/${id}`)}
+    />
+  );
+}
+
+function ExperienceNuevoPage() {
+  const navigate = useNavigate();
+  return (
+    <ExperienceForm
+      onCancel={() => navigate("/experience")}
+      onSave={() => navigate("/experience")}
+    />
+  );
+}
+
+function ExperienceEditarPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { getGastoById } = useExperience();
+
+  const existingGasto = id ? getGastoById(id) : undefined;
+
+  const existingFormulario = existingGasto
+    ? {
+        responsable: existingGasto.formularioCreatedBy || existingGasto.createdBy || '',
+        fechaRegistro: existingGasto.formularioCreatedAt?.toISOString() || existingGasto.createdAt?.toISOString(),
+        formularioEstado: existingGasto.formularioEstado as 'abierto' | 'cerrado' | 'anulado' | undefined,
+      }
+    : undefined;
+
+  return (
+    <ExperienceForm
+      gastoId={id}
+      existingFormulario={existingFormulario}
+      onCancel={() => navigate("/experience")}
+      onSave={() => navigate("/experience")}
+    />
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -510,8 +588,10 @@ export default function App() {
               <FormFieldsProvider>
                 <ImplementacionProvider>
                   <ProgramacionProvider>
-                    <AppContent />
-                    <Toaster richColors position="top-right" />
+                    <ExperienceProvider>
+                      <AppContent />
+                      <Toaster richColors position="top-right" />
+                    </ExperienceProvider>
                   </ProgramacionProvider>
                 </ImplementacionProvider>
               </FormFieldsProvider>

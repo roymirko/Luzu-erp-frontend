@@ -6,7 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Luzu ERP is an Enterprise Resource Planning system for Luzu TV (Argentine media company). It manages advertising orders, implementation expenses, programming schedules, and administrative operations.
 
-**Key documentation**: Read `MVP_REQUIREMENTS.md` for detailed business rules (in Spanish) and `PRD.md` for product context.
+**Key documentation**:
+- `MVP_REQUIREMENTS.md` - Detailed business rules (in Spanish)
+- `PRD.md` - Product context
+- `references/db.md` - **Database schema reference** (MUST READ when creating/updating migrations)
 
 ## Commands
 
@@ -97,6 +100,16 @@ Required in `.env`:
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+## Database Conventions
+
+**IMPORTANT**: Always read `references/db.md` before creating database migrations.
+
+Key rules:
+- User table is `usuarios` (NOT `users`)
+- Use `TEXT` for `created_by` fields (not UUID REFERENCES)
+- Enable RLS on all tables with `allow_all` policy for dev
+- Follow the unified gastos architecture for expense modules
 
 ## Notes
 
