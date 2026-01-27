@@ -485,7 +485,7 @@ DECLARE
   v_user_email text;
 BEGIN
   -- Get first user email for created_by
-  SELECT email INTO v_user_email FROM public.usuarios ORDER BY created_at LIMIT 1;
+  SELECT email INTO v_user_email FROM public.usuarios ORDER BY fecha_creacion LIMIT 1;
   IF v_user_email IS NULL THEN
     v_user_email := 'gaby@luzutv.com.ar';
   END IF;

@@ -735,6 +735,27 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                     </div>
                   </div>
 
+                  {/* Collapsed summary */}
+                  {isCollapsed && gasto.neto > 0 && (
+                    <div className={cn(
+                      'mt-2 pt-2 border-t text-sm',
+                      isDark ? 'border-gray-700 text-gray-400' : 'border-gray-200 text-gray-600'
+                    )}>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        {gasto.empresaPrograma && (
+                          <span><strong>PGM:</strong> {PROGRAMAS_EXPERIENCE_OPTIONS.find(p => p.value === gasto.empresaPrograma)?.label || gasto.empresaPrograma}</span>
+                        )}
+                        {gasto.empresa && (
+                          <span><strong>Empresa:</strong> {gasto.empresa}</span>
+                        )}
+                        <span><strong>Neto:</strong> {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(gasto.neto)}</span>
+                        {gasto.formaPago && (
+                          <span><strong>Pago:</strong> {FORMAS_PAGO_EXPERIENCE_OPTIONS.find(f => f.value === gasto.formaPago)?.label || gasto.formaPago}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Collapsible content */}
                   {!isCollapsed && (
                     <>
@@ -993,11 +1014,11 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                                 return;
                               }
                               toggleGastoCollapse(gasto.id);
-                              toast.success(`Gasto #${index + 1} guardado`);
+                              toast.success(`Gasto #${index + 1} validado correctamente`);
                             }}
                             className="border-[#0070ff] text-[#0070ff] hover:bg-[#0070ff]/10 text-xs"
                           >
-                            Guardar
+                            Confirmar
                           </Button>
                         </div>
                       )}
