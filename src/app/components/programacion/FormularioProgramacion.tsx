@@ -349,14 +349,22 @@ export function FormularioProgramacion({
       let success: boolean;
 
       if (isEditing && existingGasto) {
-        const updatePromises = gastos.map((g) =>
-          updateGasto({
+        // Update existing gastos sequentially to avoid conflicts on formulario updates
+        let allSucceeded = true;
+        let failedCount = 0;
+
+        for (let i = 0; i < gastos.length; i++) {
+          const g = gastos[i];
+          const result = await updateGasto({
             id: g.id,
-            unidadNegocio,
-            categoriaNegocio,
-            subRubroEmpresa: subrubro,
-            programa: nombreCampana,
-            conceptoGasto: detalleCampana,
+            // Only update formulario fields on the first gasto to avoid conflicts
+            ...(i === 0 ? {
+              unidadNegocio,
+              categoriaNegocio,
+              subRubroEmpresa: subrubro,
+              programa: nombreCampana,
+              conceptoGasto: detalleCampana,
+            } : {}),
             proveedor,
             razonSocial,
             cliente: g.facturaEmitidaA,
@@ -368,12 +376,18 @@ export function FormularioProgramacion({
             facturaEmitidaA: g.facturaEmitidaA,
             categoria: g.empresaPrograma,
             fechaFactura: g.fechaComprobante ? new Date(g.fechaComprobante) : undefined,
-          })
-        );
-        const results = await Promise.all(updatePromises);
-        success = results.every((r) => r);
+          });
+
+          if (!result) {
+            allSucceeded = false;
+            failedCount++;
+            console.error(`Failed to update gasto ${i + 1} (id: ${g.id})`);
+          }
+        }
+
+        success = allSucceeded;
         if (success) toast.success(`${gastos.length} gasto(s) actualizado(s) correctamente`);
-        else toast.error("Error al actualizar algunos gastos");
+        else toast.error(`Error al actualizar ${failedCount} de ${gastos.length} gastos`);
       } else {
         const gastosToCreate = gastos.map((g) => ({
           proveedor,

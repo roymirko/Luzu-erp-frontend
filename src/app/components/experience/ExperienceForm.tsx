@@ -316,13 +316,16 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       let success: boolean;
 
       if (isEditing && gastoId) {
-        // Update existing gastos
-        const updatePromises = gastos.map((g) =>
-          updateGasto({
+        // Update existing gastos sequentially to avoid conflicts on formulario updates
+        let allSucceeded = true;
+        let failedCount = 0;
+
+        for (let i = 0; i < gastos.length; i++) {
+          const g = gastos[i];
+          const result = await updateGasto({
             id: g.id,
-            nombreCampana,
-            detalleCampana,
-            subrubro,
+            // Only update formulario fields on the first gasto to avoid conflicts
+            ...(i === 0 ? { nombreCampana, detalleCampana, subrubro } : {}),
             proveedor: g.proveedor,
             razonSocial: g.razonSocial,
             neto: g.neto,
@@ -334,14 +337,20 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             acuerdoPago: g.acuerdoPago,
             formaPago: g.formaPago,
             pais: g.pais,
-          })
-        );
-        const results = await Promise.all(updatePromises);
-        success = results.every((r) => r);
+          });
+
+          if (!result) {
+            allSucceeded = false;
+            failedCount++;
+            console.error(`Failed to update gasto ${i + 1} (id: ${g.id})`);
+          }
+        }
+
+        success = allSucceeded;
         if (success) {
           toast.success(`${gastos.length} gasto(s) actualizado(s) correctamente`);
         } else {
-          toast.error('Error al actualizar algunos gastos');
+          toast.error(`Error al actualizar ${failedCount} de ${gastos.length} gastos`);
         }
       } else {
         // Create new gastos
