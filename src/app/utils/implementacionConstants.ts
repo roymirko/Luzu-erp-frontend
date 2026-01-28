@@ -65,7 +65,7 @@ export const ACUERDOS_PAGO_EXPERIENCE_OPTIONS: FormSelectOption[] = [
 ];
 
 export const FORMAS_PAGO_EXPERIENCE_OPTIONS: FormSelectOption[] = [
-  { value: 'echeque', label: 'eCheque' },
+  { value: 'cheque', label: 'Cheque' },
   { value: 'transferencia', label: 'Transferencia' },
   { value: 'efectivo', label: 'Efectivo' },
 ];

@@ -52,7 +52,9 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
     proveedor: gasto.proveedor,
     razonSocial: gasto.razonSocial,
     condicionPago: gasto.condicionPago || '30',
+    formaPago: gasto.formaPago || '',
     neto: String(gasto.neto),
+    observaciones: gasto.observaciones || '',
     documentoAdjunto: gasto.adjuntos?.[0],
     estadoPgm: gasto.estadoPago === 'pagado' ? 'pagado' : gasto.estadoPago === 'anulado' ? 'anulado' : 'pendiente',
   };
@@ -63,7 +65,6 @@ function bloqueToCreateInput(
   bloque: BloqueImporte,
   shared: {
     conceptoGasto: string;
-    observaciones: string;
     ordenPublicidadId?: string;
     defaultItemOrdenPublicidadId?: string;
     rubroGasto?: string;
@@ -77,7 +78,7 @@ function bloqueToCreateInput(
     neto: parseFloat(bloque.neto) || 0,
     empresa: bloque.empresa,
     conceptoGasto: shared.conceptoGasto,
-    observaciones: shared.observaciones,
+    observaciones: bloque.observaciones,
     ordenPublicidadId: shared.ordenPublicidadId,
     // Use the bloque's itemId if set (from program selection), otherwise use the default
     itemOrdenPublicidadId: bloque.itemOrdenPublicidadId || shared.defaultItemOrdenPublicidadId,
@@ -86,6 +87,7 @@ function bloqueToCreateInput(
     rubroGasto: shared.rubroGasto,
     subRubro: shared.subRubro,
     condicionPago: bloque.condicionPago,
+    formaPago: bloque.formaPago,
   };
 }
 
@@ -151,7 +153,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
   const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [conceptoGasto, setConceptoGasto] = useState('');
-  const [observaciones, setObservaciones] = useState('');
   const [importes, setImportes] = useState<BloqueImporte[]>([]);
   const [estadoOP, setEstadoOP] = useState<EstadoOP>('pendiente');
   const [saving, setSaving] = useState(false);
@@ -180,7 +181,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         setFacturaEmitidaA(existingGasto.facturaEmitidaA);
         setEmpresa(existingGasto.empresa);
         setConceptoGasto(existingGasto.conceptoGasto);
-        setObservaciones(existingGasto.observaciones);
         setEstadoOP(existingGasto.estado);
         setImportes([gastoToBloqueImporte(existingGasto)]);
         loadedGastoIdsRef.current = new Set([existingGasto.id]);
@@ -190,16 +190,19 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       // Check for existing gastos for this item
       const existingGastos = getGastosByItemOrdenId(itemId);
       if (existingGastos.length > 0) {
+        // Sort gastos by createdAt (oldest first) to maintain stable order
+        const sortedGastos = [...existingGastos].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
         // Load first gasto's shared fields
-        const first = existingGastos[0];
+        const first = sortedGastos[0];
         setFacturaEmitidaA(first.facturaEmitidaA);
         setEmpresa(first.empresa);
         setConceptoGasto(first.conceptoGasto);
-        setObservaciones(first.observaciones);
         setEstadoOP(first.estado);
-        setImportes(existingGastos.map(gastoToBloqueImporte));
+        setImportes(sortedGastos.map(gastoToBloqueImporte));
         // Store the IDs of loaded gastos for update logic
-        loadedGastoIdsRef.current = new Set(existingGastos.map(g => g.id));
+        loadedGastoIdsRef.current = new Set(sortedGastos.map(g => g.id));
         dataLoadedRef.current = true;
       } else if (!dataLoadedRef.current) {
         // Only initialize with defaults if we haven't loaded data yet
@@ -214,7 +217,9 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           proveedor: '',
           razonSocial: '',
           condicionPago: '30',
+          formaPago: '',
           neto: '',
+          observaciones: '',
           estadoPgm: 'pendiente',
         }]);
       }
@@ -292,7 +297,9 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       proveedor: '',
       razonSocial: '',
       condicionPago: '30',
+      formaPago: '',
       neto: '',
+      observaciones: '',
       estadoPgm: 'pendiente',
     };
     setImportes((prev) => [...prev, newImporte]);
@@ -348,7 +355,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     try {
       const sharedFields = {
         conceptoGasto,
-        observaciones,
         ordenPublicidadId: formId,
         defaultItemOrdenPublicidadId: itemId,
         rubroGasto: IMPLEMENTACION_DEFAULTS.rubroGasto,
@@ -377,10 +383,11 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           neto: parseFloat(importe.neto) || 0,
           empresa: importe.empresa,
           conceptoGasto,
-          observaciones,
+          observaciones: importe.observaciones,
           facturaEmitidaA: importe.facturaEmitidaA,
           sector: importe.empresaPgm,
           condicionPago: importe.condicionPago,
+          formaPago: importe.formaPago,
           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
         });
         if (success) {
@@ -487,6 +494,24 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             formatCurrency={formatCurrency}
           />
 
+          {/* Detalle/campaña - Form level field */}
+          <div className="space-y-2">
+            <Label className={labelClass}>
+              Detalle/campaña <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              value={conceptoGasto}
+              onChange={(e) => setConceptoGasto(e.target.value)}
+              maxLength={FIELD_MAX_LENGTHS.conceptoGasto}
+              disabled={isCerrado}
+              placeholder="Concepto de gasto"
+              className={cn(textareaClass, errors.cargaDatos.conceptoGasto && 'border-red-500')}
+            />
+            {errors.cargaDatos.conceptoGasto && (
+              <p className="text-sm text-red-500">{errors.cargaDatos.conceptoGasto}</p>
+            )}
+          </div>
+
           {/* Carga de Importes Section */}
           <CargaImportesSection
             isDark={isDark}
@@ -499,27 +524,11 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             onSave={handleGuardar}
             onCancel={onClose}
             errors={errors.importes}
-            conceptoGasto={conceptoGasto}
-            setConceptoGasto={setConceptoGasto}
-            conceptoGastoError={errors.cargaDatos.conceptoGasto}
             // Status props
             isNewGasto={isNewGasto}
             existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
           />
-
-          {/* Observaciones */}
-          <div className="space-y-2">
-            <Label className={labelClass}>Observaciones</Label>
-            <Textarea
-              value={observaciones}
-              onChange={(e) => setObservaciones(e.target.value)}
-              maxLength={FIELD_MAX_LENGTHS.observaciones}
-              disabled={isCerrado}
-              placeholder="Escribe aquí"
-              className={textareaClass}
-            />
-          </div>
 
           {/* Resumen */}
           <ResumenPresupuestario

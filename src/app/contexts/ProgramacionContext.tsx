@@ -120,6 +120,7 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
         estado: (firstGasto.formularioEstado || 'activo') as FormularioAgrupado['estado'],
         createdAt: firstGasto.formularioCreatedAt || firstGasto.createdAt,
         ejecutivo: firstGasto.ejecutivo || '',
+        programa: firstGasto.programa,
         facturaEmitidaA: firstGasto.facturaEmitidaA,
         empresa: firstGasto.empresa,
         unidadNegocio: firstGasto.unidadNegocio || '',

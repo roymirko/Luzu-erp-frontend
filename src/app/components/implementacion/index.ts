@@ -1,15 +1,13 @@
 export { CampaignInfoCard } from './CampaignInfoCard';
 export { CargaDatosSection, type CargaDatosSectionErrors } from './CargaDatosSection';
 export { CargaImportesSection, type ImportesErrors, type ProgramaConPresupuesto } from './CargaImportesSection';
-export { GastoImporteCard, type GastoImporteErrors } from './GastoImporteCard';
 export { ObservacionesSection } from './ObservacionesSection';
 export { ResumenPresupuestario } from './ResumenPresupuestario';
-export { StatusBadge } from './StatusBadge';
+export { StatusBadge, type EstadoOP, type EstadoPGM } from './StatusBadge';
 export { ApprovalControls } from './ApprovalControls';
 
-// UI-specific types for form state management
-export type EstadoOP = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPGM = 'pendiente' | 'pagado' | 'anulado';
+// Re-export GastoCardErrors as GastoImporteErrors for backwards compatibility
+export type { GastoCardErrors as GastoImporteErrors } from '@/app/components/shared';
 
 export interface BloqueImporte {
   id: string;
@@ -22,7 +20,9 @@ export interface BloqueImporte {
   proveedor: string;
   razonSocial: string;
   condicionPago: string;
+  formaPago: string;
   neto: string;
+  observaciones: string;
   documentoAdjunto?: string;
   estadoPgm: EstadoPGM;
 }

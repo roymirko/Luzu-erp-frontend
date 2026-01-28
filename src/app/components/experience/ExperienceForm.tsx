@@ -14,18 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { CurrencyInput } from '@/app/components/ui/currency-input';
-import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import { cn } from '@/app/components/ui/utils';
-import { Trash2, ChevronDown, ChevronUp, Paperclip, Lock, AlertTriangle } from 'lucide-react';
+import { GastoCard, type GastoData } from '@/app/components/shared';
+import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   SUBRUBROS_EXPERIENCE_OPTIONS,
-  FACTURAS_OPTIONS,
-  EMPRESAS_OPTIONS,
   ACUERDOS_PAGO_EXPERIENCE_OPTIONS,
   FORMAS_PAGO_EXPERIENCE_OPTIONS,
-  PAISES_OPTIONS,
   PROGRAMAS_EXPERIENCE_OPTIONS,
 } from '@/app/utils/implementacionConstants';
 
@@ -35,6 +31,8 @@ interface GastoItem {
   empresa: string;
   empresaPrograma: string;
   fechaComprobante: string;
+  razonSocial: string;
+  proveedor: string;
   acuerdoPago: string;
   formaPago: string;
   pais: string;
@@ -47,8 +45,6 @@ interface FormErrors {
   subrubro?: string;
   nombreCampana?: string;
   detalleCampana?: string;
-  proveedor?: string;
-  razonSocial?: string;
 }
 
 interface ExistingFormulario {
@@ -106,10 +102,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
   const [nombreCampana, setNombreCampana] = useState('');
   const [detalleCampana, setDetalleCampana] = useState('');
 
-  // Section 2: Proveedor (shared for all gastos)
-  const [razonSocial, setRazonSocial] = useState('');
-  const [proveedor, setProveedor] = useState('');
-
   // Section 2: Gastos (repeatable)
   const [gastos, setGastos] = useState<GastoItem[]>([
     {
@@ -118,6 +110,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       empresa: '',
       empresaPrograma: '',
       fechaComprobante: new Date().toISOString().split('T')[0],
+      razonSocial: '',
+      proveedor: '',
       acuerdoPago: '',
       formaPago: '',
       pais: 'argentina',
@@ -155,11 +149,11 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       setSubrubro(existingGasto.subrubro || '');
       setNombreCampana(existingGasto.nombreCampana || '');
       setDetalleCampana(existingGasto.detalleCampana || '');
-      setProveedor(existingGasto.proveedor || '');
-      setRazonSocial(existingGasto.razonSocial || '');
 
-      // Get all gastos from same formulario
-      const formularioGastos = contextGastos.filter(g => g.formularioId === existingGasto.formularioId);
+      // Get all gastos from same formulario and sort by createdAt (oldest first)
+      const formularioGastos = contextGastos
+        .filter(g => g.formularioId === existingGasto.formularioId)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       console.log('[ExperienceForm] Formulario gastos:', formularioGastos.length);
 
       if (formularioGastos.length > 0) {
@@ -170,6 +164,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           empresa: g.empresaContext || '',
           empresaPrograma: g.empresaPrograma || '',
           fechaComprobante: g.fechaComprobante || new Date().toISOString().split('T')[0],
+          razonSocial: g.razonSocial || '',
+          proveedor: g.proveedor || '',
           acuerdoPago: g.acuerdoPago || '',
           formaPago: g.formaPago || '',
           pais: g.pais || 'argentina',
@@ -199,12 +195,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     if (!detalleCampana?.trim()) {
       newErrors.detalleCampana = 'Requerido';
     }
-    if (!razonSocial?.trim()) {
-      newErrors.razonSocial = 'Requerido';
-    }
-    if (!proveedor?.trim()) {
-      newErrors.proveedor = 'Requerido';
-    }
 
     return newErrors;
   };
@@ -217,7 +207,10 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       return `Gasto #${index + 1}: Debe seleccionar una empresa`;
     }
     if (!g.empresaPrograma?.trim()) {
-      return `Gasto #${index + 1}: Debe seleccionar un Empresa/PGM`;
+      return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
+    }
+    if (!g.razonSocial?.trim()) {
+      return `Gasto #${index + 1}: Debe seleccionar una razón social`;
     }
     if (!g.acuerdoPago?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
@@ -239,9 +232,14 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     return null;
   };
 
-  const handleProveedorChange = (data: { proveedor: string; razonSocial: string }) => {
-    setProveedor(data.proveedor);
-    setRazonSocial(data.razonSocial);
+  const handleGastoProveedorChange = (gastoId: string, data: { proveedor: string; razonSocial: string }) => {
+    setGastos((prev) =>
+      prev.map((g) =>
+        g.id === gastoId
+          ? { ...g, proveedor: data.proveedor, razonSocial: data.razonSocial }
+          : g
+      )
+    );
   };
 
   const addGastoItem = () => {
@@ -253,6 +251,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         empresa: '',
         empresaPrograma: '',
         fechaComprobante: new Date().toISOString().split('T')[0],
+        razonSocial: '',
+        proveedor: '',
         acuerdoPago: '',
         formaPago: '',
         pais: 'argentina',
@@ -323,8 +323,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             nombreCampana,
             detalleCampana,
             subrubro,
-            proveedor,
-            razonSocial,
+            proveedor: g.proveedor,
+            razonSocial: g.razonSocial,
             neto: g.neto,
             observaciones: g.observaciones,
             facturaEmitidaA: g.facturaEmitidaA,
@@ -346,8 +346,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       } else {
         // Create new gastos
         const gastosToCreate = gastos.map((g) => ({
-          proveedor,
-          razonSocial,
+          proveedor: g.proveedor,
+          razonSocial: g.razonSocial,
           neto: g.neto,
           empresa: g.empresa,
           observaciones: g.observaciones,
@@ -432,31 +432,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     'disabled:opacity-60 disabled:cursor-not-allowed'
   );
 
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'pendiente-pago':
-        return 'bg-yellow-400';
-      case 'pagado':
-        return 'bg-green-400';
-      case 'anulado':
-        return 'bg-red-400';
-      default:
-        return 'bg-gray-400';
-    }
-  };
-
-  const getEstadoLabel = (estado: string) => {
-    switch (estado) {
-      case 'pendiente-pago':
-        return 'Pendiente de pago';
-      case 'pagado':
-        return 'Pagado';
-      case 'anulado':
-        return 'Anulado';
-      default:
-        return estado;
-    }
-  };
 
   // Show loading state while fetching data (only for edit mode)
   if (isEditing && (loadingData || contextLoading)) {
@@ -642,16 +617,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
               Carga de importes
             </h2>
 
-            <ProveedorSelector
-              value={{ proveedor, razonSocial }}
-              onChange={handleProveedorChange}
-              allowCreate
-              disabled={isFormularioCerrado}
-              className={cn(
-                errors.proveedor || errors.razonSocial ? '[&_input]:border-red-500' : ''
-              )}
-            />
-
             {/* Gastos Items */}
             {gastos.map((gasto, index) => {
               const isCollapsed = collapsedGastos.has(gasto.id);
@@ -659,372 +624,58 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
               const isDisabled = isFormularioCerrado || isThisGastoLocked;
               const selectedPrograms = getSelectedPrograms(gasto.id);
 
+              // Convert GastoItem to GastoData format
+              const gastoData: GastoData = {
+                ...gasto,
+                neto: String(gasto.neto || 0),
+              };
+
+              // Filter program options to exclude already selected
+              const availableProgramOptions = PROGRAMAS_EXPERIENCE_OPTIONS.filter(
+                (opt) => opt.value === gasto.empresaPrograma || !selectedPrograms.includes(opt.value)
+              );
+
               return (
-                <div
+                <GastoCard
                   key={gasto.id}
-                  className={cn(
-                    'rounded-lg border-2 p-4',
-                    isCollapsed ? 'space-y-0' : 'space-y-4',
-                    isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-[#f8f9fc] border-[#e6e7eb]',
-                    isDisabled && 'opacity-75'
-                  )}
-                >
-                  {/* Gasto Header */}
-                  <div
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => toggleGastoCollapse(gasto.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <h3
-                        className={cn(
-                          'text-lg font-bold',
-                          isDark ? 'text-blue-400' : 'text-[#165dfc]'
-                        )}
-                      >
-                        Gasto #{index + 1}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <span className={`h-3 w-3 rounded-full ${getEstadoColor(gasto.estado)}`} />
-                        <span
-                          className={cn(
-                            'text-sm font-medium',
-                            isDark ? 'text-gray-300' : 'text-gray-600'
-                          )}
-                        >
-                          {getEstadoLabel(gasto.estado)}
-                        </span>
-                      </div>
-                      {isThisGastoLocked && (
-                        <Lock className="h-4 w-4 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {gastos.length > 1 && !isDisabled && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeGastoItem(gasto.id);
-                          }}
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <button
-                        type="button"
-                        className={cn(
-                          'p-1 rounded transition-colors',
-                          isDark
-                            ? 'text-gray-400 hover:text-gray-200'
-                            : 'text-gray-500 hover:text-gray-700'
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleGastoCollapse(gasto.id);
-                        }}
-                      >
-                        {isCollapsed ? (
-                          <ChevronDown className="h-5 w-5" />
-                        ) : (
-                          <ChevronUp className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Collapsed summary */}
-                  {isCollapsed && gasto.neto > 0 && (
-                    <div className={cn(
-                      'mt-2 pt-2 border-t text-sm',
-                      isDark ? 'border-gray-700 text-gray-400' : 'border-gray-200 text-gray-600'
-                    )}>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1">
-                        {gasto.empresaPrograma && (
-                          <span><strong>PGM:</strong> {PROGRAMAS_EXPERIENCE_OPTIONS.find(p => p.value === gasto.empresaPrograma)?.label || gasto.empresaPrograma}</span>
-                        )}
-                        {gasto.empresa && (
-                          <span><strong>Empresa:</strong> {gasto.empresa}</span>
-                        )}
-                        <span><strong>Neto:</strong> {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(gasto.neto)}</span>
-                        {gasto.formaPago && (
-                          <span><strong>Pago:</strong> {FORMAS_PAGO_EXPERIENCE_OPTIONS.find(f => f.value === gasto.formaPago)?.label || gasto.formaPago}</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Collapsible content */}
-                  {!isCollapsed && (
-                    <>
-                      {/* Row 1: Factura emitida a | Empresa */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Factura emitida a <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.facturaEmitidaA}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'facturaEmitidaA', v)}
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger
-                              className={isDisabled ? disabledSelectClass : selectTriggerClass}
-                            >
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FACTURAS_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Empresa <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.empresa}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'empresa', v)}
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger
-                              className={isDisabled ? disabledSelectClass : selectTriggerClass}
-                            >
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {EMPRESAS_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Row 2: Empresa/PGM | Fecha de comprobante */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Empresa/PGM <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.empresaPrograma}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'empresaPrograma', v)}
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger
-                              className={isDisabled ? disabledSelectClass : selectTriggerClass}
-                            >
-                              <SelectValue placeholder="Seleccionar programa" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PROGRAMAS_EXPERIENCE_OPTIONS.filter(
-                                (opt) => !selectedPrograms.includes(opt.value)
-                              ).map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Fecha de comprobante <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="date"
-                            value={gasto.fechaComprobante}
-                            onChange={(e) =>
-                              updateGastoItem(gasto.id, 'fechaComprobante', e.target.value)
-                            }
-                            disabled={isDisabled}
-                            className={isDisabled ? disabledSelectClass : inputClass}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 3: Acuerdo de pago | Forma de pago */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Acuerdo de pago <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.acuerdoPago}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'acuerdoPago', v)}
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger
-                              className={isDisabled ? disabledSelectClass : selectTriggerClass}
-                            >
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ACUERDOS_PAGO_EXPERIENCE_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Forma de pago <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.formaPago}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'formaPago', v)}
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger
-                              className={isDisabled ? disabledSelectClass : selectTriggerClass}
-                            >
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FORMAS_PAGO_EXPERIENCE_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Row 4: País | Neto */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            País <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.pais}
-                            onValueChange={(v) => updateGastoItem(gasto.id, 'pais', v)}
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger
-                              className={isDisabled ? disabledSelectClass : selectTriggerClass}
-                            >
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PAISES_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Neto <span className="text-red-500">*</span>
-                          </Label>
-                          <CurrencyInput
-                            value={gasto.neto}
-                            onChange={(val) => updateGastoItem(gasto.id, 'neto', val)}
-                            placeholder="$0"
-                            disabled={isDisabled}
-                            className={isDisabled ? disabledSelectClass : inputClass}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 5: Observaciones */}
-                      <div className="space-y-1">
-                        <Label className={labelClass}>Observaciones</Label>
-                        <Textarea
-                          value={gasto.observaciones}
-                          onChange={(e) => {
-                            if (e.target.value.length <= MAX_OBSERVACIONES_LENGTH) {
-                              updateGastoItem(gasto.id, 'observaciones', e.target.value);
-                            }
-                          }}
-                          placeholder="Escribe aquí"
-                          maxLength={MAX_OBSERVACIONES_LENGTH}
-                          disabled={isDisabled}
-                          className={cn(
-                            isDisabled
-                              ? 'min-h-[72px] resize-none opacity-60 cursor-not-allowed'
-                              : textareaClass
-                          )}
-                        />
-                        <div
-                          className={cn(
-                            'text-xs text-right',
-                            isDark ? 'text-gray-500' : 'text-gray-400'
-                          )}
-                        >
-                          {gasto.observaciones.length}/{MAX_OBSERVACIONES_LENGTH}
-                        </div>
-                      </div>
-
-                      {/* Adjuntar archivos link */}
-                      {!isDisabled && (
-                        <div>
-                          <button
-                            type="button"
-                            className="flex items-center gap-2 text-sm text-[#0070ff] hover:text-[#0060dd] font-medium"
-                          >
-                            <Paperclip className="h-4 w-4" />
-                            Adjuntar archivos
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Card action buttons - hidden when locked */}
-                      {!isDisabled && (
-                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (gastos.length > 1) {
-                                removeGastoItem(gasto.id);
-                              }
-                            }}
-                            className="text-[#0070ff] hover:text-[#0060dd] text-xs"
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const error = validateSingleGasto(gasto, index);
-                              if (error) {
-                                toast.error(error);
-                                return;
-                              }
-                              toggleGastoCollapse(gasto.id);
-                              toast.success(`Gasto #${index + 1} validado correctamente`);
-                            }}
-                            className="border-[#0070ff] text-[#0070ff] hover:bg-[#0070ff]/10 text-xs"
-                          >
-                            Confirmar
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                  isDark={isDark}
+                  gasto={gastoData}
+                  index={index}
+                  isNew={false}
+                  isDisabled={isDisabled}
+                  estado={gasto.estado}
+                  isCollapsed={isCollapsed}
+                  onToggleCollapse={() => toggleGastoCollapse(gasto.id)}
+                  onUpdate={(field, value) => {
+                    if (field === 'neto') {
+                      updateGastoItem(gasto.id, field, Number(value) || 0);
+                    } else {
+                      updateGastoItem(gasto.id, field as keyof GastoItem, value);
+                    }
+                  }}
+                  onCancel={() => {
+                    if (gastos.length > 1) {
+                      removeGastoItem(gasto.id);
+                    }
+                  }}
+                  onSave={() => {
+                    const error = validateSingleGasto(gasto, index);
+                    if (error) {
+                      toast.error(error);
+                      return;
+                    }
+                    toggleGastoCollapse(gasto.id);
+                    toast.success(`Gasto #${index + 1} validado correctamente`);
+                  }}
+                  showFormaPago
+                  showPais
+                  showCharacterCount
+                  showButtonsBorder
+                  maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
+                  programOptions={availableProgramOptions}
+                  acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
+                  formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}
+                />
               );
             })}
 

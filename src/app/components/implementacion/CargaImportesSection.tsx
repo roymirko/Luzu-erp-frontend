@@ -1,11 +1,12 @@
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { cn } from '@/app/components/ui/utils';
-import { GastoImporteCard, type GastoImporteErrors } from './GastoImporteCard';
+import { GastoCard, type GastoData, type GastoCardErrors } from '@/app/components/shared';
 import type { BloqueImporte, EstadoOP, EstadoPGM } from './index';
 
 export interface ImportesErrors {
-  [importeId: string]: GastoImporteErrors;
+  [importeId: string]: GastoCardErrors;
 }
 
 export interface ProgramaConPresupuesto {
@@ -26,14 +27,36 @@ interface CargaImportesSectionProps {
   onSave?: () => void;
   onCancel?: () => void;
   errors?: ImportesErrors;
-  // Concepto de gasto is still a shared field (shown only on first card)
-  conceptoGasto: string;
-  setConceptoGasto: (v: string) => void;
-  conceptoGastoError?: string;
   // Status props
   isNewGasto?: boolean;
   existingGastoIds?: Set<string>;
   estadoOP?: EstadoOP;
+}
+
+// Map BloqueImporte to GastoData format
+function toGastoData(importe: BloqueImporte): GastoData {
+  return {
+    id: importe.id,
+    facturaEmitidaA: importe.facturaEmitidaA,
+    empresa: importe.empresa,
+    empresaPrograma: importe.empresaPgm,
+    fechaComprobante: importe.fechaComprobante,
+    razonSocial: importe.razonSocial,
+    proveedor: importe.proveedor,
+    acuerdoPago: importe.condicionPago,
+    formaPago: importe.formaPago,
+    neto: importe.neto,
+    observaciones: importe.observaciones,
+  };
+}
+
+// Map GastoData field to BloqueImporte field
+function mapFieldName(field: keyof GastoData): keyof BloqueImporte {
+  const fieldMap: Partial<Record<keyof GastoData, keyof BloqueImporte>> = {
+    empresaPrograma: 'empresaPgm',
+    acuerdoPago: 'condicionPago',
+  };
+  return fieldMap[field] || (field as keyof BloqueImporte);
 }
 
 export function CargaImportesSection(props: CargaImportesSectionProps) {
@@ -48,14 +71,29 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     onSave,
     onCancel,
     errors = {},
-    conceptoGasto,
-    setConceptoGasto,
-    conceptoGastoError,
     // Status props with defaults
     isNewGasto = true,
     existingGastoIds = new Set(),
     estadoOP = 'pendiente',
   } = props;
+
+  // Track collapsed state for each importe
+  const [collapsedImportes, setCollapsedImportes] = useState<Set<string>>(() => {
+    // Start with existing gastos collapsed
+    return new Set(importes.filter(imp => existingGastoIds.has(imp.id)).map(imp => imp.id));
+  });
+
+  const toggleCollapse = (id: string) => {
+    setCollapsedImportes(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -67,28 +105,31 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
         {importes.map((imp, idx) => {
           // Determine if this specific importe is new (not in existing gastos)
           const isImporteNew = !existingGastoIds.has(imp.id);
+          const gastoData = toGastoData(imp);
+          const isCollapsed = collapsedImportes.has(imp.id);
+
           return (
-            <GastoImporteCard
+            <GastoCard
               key={imp.id}
               isDark={isDark}
-              isCerrado={isCerrado}
-              importe={imp}
+              gasto={gastoData}
               index={idx}
-              programasConPresupuesto={programasConPresupuesto}
-              canRemove={importes.length > 1 && isImporteNew}
-              onUpdate={(field, value) => onUpdateImporte(imp.id, field, value)}
-              onRemove={() => onRemoveImporte(imp.id)}
+              isNew={isImporteNew}
+              isDisabled={isCerrado}
+              estado={estadoOP}
+              estadoPago={imp.estadoPgm}
+              isCollapsed={isCollapsed}
+              onToggleCollapse={() => toggleCollapse(imp.id)}
+              onUpdate={(field, value) => {
+                const mappedField = mapFieldName(field);
+                onUpdateImporte(imp.id, mappedField, value);
+              }}
+              onRemove={importes.length > 1 && isImporteNew ? () => onRemoveImporte(imp.id) : undefined}
               onSave={onSave}
               onCancel={onCancel}
               errors={errors[imp.id]}
-              conceptoGasto={conceptoGasto}
-              setConceptoGasto={setConceptoGasto}
-              showConceptoGasto={idx === 0}
-              conceptoGastoError={conceptoGastoError}
-              // Status props
-              isNew={isImporteNew}
-              estadoOP={estadoOP}
-              estadoPGM={imp.estadoPgm}
+              showFormaPago
+              programOptions={programasConPresupuesto}
             />
           );
         })}

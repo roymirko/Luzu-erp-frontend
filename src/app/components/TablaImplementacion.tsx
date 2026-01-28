@@ -17,16 +17,18 @@ const VIEW_MODE_OPTIONS = [
   { value: 'orden', label: 'Orden de Publicidad' },
 ];
 
-const COLUMNS_PROGRAMA = [
-  'Estado', 'Fecha de registro', 'Responsable', 'Unidad de negocio', 'Categoría de negocio',
-  'Empresa/PGM', 'Orden de Publicidad', 'Presupuesto', 'Sector', 'Rubro de gasto',
-  'Sub rubro', 'Nombre de campaña', 'Acuerdo de pago', 'Neto', 'Acciones'
+// Columns for "Orden de Publicidad" view (grouped by OP)
+const COLUMNS_ORDEN = [
+  'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
+  'Categoría de negocio', 'Marca', 'Orden de Publicidad', 'Presupuesto', 'Cant. de programas',
+  'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Neto Total', 'Acciones'
 ];
 
-const COLUMNS_ORDEN = [
-  'Estado', 'Fecha de registro', 'Responsable', 'Unidad de negocio', 'Categoría de negocio',
-  'Orden de Publicidad', 'Presupuesto', 'Cant. de programas', 'Sector', 'Rubro de gasto',
-  'Sub rubro', 'Nombre de campaña', 'Neto Total', 'Acciones'
+// Columns for "Programa" view (individual gastos)
+const COLUMNS_PROGRAMA = [
+  'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
+  'Categoría de negocio', 'Marca', 'Empresa/Programa', 'Detalle de Publicidad', 'Presupuesto',
+  'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Acuerdo de pago', 'Neto', 'Acciones'
 ];
 
 interface TablaImplementacionProps {
@@ -37,7 +39,8 @@ interface TablaImplementacionProps {
 export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementacionProps) {
   const { isDark } = useTheme();
   const { gastos } = useImplementacion();
-  const [viewMode, setViewMode] = useState<'orden' | 'programa'>('programa');
+  // Default to 'orden' (Orden de Publicidad view)
+  const [viewMode, setViewMode] = useState<'orden' | 'programa'>('orden');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -95,6 +98,9 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
     acuerdoPago: string;
     presupuesto: string;
     categoriaNegocio?: string;
+    marca?: string;
+    mesServicio?: string;
+    fechaRegistro?: string;
   }
 
   const filteredGastos = gastos.filter(g => {
@@ -119,7 +125,10 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
       nombreCampana: g.nombreCampana,
       acuerdoPago: g.acuerdoPago,
       presupuesto: g.presupuesto,
-      categoriaNegocio: g.categoriaNegocio
+      categoriaNegocio: g.categoriaNegocio,
+      marca: g.marca,
+      mesServicio: g.mesServicio,
+      fechaRegistro: g.fechaRegistro,
     }))
   );
 
@@ -132,7 +141,7 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
   });
 
   const currentData = viewMode === 'orden' ? filteredGastos : filteredImportes;
-  const columns = viewMode === 'programa' ? COLUMNS_PROGRAMA : COLUMNS_ORDEN;
+  const columns = viewMode === 'orden' ? COLUMNS_ORDEN : COLUMNS_PROGRAMA;
   const totalPages = Math.max(1, Math.ceil(currentData.length / ITEMS_PER_PAGE));
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentRows = currentData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -165,6 +174,7 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
           options={VIEW_MODE_OPTIONS}
           value={viewMode}
           onChange={handleModeChange}
+          className="w-[280px]"
         />
       </TableHeader>
 
@@ -187,42 +197,69 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
               const id = viewMode === 'orden' ? item.id : item.parentId;
 
               return (
-                <DataTableRow key={viewMode === 'orden' ? item.id : item.id} onClick={() => handleEdit(id)}>
+                <DataTableRow key={item.id} onClick={() => handleEdit(id)}>
+                  {/* Estado */}
                   <DataTableCell>
                     <StatusBadge label={getStatusLabel(status)} variant={getStatusVariant(status)} />
                   </DataTableCell>
-                  <DataTableCell>{viewMode === 'orden' ? item.fechaRegistro : item.fechaComprobante}</DataTableCell>
+                  {/* Mes de servicio */}
+                  <DataTableCell>{item.mesServicio || '-'}</DataTableCell>
+                  {/* Fecha de registro */}
+                  <DataTableCell>{item.fechaRegistro || item.fechaComprobante || '-'}</DataTableCell>
+                  {/* Responsable */}
                   <DataTableCell>{item.responsable}</DataTableCell>
+                  {/* Unidad de negocio */}
                   <DataTableCell>{item.unidadNegocio}</DataTableCell>
+                  {/* Categoría de negocio */}
                   <DataTableCell>{item.categoriaNegocio || '-'}</DataTableCell>
+                  {/* Marca */}
+                  <DataTableCell>{item.marca || '-'}</DataTableCell>
 
-                  {viewMode === 'programa' ? (
+                  {viewMode === 'orden' ? (
                     <>
-                      <DataTableCell>{item.empresaPgm}</DataTableCell>
-                      <DataTableCell>{item.parentOP}</DataTableCell>
-                      <DataTableCell>{formatCurrency(item.presupuesto)}</DataTableCell>
-                      <DataTableCell muted>{item.sector}</DataTableCell>
-                      <DataTableCell muted>{item.rubroGasto}</DataTableCell>
-                      <DataTableCell muted>{item.subRubro}</DataTableCell>
-                      <DataTableCell muted>{item.nombreCampana}</DataTableCell>
-                      <DataTableCell>{item.acuerdoPago}</DataTableCell>
-                      <DataTableCell>{formatCurrency(item.neto)}</DataTableCell>
-                    </>
-                  ) : (
-                    <>
+                      {/* Orden de Publicidad */}
                       <DataTableCell>{item.ordenPublicidad}</DataTableCell>
+                      {/* Presupuesto */}
                       <DataTableCell>{formatCurrency(item.presupuesto)}</DataTableCell>
-                      <DataTableCell>{item.cantidadProgramas}</DataTableCell>
+                      {/* Cant. de programas */}
+                      <DataTableCell>{item.importes?.length || 0}</DataTableCell>
+                      {/* Sector */}
                       <DataTableCell muted>{item.sector}</DataTableCell>
+                      {/* Rubro de gasto */}
                       <DataTableCell muted>{item.rubroGasto}</DataTableCell>
+                      {/* Sub rubro */}
                       <DataTableCell muted>{item.subRubro}</DataTableCell>
+                      {/* Nombre de campaña */}
                       <DataTableCell muted>{item.nombreCampana}</DataTableCell>
+                      {/* Neto Total */}
                       <DataTableCell>
                         {item.importes ? formatCurrency(item.importes.reduce((sum: number, i: any) => sum + (parseFloat(i.neto) || 0), 0)) : '-'}
                       </DataTableCell>
                     </>
+                  ) : (
+                    <>
+                      {/* Empresa/Programa */}
+                      <DataTableCell>{item.empresaPgm}</DataTableCell>
+                      {/* Detalle de Publicidad (Orden de Publicidad) */}
+                      <DataTableCell>{item.parentOP}</DataTableCell>
+                      {/* Presupuesto */}
+                      <DataTableCell>{formatCurrency(item.presupuesto)}</DataTableCell>
+                      {/* Sector */}
+                      <DataTableCell muted>{item.sector}</DataTableCell>
+                      {/* Rubro de gasto */}
+                      <DataTableCell muted>{item.rubroGasto}</DataTableCell>
+                      {/* Sub rubro */}
+                      <DataTableCell muted>{item.subRubro}</DataTableCell>
+                      {/* Nombre de campaña */}
+                      <DataTableCell muted>{item.nombreCampana}</DataTableCell>
+                      {/* Acuerdo de pago */}
+                      <DataTableCell>{item.acuerdoPago || item.condicionPago || '-'}</DataTableCell>
+                      {/* Neto */}
+                      <DataTableCell>{formatCurrency(item.neto)}</DataTableCell>
+                    </>
                   )}
 
+                  {/* Acciones */}
                   <DataTableCell>
                     <div className="flex items-center justify-center">
                       <Button

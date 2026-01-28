@@ -270,6 +270,7 @@ export interface ImplementacionGastoRow {
   rubro_gasto: string | null;
   sub_rubro: string | null;
   condicion_pago: string | null;
+  forma_pago: string | null;
   fecha_pago: string | null;
   adjuntos: unknown | null;
 }
@@ -307,6 +308,7 @@ export interface ImplementacionGastoFullRow {
   rubro_gasto: string | null;
   sub_rubro: string | null;
   condicion_pago: string | null;
+  forma_pago: string | null;
   fecha_pago: string | null;
   adjuntos: unknown | null;
   // Joined from ordenes_publicidad

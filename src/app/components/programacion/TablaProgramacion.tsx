@@ -51,35 +51,63 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
 
   const getEstadoPagoVariant = (estadoPago: string) => {
     switch (estadoPago) {
-      case 'pendiente': return 'warning';
-      case 'pago': return 'success';
-      default: return 'neutral';
+      case 'pendiente':
+      case 'pendiente-pago':
+        return 'warning';
+      case 'pago':
+      case 'pagado':
+        return 'success';
+      case 'anulado':
+        return 'error';
+      default:
+        return 'neutral';
     }
   };
 
   const getEstadoPagoLabel = (estadoPago: string) => {
     switch (estadoPago) {
-      case 'pendiente': return 'Pendiente de pago';
-      case 'pago': return 'Pago';
-      default: return estadoPago;
+      case 'pendiente':
+      case 'pendiente-pago':
+        return 'Pendiente de pago';
+      case 'pago':
+      case 'pagado':
+        return 'Pagado';
+      case 'anulado':
+        return 'Anulado';
+      default:
+        return 'Pendiente de carga';
     }
   };
 
   const getEstadoFormularioVariant = (estado: string) => {
     switch (estado) {
-      case 'activo': return 'success';
-      case 'cerrado': return 'neutral';
-      case 'anulado': return 'error';
-      default: return 'success';
+      case 'activo':
+      case 'abierto':
+        return 'success';
+      case 'cerrado':
+        return 'neutral';
+      case 'anulado':
+        return 'error';
+      case 'pendiente':
+        return 'neutral';
+      default:
+        return 'neutral';
     }
   };
 
   const getEstadoFormularioLabel = (estado: string) => {
     switch (estado) {
-      case 'activo': return 'Activo';
-      case 'cerrado': return 'Cerrado';
-      case 'anulado': return 'Anulado';
-      default: return 'Activo';
+      case 'activo':
+      case 'abierto':
+        return 'Activo';
+      case 'cerrado':
+        return 'Cerrado';
+      case 'anulado':
+        return 'Anulado';
+      case 'pendiente':
+        return 'Pendiente de carga';
+      default:
+        return 'Pendiente de carga';
     }
   };
 
@@ -199,8 +227,8 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
                 <DataTableCell>
                   <StatusBadge label={getEstadoPagoLabel(gasto.estadoPago)} variant={getEstadoPagoVariant(gasto.estadoPago)} />
                 </DataTableCell>
-                <DataTableCell>{gasto.programa || gasto.empresa || '-'}</DataTableCell>
-                <DataTableCell>{gasto.detalleCampana || '-'}</DataTableCell>
+                <DataTableCell>{gasto.categoria || '-'}</DataTableCell>
+                <DataTableCell>{gasto.programa || '-'}</DataTableCell>
                 <DataTableCell>{formatDateDDMMYYYY(gasto.createdAt)}</DataTableCell>
                 <DataTableCell>{gasto.ejecutivo || '-'}</DataTableCell>
                 <DataTableCell>{gasto.facturaEmitidaA || '-'}</DataTableCell>
@@ -230,7 +258,7 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
                 <DataTableCell>
                   <StatusBadge label={getEstadoFormularioLabel(formulario.estado)} variant={getEstadoFormularioVariant(formulario.estado)} />
                 </DataTableCell>
-                <DataTableCell>{formulario.detalleCampana || '-'}</DataTableCell>
+                <DataTableCell>{formulario.programa || '-'}</DataTableCell>
                 <DataTableCell>{formatDateDDMMYYYY(formulario.createdAt)}</DataTableCell>
                 <DataTableCell>{formulario.ejecutivo || '-'}</DataTableCell>
                 <DataTableCell>{formulario.facturaEmitidaA || '-'}</DataTableCell>

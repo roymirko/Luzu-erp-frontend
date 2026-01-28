@@ -212,6 +212,7 @@ CREATE TABLE implementacion_gastos (
   rubro_gasto TEXT,
   sub_rubro TEXT,
   condicion_pago TEXT,
+  forma_pago TEXT,
   fecha_pago DATE,
   adjuntos JSONB,
   UNIQUE(gasto_id)

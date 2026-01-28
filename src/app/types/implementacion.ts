@@ -33,6 +33,7 @@ export interface GastoImplementacion {
   rubroGasto?: string;
   subRubro?: string;
   condicionPago?: string;
+  formaPago?: string;
   fechaPago?: string;
   adjuntos?: string[];
   // Joined fields from ordenes_publicidad
@@ -71,6 +72,7 @@ export interface CreateGastoImplementacionInput {
   rubroGasto?: string;
   subRubro?: string;
   condicionPago?: string;
+  formaPago?: string;
   fechaPago?: string;
   adjuntos?: string[];
 }

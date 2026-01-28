@@ -49,6 +49,7 @@ function mapFromDB(row: ImplementacionGastoFullRow): GastoImplementacion {
     rubroGasto: row.rubro_gasto || undefined,
     subRubro: row.sub_rubro || undefined,
     condicionPago: row.condicion_pago || undefined,
+    formaPago: row.forma_pago || undefined,
     fechaPago: row.fecha_pago || undefined,
     adjuntos: row.adjuntos as string[] | undefined,
     // Joined orden publicidad fields
@@ -84,8 +85,8 @@ function mapToGastoInsert(input: CreateGastoImplementacionInput): GastoInsert {
     empresa: input.empresa || null,
     concepto_gasto: input.conceptoGasto || null,
     observaciones: input.observaciones || null,
-    estado: 'pendiente',
-    estado_pago: 'pendiente',
+    estado: 'activo',
+    estado_pago: 'pendiente-pago',
     created_by: input.createdBy || null,
   };
 }
@@ -102,6 +103,7 @@ function mapToContextInsert(input: CreateGastoImplementacionInput): Omit<Impleme
     rubro_gasto: input.rubroGasto || null,
     sub_rubro: input.subRubro || null,
     condicion_pago: input.condicionPago || null,
+    forma_pago: input.formaPago || null,
     fecha_pago: input.fechaPago || null,
     adjuntos: input.adjuntos || null,
   };
@@ -269,6 +271,7 @@ export async function update(input: UpdateGastoImplementacionInput): Promise<{ d
   if (fields.rubroGasto !== undefined) contextUpdate.rubro_gasto = fields.rubroGasto;
   if (fields.subRubro !== undefined) contextUpdate.sub_rubro = fields.subRubro;
   if (fields.condicionPago !== undefined) contextUpdate.condicion_pago = fields.condicionPago;
+  if (fields.formaPago !== undefined) contextUpdate.forma_pago = fields.formaPago;
   if (fields.fechaPago !== undefined) contextUpdate.fecha_pago = fields.fechaPago;
   if (fields.adjuntos !== undefined) contextUpdate.adjuntos = fields.adjuntos;
   if (fields.itemOrdenPublicidadId !== undefined) contextUpdate.item_orden_publicidad_id = fields.itemOrdenPublicidadId;

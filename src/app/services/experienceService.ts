@@ -224,7 +224,7 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
       return { data: [], error: `Gasto #${i + 1}: Debe seleccionar una empresa` };
     }
     if (!g.empresaPrograma?.trim()) {
-      return { data: [], error: `Gasto #${i + 1}: Debe seleccionar un Empresa/PGM` };
+      return { data: [], error: `Gasto #${i + 1}: Debe seleccionar Empresa/Programa` };
     }
     if (!g.acuerdoPago?.trim()) {
       return { data: [], error: `Gasto #${i + 1}: Debe seleccionar un acuerdo de pago` };

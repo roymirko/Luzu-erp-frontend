@@ -227,23 +227,23 @@ BEGIN
 
   -- Gasto 1.1: Producción general
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Producciones Audiovisuales S.A.', 'Producciones Audiovisuales S.A.',
-    25000, 21, 30250, 'ARS', 'activo', 'pendiente', 'system'
+    25000, 21, 30250, 'ARS', 'Luzu TV', 'activo', 'pendiente-pago', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form1, 'Producción', 30250, 'Luzu TV');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form1, 'FM Luzu', 30250, 'Luzu TV', '30', 'transferencia');
 
   -- Gasto 1.2: Equipamiento técnico
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Equipamiento Técnico S.R.L.', 'Equipamiento Técnico S.R.L.',
-    18000, 21, 21780, 'ARS', 'activo', 'pagado', 'system'
+    18000, 21, 21780, 'ARS', 'Luzu TV SA', 'activo', 'pagado', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form1, 'Técnico', 21780, 'Luzu TV SA');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form1, 'Antes Que Nadie', 21780, 'Luzu TV SA', '45', 'cheque');
 
   -- Formulario 2: Antes Que Nadie - Enero 2024
   INSERT INTO public.programacion_formularios (
@@ -254,23 +254,23 @@ BEGIN
 
   -- Gasto 2.1: Talentos
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Talentos y Producción S.A.', 'Talentos y Producción S.A.',
-    35000, 21, 42350, 'ARS', 'activo', 'pendiente', 'system'
+    35000, 21, 42350, 'ARS', 'Luzu TV', 'activo', 'pendiente-pago', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form2, 'Talentos', 42350, 'Luzu TV');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form2, 'Nadie Dice Nada', 42350, 'Luzu TV', '30', 'transferencia');
 
   -- Gasto 2.2: Post producción
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Post Producción Argentina S.A.', 'Post Producción Argentina S.A.',
-    22000, 21, 26620, 'ARS', 'activo', 'pagado', 'system'
+    22000, 21, 26620, 'ARS', 'Luzu TV SA', 'activo', 'pagado', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form2, 'Post Producción', 26620, 'Luzu TV SA');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form2, 'Patria y Familia', 26620, 'Luzu TV SA', '60', 'efectivo');
 
   -- Formulario 3: Se Fue Larga - Febrero 2024
   INSERT INTO public.programacion_formularios (
@@ -281,23 +281,23 @@ BEGIN
 
   -- Gasto 3.1: Sonido
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Sonido Profesional S.R.L.', 'Sonido Profesional S.R.L.',
-    28000, 21, 33880, 'ARS', 'activo', 'pendiente', 'system'
+    28000, 21, 33880, 'ARS', 'Luzu TV', 'activo', 'pendiente-pago', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form3, 'Sonido', 33880, 'Luzu TV');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form3, 'Se Fue Larga', 33880, 'Luzu TV', '45', 'transferencia');
 
   -- Gasto 3.2: Iluminación
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Iluminación y Escenografía S.A.', 'Iluminación y Escenografía S.A.',
-    32000, 21, 38720, 'ARS', 'activo', 'parcial', 'system'
+    32000, 21, 38720, 'ARS', 'Luzu TV SA', 'activo', 'pendiente-pago', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form3, 'Escenografía', 38720, 'Luzu TV SA');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form3, 'La Novela', 38720, 'Luzu TV SA', '30', 'cheque');
 
   -- Formulario 4: Patria y Familia - Febrero 2024
   INSERT INTO public.programacion_formularios (
@@ -308,23 +308,23 @@ BEGIN
 
   -- Gasto 4.1: Contenido digital
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Servicios de Contenido Digital S.A.', 'Servicios de Contenido Digital S.A.',
-    45000, 21, 54450, 'ARS', 'activo', 'pendiente', 'system'
+    45000, 21, 54450, 'ARS', 'Luzu TV', 'activo', 'pendiente-pago', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form4, 'Contenido Digital', 54450, 'Luzu TV');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form4, 'Algo Va A Picar', 54450, 'Luzu TV', '30', 'transferencia');
 
   -- Gasto 4.2: Logística
   INSERT INTO public.gastos (
-    proveedor, razon_social, neto, iva, importe_total, moneda, estado, estado_pago, created_by
+    proveedor, razon_social, neto, iva, importe_total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'Logística Medios S.R.L.', 'Logística Medios S.R.L.',
-    15000, 21, 18150, 'ARS', 'activo', 'pagado', 'system'
+    15000, 21, 18150, 'ARS', 'Luzu TV SA', 'activo', 'pagado', 'system'
   ) RETURNING id INTO v_gasto;
-  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a)
-  VALUES (v_gasto, v_form4, 'Logística', 18150, 'Luzu TV SA');
+  INSERT INTO public.programacion_gastos (gasto_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
+  VALUES (v_gasto, v_form4, 'Los No Talentos', 18150, 'Luzu TV SA', '5', 'efectivo');
 END $$;
 
 -- ============================================
@@ -354,7 +354,7 @@ BEGIN
 
   -- Solo insertar si encontramos las órdenes
   IF v_orden1 IS NOT NULL AND v_item1 IS NOT NULL THEN
-    -- Gasto Impl 1: Producción para Coca Cola (pendiente)
+    -- Gasto Impl 1: Producción para Coca Cola (activo, pendiente-pago)
     INSERT INTO public.gastos (
       proveedor, razon_social, neto, iva, importe_total, moneda,
       empresa, concepto_gasto, estado, estado_pago, created_by
@@ -362,14 +362,14 @@ BEGIN
       'Producciones Audiovisuales S.A.', 'Producciones Audiovisuales S.A.',
       30000, 21, 36300, 'ARS',
       'Luzu TV', 'Producción audiovisual campaña Verano 2024',
-      'pendiente', 'pendiente', 'system'
+      'activo', 'pendiente-pago', 'system'
     ) RETURNING id INTO v_gasto;
     INSERT INTO public.implementacion_gastos (
       gasto_id, orden_publicidad_id, item_orden_publicidad_id,
-      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
+      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago, forma_pago
     ) VALUES (
       v_gasto, v_orden1, v_item1,
-      'Luzu TV', v_programa1, 'Gasto de venta', 'Producción', '30'
+      'Luzu TV', v_programa1, 'Gasto de venta', 'Producción', '30', 'transferencia'
     );
 
     -- Gasto Impl 2: Media Tech para Coca Cola (activo, pagado)
@@ -384,15 +384,15 @@ BEGIN
     ) RETURNING id INTO v_gasto;
     INSERT INTO public.implementacion_gastos (
       gasto_id, orden_publicidad_id, item_orden_publicidad_id,
-      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
+      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago, forma_pago
     ) VALUES (
       v_gasto, v_orden1, v_item1,
-      'Luzu TV SA', v_programa1, 'Gasto de venta', 'Técnico', '30'
+      'Luzu TV SA', v_programa1, 'Gasto de venta', 'Técnico', '30', 'cheque'
     );
   END IF;
 
   IF v_orden3 IS NOT NULL AND v_item3 IS NOT NULL THEN
-    -- Gasto Impl 3: Talentos para MercadoPago (activo, pendiente)
+    -- Gasto Impl 3: Talentos para MercadoPago (activo, pendiente-pago)
     INSERT INTO public.gastos (
       proveedor, razon_social, neto, iva, importe_total, moneda,
       empresa, concepto_gasto, estado, estado_pago, created_by
@@ -400,17 +400,17 @@ BEGIN
       'Talentos y Producción S.A.', 'Talentos y Producción S.A.',
       45000, 21, 54450, 'ARS',
       'Luzu TV', 'Talentos para campaña Cashback',
-      'activo', 'pendiente', 'system'
+      'activo', 'pendiente-pago', 'system'
     ) RETURNING id INTO v_gasto;
     INSERT INTO public.implementacion_gastos (
       gasto_id, orden_publicidad_id, item_orden_publicidad_id,
-      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
+      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago, forma_pago
     ) VALUES (
       v_gasto, v_orden3, v_item3,
-      'Luzu TV', v_programa3, 'Gasto de venta', 'Talentos', '45'
+      'Luzu TV', v_programa3, 'Gasto de venta', 'Talentos', '45', 'transferencia'
     );
 
-    -- Gasto Impl 4: Equipamiento para MercadoPago (activo, pendiente)
+    -- Gasto Impl 4: Equipamiento para MercadoPago (activo, pendiente-pago)
     INSERT INTO public.gastos (
       proveedor, razon_social, neto, iva, importe_total, moneda,
       empresa, concepto_gasto, estado, estado_pago, created_by
@@ -418,19 +418,19 @@ BEGIN
       'Equipamiento Técnico S.R.L.', 'Equipamiento Técnico S.R.L.',
       25000, 21, 30250, 'ARS',
       'Luzu TV', 'Equipamiento técnico para grabación',
-      'activo', 'pendiente', 'system'
+      'activo', 'pendiente-pago', 'system'
     ) RETURNING id INTO v_gasto;
     INSERT INTO public.implementacion_gastos (
       gasto_id, orden_publicidad_id, item_orden_publicidad_id,
-      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
+      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago, forma_pago
     ) VALUES (
       v_gasto, v_orden3, v_item3,
-      'Luzu TV SA', v_programa3, 'Gasto de venta', 'Equipamiento', '30'
+      'Luzu TV SA', v_programa3, 'Gasto de venta', 'Equipamiento', '30', 'efectivo'
     );
   END IF;
 
   IF v_orden5 IS NOT NULL AND v_item5 IS NOT NULL THEN
-    -- Gasto Impl 5: Estudio Creativo para Quilmes (pendiente)
+    -- Gasto Impl 5: Estudio Creativo para Quilmes (activo, pendiente-pago)
     INSERT INTO public.gastos (
       proveedor, razon_social, neto, iva, importe_total, moneda,
       empresa, concepto_gasto, estado, estado_pago, created_by
@@ -438,14 +438,14 @@ BEGIN
       'Estudio Creativo Buenos Aires S.A.', 'Estudio Creativo Buenos Aires S.A.',
       38000, 21, 45980, 'ARS',
       'Luzu TV', 'Diseño creativo campaña Amigos',
-      'pendiente', 'pendiente', 'system'
+      'activo', 'pendiente-pago', 'system'
     ) RETURNING id INTO v_gasto;
     INSERT INTO public.implementacion_gastos (
       gasto_id, orden_publicidad_id, item_orden_publicidad_id,
-      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
+      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago, forma_pago
     ) VALUES (
       v_gasto, v_orden5, v_item5,
-      'Luzu TV', v_programa5, 'Gasto de venta', 'Creatividad', '30'
+      'Luzu TV', v_programa5, 'Gasto de venta', 'Creatividad', '30', 'transferencia'
     );
 
     -- Gasto Impl 6: Post Producción para Quilmes (activo, pagado)
@@ -460,10 +460,10 @@ BEGIN
     ) RETURNING id INTO v_gasto;
     INSERT INTO public.implementacion_gastos (
       gasto_id, orden_publicidad_id, item_orden_publicidad_id,
-      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago
+      factura_emitida_a, sector, rubro_gasto, sub_rubro, condicion_pago, forma_pago
     ) VALUES (
       v_gasto, v_orden5, v_item5,
-      'Luzu TV SA', v_programa5, 'Gasto de venta', 'Post Producción', '45'
+      'Luzu TV SA', v_programa5, 'Gasto de venta', 'Post Producción', '45', 'cheque'
     );
   END IF;
 END $$;
@@ -474,7 +474,7 @@ END $$;
 -- Valores deben coincidir con implementacionConstants.ts:
 --   subrubro: 'produccion', 'diseno', 'edicion', 'tecnica'
 --   acuerdo_pago: '5', '30', '45', '60', '90'
---   forma_pago: 'echeque', 'transferencia', 'efectivo'
+--   forma_pago: 'cheque', 'transferencia', 'efectivo'
 --   empresa_programa: 'fm-luzu', 'antes-que-nadie', 'nadie-dice-nada', etc.
 --   factura_emitida_a / empresa: 'Luzu TV', 'Luzu TV SA'
 -- ============================================
@@ -504,7 +504,7 @@ BEGIN
   ) VALUES (
     'Producciones Audiovisuales', 'Producciones Audiovisuales S.A.',
     'A', '0001-00001234', '2024-01-10',
-    40000, 21, 48400, 'ARS', 'activo', 'pendiente', v_user_email
+    40000, 21, 48400, 'ARS', 'activo', 'pendiente-pago', v_user_email
   ) RETURNING id INTO v_gasto;
   INSERT INTO public.experience_gastos (
     gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -545,14 +545,14 @@ BEGIN
   ) VALUES (
     'Iluminación', 'Iluminación y Escenografía S.A.',
     'A', '0002-00001111', '2024-02-05',
-    55000, 21, 66550, 'ARS', 'activo', 'pendiente', v_user_email
+    55000, 21, 66550, 'ARS', 'activo', 'pendiente-pago', v_user_email
   ) RETURNING id INTO v_gasto;
   INSERT INTO public.experience_gastos (
     gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
     fecha_comprobante, acuerdo_pago, forma_pago, pais
   ) VALUES (
     v_gasto, v_form2, 'Luzu TV', 'Luzu TV', 'antes-que-nadie',
-    '2024-02-05', '45', 'echeque', 'argentina'
+    '2024-02-05', '45', 'cheque', 'argentina'
   );
 
   -- Gasto 2.2: Equipamiento técnico
@@ -603,7 +603,7 @@ BEGIN
   ) VALUES (
     'Talentos', 'Talentos y Producción S.A.',
     'A', '0003-00004444', '2024-03-05',
-    28000, 21, 33880, 'ARS', 'activo', 'pendiente', v_user_email
+    28000, 21, 33880, 'ARS', 'activo', 'pendiente-pago', v_user_email
   ) RETURNING id INTO v_gasto;
   INSERT INTO public.experience_gastos (
     gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -627,7 +627,7 @@ BEGIN
   ) VALUES (
     'Media Tech', 'Media Tech Argentina S.R.L.',
     'A', '0004-00005555', '2024-03-15',
-    45000, 21, 54450, 'ARS', 'activo', 'pendiente', v_user_email
+    45000, 21, 54450, 'ARS', 'activo', 'pendiente-pago', v_user_email
   ) RETURNING id INTO v_gasto;
   INSERT INTO public.experience_gastos (
     gasto_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -651,7 +651,7 @@ BEGIN
     fecha_comprobante, acuerdo_pago, forma_pago, pais
   ) VALUES (
     v_gasto, v_form4, 'Luzu TV SA', 'Luzu TV SA', 'optimo',
-    '2024-03-18', '5', 'echeque', 'argentina'
+    '2024-03-18', '5', 'cheque', 'argentina'
   );
 END $$;
 

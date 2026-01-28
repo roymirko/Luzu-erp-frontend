@@ -187,6 +187,11 @@ export async function createWithMultipleGastos(input: {
   const results: ExperienceGastoFullRow[] = [];
   for (const gastoId of createdGastoIds) {
     const result = await findById(gastoId);
+    if (result.error) {
+      console.error(`[Experience:createWithMultipleGastos] Error fetching gasto ${gastoId} from view:`, result.error);
+      // Return the error instead of silently ignoring it
+      return { data: results, error: result.error };
+    }
     if (result.data) {
       results.push(result.data);
     }

@@ -134,6 +134,7 @@ export interface FormularioAgrupado {
   estado: EstadoFormularioProgramacion;
   createdAt: Date;
   ejecutivo: string;
+  programa?: string; // Nombre de campaña
   facturaEmitidaA?: string;
   empresa?: string;
   unidadNegocio: string;

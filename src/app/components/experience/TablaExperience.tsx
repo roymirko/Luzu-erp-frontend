@@ -52,8 +52,9 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
     return d.toLocaleDateString('es-AR', { month: '2-digit', year: 'numeric' });
   };
 
-  const getEstadoVariant = (estado: string) => {
-    switch (estado) {
+  // For gasto rows (programa view) - shows estado_pago
+  const getEstadoPagoVariant = (estadoPago: string) => {
+    switch (estadoPago) {
       case 'pendiente':
       case 'pendiente-pago':
         return 'warning';
@@ -62,15 +63,13 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
         return 'success';
       case 'anulado':
         return 'error';
-      case 'activo':
-        return 'info';
       default:
         return 'neutral';
     }
   };
 
-  const getEstadoLabel = (estado: string) => {
-    switch (estado) {
+  const getEstadoPagoLabel = (estadoPago: string) => {
+    switch (estadoPago) {
       case 'pendiente':
       case 'pendiente-pago':
         return 'Pendiente de pago';
@@ -79,10 +78,41 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
         return 'Pagado';
       case 'anulado':
         return 'Anulado';
-      case 'activo':
-        return 'Activo';
       default:
-        return estado;
+        return 'Pendiente de carga';
+    }
+  };
+
+  // For formulario rows (campaña view) - shows formulario estado
+  const getEstadoFormularioVariant = (estado: string) => {
+    switch (estado) {
+      case 'activo':
+      case 'abierto':
+        return 'success';
+      case 'cerrado':
+        return 'neutral';
+      case 'anulado':
+        return 'error';
+      case 'pendiente':
+        return 'neutral';
+      default:
+        return 'neutral';
+    }
+  };
+
+  const getEstadoFormularioLabel = (estado: string) => {
+    switch (estado) {
+      case 'activo':
+      case 'abierto':
+        return 'Activo';
+      case 'cerrado':
+        return 'Cerrado';
+      case 'anulado':
+        return 'Anulado';
+      case 'pendiente':
+        return 'Pendiente de carga';
+      default:
+        return 'Pendiente de carga';
     }
   };
 
@@ -213,7 +243,7 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
             (currentRows as typeof gastos).map((gasto) => (
               <DataTableRow key={gasto.id} onClick={() => handleRowClick(gasto)}>
                 <DataTableCell>
-                  <StatusBadge label={getEstadoLabel(gasto.estadoPago || 'pendiente')} variant={getEstadoVariant(gasto.estadoPago || 'pendiente')} />
+                  <StatusBadge label={getEstadoPagoLabel(gasto.estadoPago || 'pendiente')} variant={getEstadoPagoVariant(gasto.estadoPago || 'pendiente')} />
                 </DataTableCell>
                 <DataTableCell>{formatDate(gasto.createdAt)}</DataTableCell>
                 <DataTableCell>{gasto.formularioCreatedBy || gasto.createdBy || '-'}</DataTableCell>
@@ -244,7 +274,7 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
             (currentRows as typeof formulariosAgrupados).map((formulario) => (
               <DataTableRow key={formulario.id} onClick={() => handleRowClick(formulario)}>
                 <DataTableCell>
-                  <StatusBadge label={getEstadoLabel(formulario.estado)} variant={getEstadoVariant(formulario.estado)} />
+                  <StatusBadge label={getEstadoFormularioLabel(formulario.estado)} variant={getEstadoFormularioVariant(formulario.estado)} />
                 </DataTableCell>
                 <DataTableCell>{formulario.nombreCampana || '-'}</DataTableCell>
                 <DataTableCell>{formatDate(formulario.createdAt)}</DataTableCell>

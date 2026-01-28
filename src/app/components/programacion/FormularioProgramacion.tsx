@@ -5,7 +5,6 @@ import { useData } from "../../contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { CurrencyInput } from "../ui/currency-input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import {
@@ -17,15 +16,9 @@ import {
 } from "../ui/select";
 import { ProveedorSelector } from "../ProveedorSelector";
 import { toast } from "sonner";
-import {
-  Lock,
-  Search,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-  Paperclip,
-} from "lucide-react";
+import { Lock, Search } from "lucide-react";
 import { cn } from "../ui/utils";
+import { GastoCard, type GastoData } from "../shared";
 import { formatDateDDMMYYYY } from "../../utils/dateFormatters";
 import type {
   GastoProgramacion,
@@ -58,10 +51,13 @@ interface GastoItem {
   estado: "pendiente-pago" | "pagado" | "anulado";
 }
 
-const ACUERDOS_PAGO = ["5 días", "30 días", "45 días", "60 días", "90 días"];
-const FORMAS_PAGO = ["eCheque", "Transferencia", "Efectivo"];
-const EMPRESAS = ["Luzu TV", "Luzu TV SA"];
-const FACTURA_EMITIDA_A = ["Luzu TV", "Luzu TV SA"];
+import {
+  FACTURAS_OPTIONS,
+  EMPRESAS_OPTIONS,
+  ACUERDOS_PAGO_EXPERIENCE_OPTIONS,
+  FORMAS_PAGO_EXPERIENCE_OPTIONS,
+} from '../../utils/implementacionConstants';
+
 const PROGRAMAS_LUZU = [
   "FM Luzu",
   "Antes Que Nadie",
@@ -76,6 +72,15 @@ const PROGRAMAS_LUZU = [
   "Edición Especial",
 ];
 const MAX_OBSERVACIONES_LENGTH = 250;
+
+// Convert string arrays to option format for GastoCard
+const toOptions = (arr: string[]) => arr.map((v) => ({ value: v, label: v }));
+const PROGRAMAS_LUZU_OPTIONS = toOptions(PROGRAMAS_LUZU);
+
+// Use shared options from implementacionConstants
+const ACUERDOS_PAGO_OPTIONS = ACUERDOS_PAGO_EXPERIENCE_OPTIONS;
+const FORMAS_PAGO_OPTIONS = FORMAS_PAGO_EXPERIENCE_OPTIONS;
+const FACTURA_EMITIDA_A_OPTIONS = FACTURAS_OPTIONS;
 
 const SUB_RUBROS = ["Producción", "Diseño", "Edición", "Técnica"];
 const CATEGORIAS_NEGOCIO = ["PE", "Media"];
@@ -133,8 +138,11 @@ export function FormularioProgramacion({
   const isEditing = !!gastoId;
   const existingGasto = gastoId ? getGastoById(gastoId) : undefined;
   // Get ALL gastos for this formulario (not just the clicked one)
+  // Get gastos and sort by createdAt (oldest first) to maintain stable order
   const formularioGastos = existingGasto
-    ? getGastosByFormularioId(existingGasto.formularioId)
+    ? getGastosByFormularioId(existingGasto.formularioId).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      )
     : [];
   const isFormularioCerrado =
     existingGasto?.formularioEstado === "cerrado" ||
@@ -160,7 +168,7 @@ export function FormularioProgramacion({
           facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
           empresa: g.empresa || "",
           empresaPrograma: g.categoria || "",
-          fechaComprobante: g.createdAt.toISOString().split("T")[0],
+          fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
           acuerdoPago: g.acuerdoPago || "",
           formaPago: g.formaPago || "",
           neto: g.neto || 0,
@@ -208,7 +216,7 @@ export function FormularioProgramacion({
         return `Gasto #${index + 1}: Debe seleccionar una empresa`;
       }
       if (!g.empresaPrograma?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar un programa`;
+        return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
       }
       if (!g.acuerdoPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
@@ -359,6 +367,7 @@ export function FormularioProgramacion({
             observaciones: g.observaciones,
             facturaEmitidaA: g.facturaEmitidaA,
             categoria: g.empresaPrograma,
+            fechaFactura: g.fechaComprobante ? new Date(g.fechaComprobante) : undefined,
           })
         );
         const results = await Promise.all(updatePromises);
@@ -376,6 +385,7 @@ export function FormularioProgramacion({
           acuerdoPago: g.acuerdoPago,
           formaPago: g.formaPago,
           categoria: g.empresaPrograma,
+          fechaFactura: g.fechaComprobante ? new Date(g.fechaComprobante) : undefined,
         }));
 
         const result = await addMultipleGastos({
@@ -465,31 +475,6 @@ export function FormularioProgramacion({
     "disabled:opacity-60 disabled:cursor-not-allowed",
   );
 
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case "pendiente-pago":
-        return "bg-yellow-400";
-      case "pagado":
-        return "bg-green-400";
-      case "anulado":
-        return "bg-red-400";
-      default:
-        return "bg-gray-400";
-    }
-  };
-
-  const getEstadoLabel = (estado: string) => {
-    switch (estado) {
-      case "pendiente-pago":
-        return "Pendiente de pago";
-      case "pagado":
-        return "Pagado";
-      case "anulado":
-        return "Anulado";
-      default:
-        return estado;
-    }
-  };
 
   return (
     <div
@@ -746,354 +731,72 @@ export function FormularioProgramacion({
               const isDisabled = isFormularioCerrado || isLocked;
               const selectedPrograms = getSelectedPrograms(gasto.id);
 
+              // Convert GastoItem to GastoData format
+              const gastoData: GastoData = {
+                id: gasto.id,
+                facturaEmitidaA: gasto.facturaEmitidaA,
+                empresa: gasto.empresa,
+                empresaPrograma: gasto.empresaPrograma,
+                fechaComprobante: gasto.fechaComprobante,
+                razonSocial: "",
+                proveedor: "",
+                acuerdoPago: gasto.acuerdoPago,
+                formaPago: gasto.formaPago,
+                neto: String(gasto.neto || 0),
+                observaciones: gasto.observaciones,
+              };
+
+              // Filter program options to exclude already selected
+              const availableProgramOptions = PROGRAMAS_LUZU_OPTIONS.filter(
+                (opt) =>
+                  opt.value === gasto.empresaPrograma ||
+                  !selectedPrograms.includes(opt.value)
+              );
+
               return (
-                <div
+                <GastoCard
                   key={gasto.id}
-                  className={cn(
-                    "rounded-lg border-2 p-4",
-                    isCollapsed ? "space-y-0" : "space-y-4",
-                    isDark
-                      ? "bg-[#1a1a1a] border-gray-800"
-                      : "bg-[#f8f9fc] border-[#e6e7eb]",
-                    isLocked && "opacity-80",
-                  )}
-                >
-                  {/* Gasto Header - Always visible, clickable to collapse/expand */}
-                  <div
-                    className="flex items-center justify-between cursor-pointer"
-                    onClick={() => toggleGastoCollapse(gasto.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <h3
-                        className={cn(
-                          "text-lg font-bold",
-                          isDark ? "text-blue-400" : "text-[#165dfc]",
-                        )}
-                      >
-                        Gasto #{index + 1}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`h-3 w-3 rounded-full ${getEstadoColor(gasto.estado)}`}
-                        />
-                        <span
-                          className={cn(
-                            "text-sm font-medium",
-                            isDark ? "text-gray-300" : "text-gray-600",
-                          )}
-                        >
-                          {getEstadoLabel(gasto.estado)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {gastos.length > 1 && !isLocked && !isFormularioCerrado && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeGastoItem(gasto.id);
-                          }}
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <button
-                        type="button"
-                        className={cn(
-                          "p-1 rounded transition-colors",
-                          isDark
-                            ? "text-gray-400 hover:text-gray-200"
-                            : "text-gray-500 hover:text-gray-700",
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleGastoCollapse(gasto.id);
-                        }}
-                      >
-                        {isCollapsed ? (
-                          <ChevronDown className="h-5 w-5" />
-                        ) : (
-                          <ChevronUp className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Collapsible content */}
-                  {!isCollapsed && (
-                    <>
-                      {/* Row 1: Factura emitida a | Empresa */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Factura emitida a{" "}
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.facturaEmitidaA}
-                            onValueChange={(v) =>
-                              updateGastoItem(gasto.id, "facturaEmitidaA", v)
-                            }
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger className={selectTriggerClass}>
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FACTURA_EMITIDA_A.map((opt) => (
-                                <SelectItem key={opt} value={opt}>
-                                  {opt}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Empresa <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.empresa}
-                            onValueChange={(v) =>
-                              updateGastoItem(gasto.id, "empresa", v)
-                            }
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger className={selectTriggerClass}>
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {EMPRESAS.map((opt) => (
-                                <SelectItem key={opt} value={opt}>
-                                  {opt}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Row 2: Empresa/PGM | Fecha de comprobante */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Empresa/PGM <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.empresaPrograma}
-                            onValueChange={(v) =>
-                              updateGastoItem(gasto.id, "empresaPrograma", v)
-                            }
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger className={selectTriggerClass}>
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PROGRAMAS_LUZU.filter(
-                                (opt) => !selectedPrograms.includes(opt),
-                              ).map((opt) => (
-                                <SelectItem key={opt} value={opt}>
-                                  {opt}
-                                </SelectItem>
-                              ))}
-                              {/* Show current selection even if it would be filtered */}
-                              {gasto.empresaPrograma &&
-                                !PROGRAMAS_LUZU.filter(
-                                  (opt) => !selectedPrograms.includes(opt),
-                                ).includes(gasto.empresaPrograma) && (
-                                  <SelectItem
-                                    key={gasto.empresaPrograma}
-                                    value={gasto.empresaPrograma}
-                                  >
-                                    {gasto.empresaPrograma}
-                                  </SelectItem>
-                                )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Fecha de comprobante{" "}
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            type="date"
-                            value={gasto.fechaComprobante}
-                            onChange={(e) =>
-                              updateGastoItem(
-                                gasto.id,
-                                "fechaComprobante",
-                                e.target.value,
-                              )
-                            }
-                            disabled={isDisabled}
-                            className={inputClass}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 3: Acuerdo de pago | Forma de pago */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Acuerdo de pago{" "}
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.acuerdoPago}
-                            onValueChange={(v) =>
-                              updateGastoItem(gasto.id, "acuerdoPago", v)
-                            }
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger className={selectTriggerClass}>
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ACUERDOS_PAGO.map((opt) => (
-                                <SelectItem key={opt} value={opt}>
-                                  {opt}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Forma de pago{" "}
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={gasto.formaPago}
-                            onValueChange={(v) =>
-                              updateGastoItem(gasto.id, "formaPago", v)
-                            }
-                            disabled={isDisabled}
-                          >
-                            <SelectTrigger className={selectTriggerClass}>
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FORMAS_PAGO.map((opt) => (
-                                <SelectItem key={opt} value={opt}>
-                                  {opt}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Row 4: Neto */}
-                      <div className="w-1/2 pr-2">
-                        <div className="space-y-1">
-                          <Label className={labelClass}>
-                            Neto <span className="text-red-500">*</span>
-                          </Label>
-                          <CurrencyInput
-                            value={gasto.neto}
-                            onChange={(val) =>
-                              updateGastoItem(gasto.id, "neto", val)
-                            }
-                            placeholder="$0"
-                            disabled={isDisabled}
-                            className={inputClass}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 5: Observaciones */}
-                      <div className="space-y-1">
-                        <Label className={labelClass}>Observaciones</Label>
-                        <Textarea
-                          value={gasto.observaciones}
-                          onChange={(e) => {
-                            if (
-                              e.target.value.length <= MAX_OBSERVACIONES_LENGTH
-                            ) {
-                              updateGastoItem(
-                                gasto.id,
-                                "observaciones",
-                                e.target.value,
-                              );
-                            }
-                          }}
-                          placeholder="Escribe aquí"
-                          disabled={isDisabled}
-                          maxLength={MAX_OBSERVACIONES_LENGTH}
-                          className={textareaClass}
-                        />
-                        <div
-                          className={cn(
-                            "text-xs text-right",
-                            isDark ? "text-gray-500" : "text-gray-400",
-                          )}
-                        >
-                          {gasto.observaciones.length}/
-                          {MAX_OBSERVACIONES_LENGTH}
-                        </div>
-                      </div>
-
-                      {/* Adjuntar archivos link */}
-                      {!isDisabled && (
-                        <div>
-                          <button
-                            type="button"
-                            className="flex items-center gap-2 text-sm text-[#0070ff] hover:text-[#0060dd] font-medium"
-                          >
-                            <Paperclip className="h-4 w-4" />
-                            Adjuntar archivos
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Card action buttons - Cancelar / Guardar */}
-                      {!isDisabled && (
-                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              // Reset this gasto to initial state
-                              if (gastos.length > 1) {
-                                removeGastoItem(gasto.id);
-                              }
-                            }}
-                            className="text-[#0070ff] hover:text-[#0060dd] text-xs"
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const error = validateSingleGasto(gasto, index);
-                              if (error) {
-                                toast.error(error);
-                                return;
-                              }
-                              toggleGastoCollapse(gasto.id);
-                              toast.success(`Gasto #${index + 1} guardado`);
-                            }}
-                            className="border-[#0070ff] text-[#0070ff] hover:bg-[#0070ff]/10 text-xs"
-                          >
-                            Guardar
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                  isDark={isDark}
+                  gasto={gastoData}
+                  index={index}
+                  isNew={false}
+                  isDisabled={isDisabled}
+                  estado={gasto.estado}
+                  isCollapsed={isCollapsed}
+                  onToggleCollapse={() => toggleGastoCollapse(gasto.id)}
+                  onUpdate={(field, value) => {
+                    if (field === "neto") {
+                      updateGastoItem(gasto.id, field, Number(value) || 0);
+                    } else if (field !== "proveedor" && field !== "razonSocial") {
+                      updateGastoItem(gasto.id, field as keyof GastoItem, value);
+                    }
+                  }}
+                  onCancel={() => {
+                    if (gastos.length > 1) {
+                      removeGastoItem(gasto.id);
+                    }
+                  }}
+                  onSave={() => {
+                    const error = validateSingleGasto(gasto, index);
+                    if (error) {
+                      toast.error(error);
+                      return;
+                    }
+                    toggleGastoCollapse(gasto.id);
+                    toast.success(`Gasto #${index + 1} guardado`);
+                  }}
+                  showProveedorSelector={false}
+                  showFormaPago
+                  showCharacterCount
+                  showAttachments
+                  showButtonsBorder
+                  maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
+                  programOptions={availableProgramOptions}
+                  facturaOptions={FACTURA_EMITIDA_A_OPTIONS}
+                  empresaOptions={EMPRESAS_OPTIONS}
+                  acuerdoPagoOptions={ACUERDOS_PAGO_OPTIONS}
+                  formaPagoOptions={FORMAS_PAGO_OPTIONS}
+                />
               );
             })}
 

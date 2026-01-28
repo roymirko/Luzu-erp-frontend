@@ -211,7 +211,7 @@ export function ImplementacionNuevoFormulario({ formId, itemId }: Props) {
               <div className="mb-3 font-medium ${isDark ? 'text-white' : 'text-gray-900'}">Gasto #2</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className={muted}>Empresa/PGM*</Label>
+                  <Label className={muted}>Empresa/Programa*</Label>
                   <Input placeholder="NDN" value={selectedItem?.programa || ''} readOnly className={isDark ? 'bg-[#1e1e1e] border-gray-800 text-white' : ''} />
                 </div>
                 <div>
@@ -250,7 +250,7 @@ export function ImplementacionNuevoFormulario({ formId, itemId }: Props) {
               {expenses.map((g, idx) => (
                 <div key={g.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <Label className={muted}>Empresa/PGM*</Label>
+                    <Label className={muted}>Empresa/Programa*</Label>
                     <Input value={selectedItem?.programa || ''} readOnly className={isDark ? 'bg-[#1e1e1e] border-gray-800 text-white' : ''} />
                   </div>
                   <div>
