@@ -294,6 +294,65 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
 }
 
 /**
+ * Agrega un gasto a un formulario existente
+ */
+export async function addGastoToFormulario(
+  formularioId: string,
+  input: {
+    proveedor: string;
+    razonSocial: string;
+    neto: number;
+    iva?: number;
+    empresa?: string;
+    observaciones?: string;
+    facturaEmitidaA?: string;
+    empresaContext?: string;
+    empresaPrograma?: string;
+    fechaComprobante?: string;
+    acuerdoPago?: string;
+    formaPago?: string;
+    pais?: string;
+    createdBy?: string;
+  }
+): Promise<{ data: GastoExperience | null; error: string | null }> {
+  const neto = input.neto;
+  const iva = input.iva ?? DEFAULT_IVA;
+  const importeTotal = neto * (1 + iva / 100);
+
+  const result = await experienceRepo.addGastoToFormulario(formularioId, {
+    gasto: {
+      proveedor: input.proveedor,
+      razon_social: input.razonSocial || null,
+      moneda: DEFAULT_MONEDA,
+      neto,
+      iva,
+      importe_total: importeTotal,
+      empresa: input.empresa || null,
+      observaciones: input.observaciones || null,
+      estado: 'pendiente',
+      estado_pago: 'pendiente',
+      created_by: input.createdBy || null,
+    },
+    context: {
+      factura_emitida_a: input.facturaEmitidaA || null,
+      empresa: input.empresaContext || null,
+      empresa_programa: input.empresaPrograma || null,
+      fecha_comprobante: input.fechaComprobante || null,
+      acuerdo_pago: input.acuerdoPago || null,
+      forma_pago: input.formaPago || null,
+      pais: input.pais || 'argentina',
+    },
+  });
+
+  if (result.error || !result.data) {
+    console.error('Error adding gasto to formulario:', result.error);
+    return { data: null, error: result.error?.message || 'Error al agregar el gasto' };
+  }
+
+  return { data: mapFromDB(result.data), error: null };
+}
+
+/**
  * Actualiza un gasto de Experience
  */
 export async function update(input: UpdateGastoExperienceInput): Promise<{ data: GastoExperience | null; error: string | null }> {

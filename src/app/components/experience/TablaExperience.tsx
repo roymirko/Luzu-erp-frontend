@@ -10,8 +10,16 @@ import { DataTablePagination } from '../ui/data-table-pagination';
 import { StatusBadge } from '../ui/status-badge';
 import { MoreVertical, Plus, Loader2 } from 'lucide-react';
 import { cn } from '../ui/utils';
+import { formatDateDDMMYYYY } from '../../utils/dateFormatters';
+import { PROGRAMAS_EXPERIENCE_OPTIONS } from '../../utils/implementacionConstants';
 
 const ITEMS_PER_PAGE = 10;
+
+const getProgramaLabel = (value: string | undefined): string => {
+  if (!value) return '-';
+  const option = PROGRAMAS_EXPERIENCE_OPTIONS.find(o => o.value === value);
+  return option?.label || value;
+};
 
 type FilterMode = 'programa' | 'campana';
 
@@ -46,11 +54,6 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(value);
   };
 
-  const formatDate = (date: Date | string | undefined) => {
-    if (!date) return '-';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('es-AR', { month: '2-digit', year: 'numeric' });
-  };
 
   // For gasto rows (programa view) - shows estado_pago
   const getEstadoPagoVariant = (estadoPago: string) => {
@@ -245,9 +248,9 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
                 <DataTableCell>
                   <StatusBadge label={getEstadoPagoLabel(gasto.estadoPago || 'pendiente')} variant={getEstadoPagoVariant(gasto.estadoPago || 'pendiente')} />
                 </DataTableCell>
-                <DataTableCell>{formatDate(gasto.createdAt)}</DataTableCell>
+                <DataTableCell>{formatDateDDMMYYYY(gasto.createdAt)}</DataTableCell>
                 <DataTableCell>{gasto.formularioCreatedBy || gasto.createdBy || '-'}</DataTableCell>
-                <DataTableCell>{gasto.empresaPrograma || '-'}</DataTableCell>
+                <DataTableCell>{getProgramaLabel(gasto.empresaPrograma)}</DataTableCell>
                 <DataTableCell>{gasto.facturaEmitidaA || '-'}</DataTableCell>
                 <DataTableCell>{gasto.empresaContext || '-'}</DataTableCell>
                 <DataTableCell>Experience</DataTableCell>
@@ -277,10 +280,10 @@ export function TablaExperience({ onOpen, onNew }: TablaExperienceProps) {
                   <StatusBadge label={getEstadoFormularioLabel(formulario.estado)} variant={getEstadoFormularioVariant(formulario.estado)} />
                 </DataTableCell>
                 <DataTableCell>{formulario.nombreCampana || '-'}</DataTableCell>
-                <DataTableCell>{formatDate(formulario.createdAt)}</DataTableCell>
+                <DataTableCell>{formatDateDDMMYYYY(formulario.createdAt)}</DataTableCell>
                 <DataTableCell>{formulario.createdBy || '-'}</DataTableCell>
-                <DataTableCell>-</DataTableCell>
-                <DataTableCell>-</DataTableCell>
+                <DataTableCell>{formulario.facturaEmitidaA || '-'}</DataTableCell>
+                <DataTableCell>{formulario.empresaContext || '-'}</DataTableCell>
                 <DataTableCell>Experience</DataTableCell>
                 <DataTableCell>{formulario.subrubro || '-'}</DataTableCell>
                 <DataTableCell>{formulario.proveedor || '-'}</DataTableCell>

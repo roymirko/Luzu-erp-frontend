@@ -8,12 +8,30 @@ import type {
   CreateMultipleGastosExperienceInput,
 } from '../types/experience';
 
+interface AddGastoToFormularioInput {
+  proveedor: string;
+  razonSocial: string;
+  neto: number;
+  iva?: number;
+  empresa?: string;
+  observaciones?: string;
+  facturaEmitidaA?: string;
+  empresaContext?: string;
+  empresaPrograma?: string;
+  fechaComprobante?: string;
+  acuerdoPago?: string;
+  formaPago?: string;
+  pais?: string;
+  createdBy?: string;
+}
+
 interface ExperienceContextType {
   gastos: GastoExperience[];
   formulariosAgrupados: FormularioExperienceAgrupado[];
   loading: boolean;
   addGasto: (input: CreateGastoExperienceInput) => Promise<boolean>;
   addMultipleGastos: (input: CreateMultipleGastosExperienceInput) => Promise<{ success: boolean; error?: string }>;
+  addGastoToFormulario: (formularioId: string, input: AddGastoToFormularioInput) => Promise<GastoExperience | null>;
   updateGasto: (input: UpdateGastoExperienceInput) => Promise<boolean>;
   deleteGasto: (id: string) => Promise<boolean>;
   getGastoById: (id: string) => GastoExperience | undefined;
@@ -55,7 +73,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => [...prev, result.data!]);
     return true;
   };
 
@@ -67,19 +85,31 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       return { success: false, error: result.error || 'Error desconocido al crear gastos' };
     }
 
-    await fetchGastos();
+    setGastos(prev => [...prev, ...result.data]);
     return { success: true };
+  };
+
+  const addGastoToFormulario = async (formularioId: string, input: AddGastoToFormularioInput): Promise<GastoExperience | null> => {
+    const result = await experienceService.addGastoToFormulario(formularioId, input);
+
+    if (result.error || !result.data) {
+      console.error('Error adding gasto to formulario:', result.error);
+      return null;
+    }
+
+    setGastos(prev => [...prev, result.data!]);
+    return result.data;
   };
 
   const updateGasto = async (input: UpdateGastoExperienceInput): Promise<boolean> => {
     const result = await experienceService.update(input);
 
-    if (result.error) {
+    if (result.error || !result.data) {
       console.error('Error updating gasto:', result.error);
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.map(g => g.id === input.id ? result.data! : g));
     return true;
   };
 
@@ -91,7 +121,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.filter(g => g.id !== id));
     return true;
   };
 
@@ -130,6 +160,8 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
         subrubro: firstGasto.subrubro || '',
         proveedor: firstGasto.proveedor,
         razonSocial: firstGasto.razonSocial,
+        facturaEmitidaA: firstGasto.facturaEmitidaA,
+        empresaContext: firstGasto.empresaContext,
         netoTotal,
         gastosCount: formularioGastos.length,
       });
@@ -148,6 +180,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
         loading,
         addGasto,
         addMultipleGastos,
+        addGastoToFormulario,
         updateGasto,
         deleteGasto,
         getGastoById,

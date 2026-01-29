@@ -68,7 +68,7 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    await fetchGastos();
+    setGastos(prev => [...prev, result.data!]);
     return result.data;
   };
 
@@ -79,21 +79,22 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
 
     if (result.error) {
       console.error('Error adding multiple gastos:', result.error);
+      return result.data;
     }
 
-    await fetchGastos();
+    setGastos(prev => [...prev, ...result.data]);
     return result.data;
   };
 
   const updateGasto = async (input: UpdateGastoImplementacionInput): Promise<boolean> => {
     const result = await implementacionService.update(input);
 
-    if (result.error) {
+    if (result.error || !result.data) {
       console.error('Error updating gasto:', result.error);
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.map(g => g.id === input.id ? result.data! : g));
     return true;
   };
 
@@ -105,7 +106,7 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.filter(g => g.id !== id));
     return true;
   };
 
@@ -124,36 +125,36 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
   const approveGastoFn = async (id: string): Promise<boolean> => {
     const result = await implementacionService.approveGasto(id);
 
-    if (!result.success) {
+    if (!result.success || !result.data) {
       console.error('Error approving gasto:', result.error);
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.map(g => g.id === id ? result.data! : g));
     return true;
   };
 
   const rejectGastoFn = async (id: string): Promise<boolean> => {
     const result = await implementacionService.rejectGasto(id);
 
-    if (!result.success) {
+    if (!result.success || !result.data) {
       console.error('Error rejecting gasto:', result.error);
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.map(g => g.id === id ? result.data! : g));
     return true;
   };
 
   const markGastoAsPaidFn = async (id: string): Promise<boolean> => {
     const result = await implementacionService.markGastoAsPaid(id);
 
-    if (!result.success) {
+    if (!result.success || !result.data) {
       console.error('Error marking gasto as paid:', result.error);
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.map(g => g.id === id ? result.data! : g));
     return true;
   };
 

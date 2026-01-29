@@ -202,6 +202,46 @@ export async function createWithMultipleGastos(input: {
 }
 
 /**
+ * Agrega un gasto a un formulario existente
+ */
+export async function addGastoToFormulario(
+  formularioId: string,
+  input: {
+    gasto: GastoInsert;
+    context: Omit<ProgramacionGastoInsert, 'gasto_id' | 'formulario_id'>;
+  }
+): Promise<RepositoryResult<ProgramacionGastoFullRow>> {
+  // 1. Create gasto base
+  const { data: gastoData, error: gastoError } = await supabase
+    .from('gastos')
+    .insert(input.gasto)
+    .select()
+    .single();
+
+  if (gastoError || !gastoData) {
+    return { data: null, error: mapSupabaseError(gastoError || { message: 'Error al crear gasto' }) };
+  }
+
+  // 2. Create context linking gasto to existing formulario
+  const { error: contextError } = await supabase
+    .from('programacion_gastos')
+    .insert({
+      gasto_id: gastoData.id,
+      formulario_id: formularioId,
+      ...input.context,
+    });
+
+  if (contextError) {
+    // Rollback: delete gasto
+    await supabase.from('gastos').delete().eq('id', gastoData.id);
+    return { data: null, error: mapSupabaseError(contextError) };
+  }
+
+  // 3. Return complete record
+  return findById(gastoData.id);
+}
+
+/**
  * Actualiza un gasto de programación (actualiza las 3 tablas según corresponda)
  */
 export async function update(

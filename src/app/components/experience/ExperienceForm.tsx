@@ -66,7 +66,7 @@ const MAX_OBSERVACIONES_LENGTH = 250;
 export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }: ExperienceFormProps) {
   const { isDark } = useTheme();
   const { currentUser } = useData();
-  const { gastos: contextGastos, loading: contextLoading, addMultipleGastos, updateGasto, getGastosByFormularioId, getGastoById } = useExperience();
+  const { gastos: contextGastos, loading: contextLoading, addMultipleGastos, addGastoToFormulario, updateGasto, getGastosByFormularioId, getGastoById } = useExperience();
 
   // Form-level state
   const isEditing = !!gastoId;
@@ -316,12 +316,21 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       let success: boolean;
 
       if (isEditing && gastoId) {
-        // Update existing gastos sequentially to avoid conflicts on formulario updates
+        // Get the formularioId from the first existing gasto
+        const existingGasto = contextGastos.find(g => g.id === gastoId);
+        const formularioId = existingGasto?.formularioId;
+
+        // Separate gastos into existing (in DB) and new (not in DB)
+        const existingGastoIds = new Set(contextGastos.map(g => g.id));
+        const gastosToUpdate = gastos.filter(g => existingGastoIds.has(g.id));
+        const gastosToCreate = gastos.filter(g => !existingGastoIds.has(g.id));
+
         let allSucceeded = true;
         let failedCount = 0;
 
-        for (let i = 0; i < gastos.length; i++) {
-          const g = gastos[i];
+        // Update existing gastos
+        for (let i = 0; i < gastosToUpdate.length; i++) {
+          const g = gastosToUpdate[i];
           const result = await updateGasto({
             id: g.id,
             // Only update formulario fields on the first gasto to avoid conflicts
@@ -346,11 +355,38 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           }
         }
 
+        // Create new gastos (added to existing formulario)
+        if (formularioId && gastosToCreate.length > 0) {
+          for (const g of gastosToCreate) {
+            const result = await addGastoToFormulario(formularioId, {
+              proveedor: g.proveedor,
+              razonSocial: g.razonSocial,
+              neto: g.neto,
+              observaciones: g.observaciones,
+              facturaEmitidaA: g.facturaEmitidaA,
+              empresaContext: g.empresa,
+              empresaPrograma: g.empresaPrograma,
+              fechaComprobante: g.fechaComprobante,
+              acuerdoPago: g.acuerdoPago,
+              formaPago: g.formaPago,
+              pais: g.pais,
+              createdBy: currentUser?.id,
+            });
+
+            if (!result) {
+              allSucceeded = false;
+              failedCount++;
+              console.error(`Failed to create new gasto`);
+            }
+          }
+        }
+
         success = allSucceeded;
+        const totalCount = gastosToUpdate.length + gastosToCreate.length;
         if (success) {
-          toast.success(`${gastos.length} gasto(s) actualizado(s) correctamente`);
+          toast.success(`${totalCount} gasto(s) guardado(s) correctamente`);
         } else {
-          toast.error(`Error al actualizar ${failedCount} de ${gastos.length} gastos`);
+          toast.error(`Error al guardar ${failedCount} de ${totalCount} gastos`);
         }
       } else {
         // Create new gastos

@@ -3,12 +3,28 @@ import * as programacionService from '../services/programacionService';
 import type { GastoProgramacion, CreateGastoProgramacionInput, UpdateGastoProgramacionInput, FormularioAgrupado } from '../types/programacion';
 import type { CreateMultipleGastosInput } from '../services/programacionService';
 
+interface AddGastoToFormularioInput {
+  proveedor: string;
+  razonSocial: string;
+  neto: number;
+  iva?: number;
+  empresa?: string;
+  observaciones?: string;
+  facturaEmitidaA?: string;
+  categoria?: string;
+  acuerdoPago?: string;
+  formaPago?: string;
+  fechaFactura?: Date;
+  createdBy?: string;
+}
+
 interface ProgramacionContextType {
   gastos: GastoProgramacion[];
   formulariosAgrupados: FormularioAgrupado[];
   loading: boolean;
   addGasto: (input: CreateGastoProgramacionInput) => Promise<boolean>;
   addMultipleGastos: (input: CreateMultipleGastosInput) => Promise<{ success: boolean; error?: string }>;
+  addGastoToFormulario: (formularioId: string, input: AddGastoToFormularioInput) => Promise<GastoProgramacion | null>;
   updateGasto: (input: UpdateGastoProgramacionInput) => Promise<boolean>;
   deleteGasto: (id: string) => Promise<boolean>;
   getGastoById: (id: string) => GastoProgramacion | undefined;
@@ -50,7 +66,7 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => [...prev, result.data!]);
     return true;
   };
 
@@ -62,19 +78,31 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
       return { success: false, error: result.error || 'Error desconocido al crear gastos' };
     }
 
-    await fetchGastos();
+    setGastos(prev => [...prev, ...result.data]);
     return { success: true };
+  };
+
+  const addGastoToFormulario = async (formularioId: string, input: AddGastoToFormularioInput): Promise<GastoProgramacion | null> => {
+    const result = await programacionService.addGastoToFormulario(formularioId, input);
+
+    if (result.error || !result.data) {
+      console.error('Error adding gasto to formulario:', result.error);
+      return null;
+    }
+
+    setGastos(prev => [...prev, result.data!]);
+    return result.data;
   };
 
   const updateGasto = async (input: UpdateGastoProgramacionInput): Promise<boolean> => {
     const result = await programacionService.update(input);
 
-    if (result.error) {
+    if (result.error || !result.data) {
       console.error('Error updating gasto:', result.error);
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.map(g => g.id === input.id ? result.data! : g));
     return true;
   };
 
@@ -86,7 +114,7 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    await fetchGastos();
+    setGastos(prev => prev.filter(g => g.id !== id));
     return true;
   };
 
@@ -146,6 +174,7 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
         loading,
         addGasto,
         addMultipleGastos,
+        addGastoToFormulario,
         updateGasto,
         deleteGasto,
         getGastoById,

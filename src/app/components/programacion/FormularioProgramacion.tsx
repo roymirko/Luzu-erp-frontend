@@ -92,8 +92,10 @@ export function FormularioProgramacion({
 }: FormularioProgramacionProps) {
   const { isDark } = useTheme();
   const {
+    gastos: contextGastos,
     addGasto,
     addMultipleGastos,
+    addGastoToFormulario,
     updateGasto,
     getGastoById,
     getGastosByFormularioId,
@@ -349,12 +351,20 @@ export function FormularioProgramacion({
       let success: boolean;
 
       if (isEditing && existingGasto) {
-        // Update existing gastos sequentially to avoid conflicts on formulario updates
+        // Get the formularioId from the existing gasto
+        const formularioId = existingGasto.formularioId;
+
+        // Separate gastos into existing (in DB) and new (not in DB)
+        const existingGastoIds = new Set(contextGastos.map(g => g.id));
+        const gastosToUpdate = gastos.filter(g => existingGastoIds.has(g.id));
+        const gastosToCreateNew = gastos.filter(g => !existingGastoIds.has(g.id));
+
         let allSucceeded = true;
         let failedCount = 0;
 
-        for (let i = 0; i < gastos.length; i++) {
-          const g = gastos[i];
+        // Update existing gastos
+        for (let i = 0; i < gastosToUpdate.length; i++) {
+          const g = gastosToUpdate[i];
           const result = await updateGasto({
             id: g.id,
             // Only update formulario fields on the first gasto to avoid conflicts
@@ -385,9 +395,35 @@ export function FormularioProgramacion({
           }
         }
 
+        // Create new gastos (added to existing formulario)
+        if (formularioId && gastosToCreateNew.length > 0) {
+          for (const g of gastosToCreateNew) {
+            const result = await addGastoToFormulario(formularioId, {
+              proveedor,
+              razonSocial,
+              neto: g.neto,
+              empresa: g.empresa,
+              observaciones: g.observaciones,
+              facturaEmitidaA: g.facturaEmitidaA,
+              categoria: g.empresaPrograma,
+              acuerdoPago: g.acuerdoPago,
+              formaPago: g.formaPago,
+              fechaFactura: g.fechaComprobante ? new Date(g.fechaComprobante) : undefined,
+              createdBy: currentUser?.id,
+            });
+
+            if (!result) {
+              allSucceeded = false;
+              failedCount++;
+              console.error(`Failed to create new gasto`);
+            }
+          }
+        }
+
         success = allSucceeded;
-        if (success) toast.success(`${gastos.length} gasto(s) actualizado(s) correctamente`);
-        else toast.error(`Error al actualizar ${failedCount} de ${gastos.length} gastos`);
+        const totalCount = gastosToUpdate.length + gastosToCreateNew.length;
+        if (success) toast.success(`${totalCount} gasto(s) guardado(s) correctamente`);
+        else toast.error(`Error al guardar ${failedCount} de ${totalCount} gastos`);
       } else {
         const gastosToCreate = gastos.map((g) => ({
           proveedor,

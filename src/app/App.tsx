@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -23,8 +23,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
-import { OrdenesPublicidadForm } from "./components/OrdenesPublicidadForm";
-import { FormBuilder } from "./components/FormBuilder";
+// Lazy-loaded heavy components
+const OrdenesPublicidadForm = lazy(() => import("./components/OrdenesPublicidadForm").then(m => ({ default: m.OrdenesPublicidadForm })));
+const FormBuilder = lazy(() => import("./components/FormBuilder").then(m => ({ default: m.FormBuilder })));
 import { Configuraciones } from "./components/Configuraciones";
 import { Login } from "./components/Login";
 import { NotificationsPanel } from "./components/NotificationsPanel";
@@ -42,10 +43,46 @@ import { ExperienceForm } from "./components/experience/ExperienceForm";
 import { Avatar, AvatarFallback } from "./components/ui/avatar";
 import { Button } from "./components/ui/button";
 import { ActionCard } from "./components/ui/action-card";
+import { cn } from "./components/ui/utils";
 import { Toaster } from "sonner";
 import imgLogoLuzu from "../assets/logo-luzu-2025 1.png";
 import imgLogoLuzuSmall from "../assets/loguito.png";
 import imgContainer from "../assets/Container.png";
+
+// Loading fallback for lazy components
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white" />
+  </div>
+);
+
+// Hoisted outside component to prevent recreation on every render
+const menuItems = [
+  {
+    id: "comercial",
+    path: "/comercial",
+    label: "Comercial",
+    icon: <Briefcase className="h-5 w-5" />,
+  },
+  {
+    id: "implementacion",
+    path: "/implementacion",
+    label: "Implementación",
+    icon: <Key className="h-5 w-5" />,
+  },
+  {
+    id: "programacion",
+    path: "/programacion",
+    label: "Programación",
+    icon: <TrendingUp className="h-5 w-5" />,
+  },
+  {
+    id: "experience",
+    path: "/experience",
+    label: "Experience",
+    icon: <Sparkles className="h-5 w-5" />,
+  },
+];
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -104,38 +141,9 @@ function AppContent() {
     }
   };
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} onGoogleLogin={loginWithGoogle} />;
-  }
+  const handleCloseProfile = useCallback(() => setProfilePanelOpen(false), []);
 
-  const menuItems = [
-    {
-      id: "comercial",
-      path: "/comercial",
-      label: "Comercial",
-      icon: <Briefcase className="h-5 w-5" />,
-    },
-    {
-      id: "implementacion",
-      path: "/implementacion",
-      label: "Implementación",
-      icon: <Key className="h-5 w-5" />,
-    },
-    {
-      id: "programacion",
-      path: "/programacion",
-      label: "Programación",
-      icon: <TrendingUp className="h-5 w-5" />,
-    },
-    {
-      id: "experience",
-      path: "/experience",
-      label: "Experience",
-      icon: <Sparkles className="h-5 w-5" />,
-    },
-  ];
-
-  const getBreadcrumbs = (): { label: string; path: string | null }[] => {
+  const breadcrumbs = useMemo(() => {
     const path = location.pathname;
 
     if (path === "/" || path === "/comercial") {
@@ -218,7 +226,11 @@ function AppContent() {
       ];
     }
     return [{ label: "Inicio", path: null }];
-  };
+  }, [location.pathname]);
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} onGoogleLogin={loginWithGoogle} />;
+  }
 
   const isMenuActive = (menuPath: string) => {
     return location.pathname === menuPath || location.pathname.startsWith(menuPath + "/");
@@ -226,23 +238,22 @@ function AppContent() {
 
   return (
     <div
-      className={`flex h-screen overflow-hidden ${isDark ? "bg-[#0a0a0a]" : "bg-gray-50"}`}
+      className={cn("flex h-screen overflow-hidden", isDark ? "bg-[#0a0a0a]" : "bg-gray-50")}
     >
       {/* Sidebar */}
       <aside
-        className={`border-r transition-all duration-300 flex-col ${
-          isDark ? "bg-[#141414] border-gray-800" : "bg-white border-gray-200"
-        } ${sidebarOpen ? "w-64" : "w-0 md:w-[56px]"} ${
-          sidebarOpen
-            ? "flex fixed md:relative z-50 md:z-auto"
-            : "hidden md:flex"
-        } h-full`}
+        className={cn(
+          "border-r transition-all duration-300 flex-col h-full",
+          isDark ? "bg-[#141414] border-gray-800" : "bg-white border-gray-200",
+          sidebarOpen ? "w-64 flex fixed md:relative z-50 md:z-auto" : "w-0 md:w-[56px] hidden md:flex"
+        )}
       >
         {/* Logo */}
         <div
-          className={`border-b px-5 py-3 transition-all duration-300 flex items-center justify-between ${
+          className={cn(
+            "border-b px-5 py-3 transition-all duration-300 flex items-center justify-between",
             isDark ? "border-gray-800" : "border-gray-200"
-          }`}
+          )}
         >
           <div
             className="flex items-center justify-center cursor-pointer h-10"
@@ -260,11 +271,10 @@ function AppContent() {
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(false)}
-              className={
-                isDark
-                  ? "text-gray-400 hover:text-white hover:bg-[#1e1e1e] md:hidden"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 md:hidden"
-              }
+              className={cn(
+                "md:hidden",
+                isDark ? "text-gray-400 hover:text-white hover:bg-[#1e1e1e]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              )}
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -280,15 +290,13 @@ function AppContent() {
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center rounded-lg transition-all duration-200 ${
-                  sidebarOpen ? "gap-3 px-4 py-3" : "justify-center p-2.5"
-                } ${
-                  isActive
-                    ? "bg-[#fb2c36] text-white"
-                    : isDark
-                      ? "text-gray-400 hover:bg-[#1e1e1e] hover:text-white"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`}
+                className={cn(
+                  "w-full flex items-center rounded-lg transition-all duration-200",
+                  sidebarOpen ? "gap-3 px-4 py-3" : "justify-center p-2.5",
+                  isActive && "bg-[#fb2c36] text-white",
+                  !isActive && isDark && "text-gray-400 hover:bg-[#1e1e1e] hover:text-white",
+                  !isActive && !isDark && "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                )}
                 title={!sidebarOpen ? item.label : undefined}
               >
                 <div className="shrink-0">{item.icon}</div>
@@ -306,15 +314,13 @@ function AppContent() {
         >
           <button
             onClick={() => navigate("/backoffice")}
-            className={`w-full flex items-center rounded-lg transition-all duration-200 ${
-              sidebarOpen ? "gap-3 px-4 py-3" : "justify-center p-2.5"
-            } ${
-              location.pathname === "/backoffice"
-                ? "bg-[#fb2c36] text-white"
-                : isDark
-                  ? "text-gray-400 hover:bg-[#1e1e1e] hover:text-white"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-            }`}
+            className={cn(
+              "w-full flex items-center rounded-lg transition-all duration-200",
+              sidebarOpen ? "gap-3 px-4 py-3" : "justify-center p-2.5",
+              location.pathname === "/backoffice" && "bg-[#fb2c36] text-white",
+              location.pathname !== "/backoffice" && isDark && "text-gray-400 hover:bg-[#1e1e1e] hover:text-white",
+              location.pathname !== "/backoffice" && !isDark && "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            )}
             title={!sidebarOpen ? "Backoffice" : undefined}
           >
             <div className="shrink-0">
@@ -331,9 +337,10 @@ function AppContent() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Navbar */}
         <header
-          className={`border-b px-5 py-3 ${
+          className={cn(
+            "border-b px-5 py-3",
             isDark ? "bg-[#141414] border-gray-800" : "bg-white border-gray-200"
-          }`}
+          )}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -341,11 +348,9 @@ function AppContent() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={
-                  isDark
-                    ? "text-gray-400 hover:text-white hover:bg-[#1e1e1e]"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }
+                className={cn(
+                  isDark ? "text-gray-400 hover:text-white hover:bg-[#1e1e1e]" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                )}
               >
                 <Menu className="h-5 w-5" />
               </Button>
@@ -366,12 +371,13 @@ function AppContent() {
 
         {/* Breadcrumbs */}
         <div
-          className={`border-b px-5 py-2.5 ${
+          className={cn(
+            "border-b px-5 py-2.5",
             isDark ? "bg-[#141414] border-gray-800" : "bg-white border-gray-200"
-          }`}
+          )}
         >
           <div className="flex items-center gap-2 text-sm">
-            {getBreadcrumbs().map((crumb, index) => (
+            {breadcrumbs.map((crumb, index) => (
               <div key={index} className="flex items-center gap-2">
                 {index > 0 && (
                   <span className={isDark ? "text-gray-700" : "text-gray-400"}>
@@ -379,19 +385,16 @@ function AppContent() {
                   </span>
                 )}
                 <span
-                  className={
-                    index === getBreadcrumbs().length - 1
-                      ? isDark
-                        ? "text-white font-medium"
-                        : "text-gray-900 font-medium"
-                      : crumb.path
-                        ? isDark
-                          ? "text-gray-500 hover:text-gray-400 cursor-pointer"
-                          : "text-gray-600 hover:text-gray-700 cursor-pointer"
-                        : isDark
-                          ? "text-gray-500"
-                          : "text-gray-600"
-                  }
+                  className={cn(
+                    index === breadcrumbs.length - 1 && "font-medium",
+                    index === breadcrumbs.length - 1 && isDark && "text-white",
+                    index === breadcrumbs.length - 1 && !isDark && "text-gray-900",
+                    index !== breadcrumbs.length - 1 && crumb.path && "cursor-pointer",
+                    index !== breadcrumbs.length - 1 && crumb.path && isDark && "text-gray-500 hover:text-gray-400",
+                    index !== breadcrumbs.length - 1 && crumb.path && !isDark && "text-gray-600 hover:text-gray-700",
+                    index !== breadcrumbs.length - 1 && !crumb.path && isDark && "text-gray-500",
+                    index !== breadcrumbs.length - 1 && !crumb.path && !isDark && "text-gray-600"
+                  )}
                   onClick={() => crumb.path && navigate(crumb.path)}
                 >
                   {crumb.label}
@@ -403,9 +406,7 @@ function AppContent() {
 
         {/* Content Area */}
         <main
-          className={`flex-1 overflow-y-auto p-5 ${
-            isDark ? "bg-[#0a0a0a]" : "bg-white"
-          }`}
+          className={cn("flex-1 overflow-y-auto p-5", isDark ? "bg-[#0a0a0a]" : "bg-white")}
           style={{ scrollbarGutter: "stable" }}
         >
           <div className="max-w-[1440px] mx-auto">
@@ -423,7 +424,7 @@ function AppContent() {
               <Route path="/experience" element={<ExperiencePage />} />
               <Route path="/experience/nuevo" element={<ExperienceNuevoPage />} />
               <Route path="/experience/editar/:id" element={<ExperienceEditarPage />} />
-              <Route path="/backoffice" element={<FormBuilder />} />
+              <Route path="/backoffice" element={<Suspense fallback={<LoadingFallback />}><FormBuilder /></Suspense>} />
             </Routes>
           </div>
         </main>
@@ -431,7 +432,7 @@ function AppContent() {
 
       {/* Profile Panel */}
       {profilePanelOpen && (
-        <ProfilePanel onClose={() => setProfilePanelOpen(false)} />
+        <ProfilePanel onClose={handleCloseProfile} />
       )}
     </div>
   );
@@ -459,10 +460,12 @@ function ComercialPage() {
 function NuevoFormularioPage() {
   const navigate = useNavigate();
   return (
-    <OrdenesPublicidadForm
-      onFormularioGuardado={() => navigate("/comercial")}
-      onCancel={() => navigate("/comercial")}
-    />
+    <Suspense fallback={<LoadingFallback />}>
+      <OrdenesPublicidadForm
+        onFormularioGuardado={() => navigate("/comercial")}
+        onCancel={() => navigate("/comercial")}
+      />
+    </Suspense>
   );
 }
 
@@ -470,11 +473,13 @@ function EditarFormularioPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   return (
-    <OrdenesPublicidadForm
-      formularioId={id}
-      onFormularioGuardado={() => navigate("/comercial")}
-      onCancel={() => navigate("/comercial")}
-    />
+    <Suspense fallback={<LoadingFallback />}>
+      <OrdenesPublicidadForm
+        formularioId={id}
+        onFormularioGuardado={() => navigate("/comercial")}
+        onCancel={() => navigate("/comercial")}
+      />
+    </Suspense>
   );
 }
 

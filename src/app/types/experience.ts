@@ -122,6 +122,8 @@ export interface FormularioExperienceAgrupado {
   subrubro: string;
   proveedor?: string;
   razonSocial?: string;
+  facturaEmitidaA?: string;
+  empresaContext?: string;
   netoTotal: number;
   gastosCount: number;
 }

@@ -413,24 +413,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
       !currentAssignments.some(ca => ca.areaId === fa.areaId && ca.roleId === ca.roleId)
     );
 
-    // Apply removals
+    // Apply removals (batch delete)
     if (toRemove.length > 0) {
-      for (const rem of toRemove) {
-        const { error: delErr } = await supabase
-          .from('usuario_area_roles')
-          .delete()
-          .eq('id', rem.id);
-        if (delErr) {
-          console.error('Error deleting assignment:', delErr);
-          return { success: false };
-        }
-        setUserAreaRoles(prev => prev.filter(uar => uar.id !== rem.id));
+      const idsToRemove = toRemove.map(rem => rem.id);
+      const { error: delErr } = await supabase
+        .from('usuario_area_roles')
+        .delete()
+        .in('id', idsToRemove);
+      if (delErr) {
+        console.error('Error deleting assignments:', delErr);
+        return { success: false };
+      }
+      setUserAreaRoles(prev => prev.filter(uar => !idsToRemove.includes(uar.id)));
 
-        // Log removal
-        const user = users.find(u => u.id === userId);
+      // Log removals
+      const user = users.find(u => u.id === userId);
+      const currentRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
+      const role = currentRole ? roles.find(r => r.id === currentRole.roleId) : null;
+      for (const rem of toRemove) {
         const area = areas.find(a => a.id === rem.areaId);
-        const currentRole = currentUser ? userAreaRoles.find(uar => uar.userId === currentUser.id) : null;
-        const role = currentRole ? roles.find(r => r.id === currentRole.roleId) : null;
         addLog({
           userId: currentUser?.id || 'system',
           userEmail: currentUser?.email || 'system',
