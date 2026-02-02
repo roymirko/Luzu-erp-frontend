@@ -436,3 +436,118 @@ export interface ExperienceGastoFullRow {
   forma_pago: string | null;
   pais: string | null;
 }
+
+// ============================================
+// NEW: Entidades (proveedores + clientes)
+// ============================================
+
+export interface EntidadRow {
+  id: string;
+  razon_social: string;
+  nombre_fantasia: string | null;
+  cuit: string;
+  tipo_entidad: 'proveedor' | 'cliente' | 'ambos';
+  condicion_iva: 'responsable_inscripto' | 'monotributista' | 'exento' | 'consumidor_final' | 'no_responsable';
+  direccion: string | null;
+  localidad: string | null;
+  provincia: string | null;
+  email: string | null;
+  telefono: string | null;
+  empresa: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export type EntidadInsert = Omit<EntidadRow, 'id' | 'created_at' | 'updated_at'>;
+export type EntidadUpdate = Partial<Omit<EntidadRow, 'id' | 'created_at'>>;
+
+// ============================================
+// NEW: Comprobantes (ingresos + egresos)
+// ============================================
+
+export interface ComprobanteRow {
+  id: string;
+  tipo_movimiento: 'ingreso' | 'egreso';
+  entidad_id: string | null;
+  entidad_nombre: string;
+  entidad_cuit: string | null;
+  tipo_comprobante: string | null;
+  punto_venta: string | null;
+  numero_comprobante: string | null;
+  fecha_comprobante: string | null;
+  cae: string | null;
+  fecha_vencimiento_cae: string | null;
+  moneda: string;
+  neto: number;
+  iva_alicuota: number;
+  iva_monto: number;
+  percepciones: number;
+  total: number;
+  empresa: string | null;
+  concepto: string | null;
+  observaciones: string | null;
+  estado: string;
+  estado_pago: 'pendiente' | 'pagado' | 'anulado';
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export type ComprobanteInsert = Omit<ComprobanteRow, 'id' | 'created_at' | 'updated_at'>;
+export type ComprobanteUpdate = Partial<Omit<ComprobanteRow, 'id' | 'created_at'>>;
+
+// Tabla implementacion_comprobantes (contexto)
+export interface ImplementacionComprobanteRow {
+  id: string;
+  comprobante_id: string;
+  orden_publicidad_id: string | null;
+  item_orden_publicidad_id: string | null;
+  factura_emitida_a: string | null;
+  sector: string | null;
+  rubro_gasto: string | null;
+  sub_rubro: string | null;
+  condicion_pago: string | null;
+  forma_pago: string | null;
+  fecha_pago: string | null;
+  adjuntos: unknown | null;
+}
+
+export type ImplementacionComprobanteInsert = Omit<ImplementacionComprobanteRow, 'id'>;
+export type ImplementacionComprobanteUpdate = Partial<Omit<ImplementacionComprobanteRow, 'id' | 'comprobante_id'>>;
+
+// Tabla programacion_comprobantes (contexto)
+export interface ProgramacionComprobanteRow {
+  id: string;
+  comprobante_id: string;
+  formulario_id: string;
+  categoria: string | null;
+  acuerdo_pago: string | null;
+  cliente: string | null;
+  monto: number | null;
+  valor_imponible: number | null;
+  bonificacion: number | null;
+  factura_emitida_a: string | null;
+  forma_pago: string | null;
+}
+
+export type ProgramacionComprobanteInsert = Omit<ProgramacionComprobanteRow, 'id'>;
+export type ProgramacionComprobanteUpdate = Partial<Omit<ProgramacionComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>;
+
+// Tabla experience_comprobantes (contexto)
+export interface ExperienceComprobanteRow {
+  id: string;
+  comprobante_id: string;
+  formulario_id: string;
+  factura_emitida_a: string | null;
+  empresa: string | null;
+  empresa_programa: string | null;
+  fecha_comprobante: string | null;
+  acuerdo_pago: string | null;
+  forma_pago: string | null;
+  pais: string | null;
+}
+
+export type ExperienceComprobanteInsert = Omit<ExperienceComprobanteRow, 'id'>;
+export type ExperienceComprobanteUpdate = Partial<Omit<ExperienceComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>

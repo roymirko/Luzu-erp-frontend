@@ -1,20 +1,36 @@
 /**
- * Tipos base para el sistema unificado de gastos
- * Todos los módulos (implementación, programación, etc.) extienden de estos tipos base
+ * LEGACY - Re-exports from comprobantes for backward compatibility
+ * New code should import from './comprobantes' directly
+ *
+ * gastos = comprobantes where tipo_movimiento = 'egreso'
  */
 
-export type EstadoGasto = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPago = 'pendiente' | 'pagado' | 'anulado';
-export type TipoGasto = 'implementacion' | 'programacion';
-export type Moneda = 'ARS' | 'USD';
+import type {
+  Comprobante,
+  ComprobanteFull,
+  CreateComprobanteInput,
+  UpdateComprobanteInput,
+  ComprobanteValidationError,
+  ComprobanteValidationResult,
+  EstadoPago as ComprobanteEstadoPago,
+  EstadoComprobante,
+  Moneda as ComprobanteMoneda,
+  TipoGasto as ComprobanteTipoGasto,
+} from './comprobantes';
+
+// Re-export types with legacy names
+export type EstadoGasto = EstadoComprobante;
+export type EstadoPago = ComprobanteEstadoPago;
+export type TipoGasto = ComprobanteTipoGasto;
+export type Moneda = ComprobanteMoneda;
 
 /**
- * Gasto base - representa un registro en la tabla `gastos`
- * Es la unidad atómica de gasto en el sistema
+ * Gasto base - legacy interface mapping to Comprobante
+ * Maps old field names to new Comprobante structure
  */
 export interface Gasto {
   id: string;
-  // Proveedor/Factura
+  // Proveedor/Factura (legacy names)
   proveedor: string;
   razonSocial?: string;
   tipoFactura?: string;
@@ -39,7 +55,7 @@ export interface Gasto {
 }
 
 /**
- * Input para crear un gasto base
+ * Input para crear un gasto base (legacy)
  */
 export interface CreateGastoInput {
   proveedor: string;
@@ -58,7 +74,7 @@ export interface CreateGastoInput {
 }
 
 /**
- * Input para actualizar un gasto base
+ * Input para actualizar un gasto base (legacy)
  */
 export interface UpdateGastoInput extends Partial<CreateGastoInput> {
   id: string;
@@ -67,8 +83,7 @@ export interface UpdateGastoInput extends Partial<CreateGastoInput> {
 }
 
 /**
- * Vista unificada de gastos (gastos_full view)
- * Incluye datos del gasto + contexto del módulo
+ * Vista unificada de gastos (legacy)
  */
 export interface GastoFull extends Gasto {
   tipoGasto: TipoGasto;
@@ -88,20 +103,67 @@ export interface GastoFull extends Gasto {
   categoriaNegocioEfectiva?: string;
 }
 
+export type GastoValidationError = ComprobanteValidationError;
+export type GastoValidationResult = ComprobanteValidationResult;
+
 /**
- * Error de validación
+ * Convert Comprobante to legacy Gasto format
  */
-export interface GastoValidationError {
-  field: string;
-  message: string;
+export function comprobanteToGasto(comprobante: Comprobante): Gasto {
+  return {
+    id: comprobante.id,
+    proveedor: comprobante.entidadNombre,
+    razonSocial: comprobante.entidadNombre,
+    tipoFactura: comprobante.tipoComprobante,
+    numeroFactura: comprobante.puntoVenta && comprobante.numeroComprobante
+      ? `${comprobante.puntoVenta}-${comprobante.numeroComprobante}`
+      : comprobante.numeroComprobante,
+    fechaFactura: comprobante.fechaComprobante,
+    moneda: comprobante.moneda,
+    neto: comprobante.neto,
+    iva: comprobante.ivaAlicuota,
+    importeTotal: comprobante.total,
+    empresa: comprobante.empresa,
+    conceptoGasto: comprobante.concepto,
+    observaciones: comprobante.observaciones,
+    estado: comprobante.estado,
+    estadoPago: comprobante.estadoPago,
+    createdAt: comprobante.createdAt,
+    updatedAt: comprobante.updatedAt,
+    createdBy: comprobante.createdBy,
+  };
 }
 
 /**
- * Resultado de validación
+ * Convert legacy CreateGastoInput to CreateComprobanteInput
  */
-export interface GastoValidationResult {
-  valid: boolean;
-  errors: GastoValidationError[];
+export function gastoInputToComprobanteInput(input: CreateGastoInput): CreateComprobanteInput {
+  // Parse numero_factura if it contains punto_venta
+  let puntoVenta: string | undefined;
+  let numeroComprobante: string | undefined;
+  if (input.numeroFactura?.includes('-')) {
+    const parts = input.numeroFactura.split('-');
+    puntoVenta = parts[0];
+    numeroComprobante = parts[1];
+  } else {
+    numeroComprobante = input.numeroFactura;
+  }
+
+  return {
+    tipoMovimiento: 'egreso',
+    entidadNombre: input.proveedor,
+    tipoComprobante: input.tipoFactura as any,
+    puntoVenta,
+    numeroComprobante,
+    fechaComprobante: input.fechaFactura,
+    moneda: input.moneda,
+    neto: input.neto,
+    ivaAlicuota: input.iva,
+    empresa: input.empresa,
+    concepto: input.conceptoGasto,
+    observaciones: input.observaciones,
+    createdBy: input.createdBy,
+  };
 }
 
 /**

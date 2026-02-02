@@ -1,3 +1,11 @@
+/**
+ * LEGACY - Re-exports from entidades for backward compatibility
+ * New code should import from './entidades' directly
+ */
+
+import type { Entidad, CreateEntidadInput, UpdateEntidadInput, EntidadValidationError, EntidadValidationResult } from './entidades';
+
+// Re-export Entidad as Proveedor for backward compatibility
 export interface Proveedor {
   id: string;
   razonSocial: string;
@@ -22,12 +30,35 @@ export interface UpdateProveedorInput extends Partial<CreateProveedorInput> {
   activo?: boolean;
 }
 
-export interface ProveedorValidationError {
-  field: string;
-  message: string;
+export type ProveedorValidationError = EntidadValidationError;
+export type ProveedorValidationResult = EntidadValidationResult;
+
+/**
+ * Convert Entidad to legacy Proveedor format
+ */
+export function entidadToProveedor(entidad: Entidad): Proveedor {
+  return {
+    id: entidad.id,
+    razonSocial: entidad.razonSocial,
+    empresa: entidad.empresa ?? null,
+    cuit: entidad.cuit,
+    direccion: entidad.direccion ?? null,
+    activo: entidad.activo,
+    createdAt: entidad.createdAt,
+    createdBy: entidad.createdBy ?? null,
+  };
 }
 
-export interface ProveedorValidationResult {
-  valid: boolean;
-  errors: ProveedorValidationError[];
+/**
+ * Convert legacy CreateProveedorInput to CreateEntidadInput
+ */
+export function proveedorInputToEntidadInput(input: CreateProveedorInput): CreateEntidadInput {
+  return {
+    razonSocial: input.razonSocial,
+    empresa: input.empresa,
+    cuit: input.cuit,
+    direccion: input.direccion,
+    tipoEntidad: 'proveedor',
+    createdBy: input.createdBy,
+  };
 }

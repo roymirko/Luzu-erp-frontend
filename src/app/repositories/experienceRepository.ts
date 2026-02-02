@@ -2,23 +2,104 @@ import { supabase } from '../services/supabase';
 import type {
   GastoInsert,
   GastoUpdate,
+  ComprobanteInsert,
+  ComprobanteUpdate,
   ExperienceFormularioInsert,
   ExperienceFormularioUpdate,
   ExperienceGastoInsert,
   ExperienceGastoUpdate,
+  ExperienceComprobanteInsert,
   ExperienceGastoFullRow,
   RepositoryResult,
   RepositoryListResult,
   RepositoryError,
 } from './types';
 
-const VIEW_NAME = 'experience_gastos_full';
+// Use actual tables, not views
+const COMPROBANTES_TABLE = 'comprobantes';
+const CONTEXT_TABLE = 'experience_comprobantes';
+const VIEW_NAME = 'experience_gastos_full'; // Legacy view for reading
 
 function mapSupabaseError(error: { code?: string; message: string; details?: string }): RepositoryError {
   return {
     code: error.code || 'UNKNOWN',
     message: error.message,
     details: error.details,
+  };
+}
+
+/**
+ * Maps old GastoInsert to new ComprobanteInsert
+ */
+function mapGastoToComprobante(gasto: GastoInsert): ComprobanteInsert {
+  return {
+    tipo_movimiento: 'egreso',
+    entidad_id: null,
+    entidad_nombre: gasto.proveedor,
+    entidad_cuit: null,
+    tipo_comprobante: gasto.tipo_factura || null,
+    punto_venta: null,
+    numero_comprobante: gasto.numero_factura || null,
+    fecha_comprobante: gasto.fecha_factura || null,
+    cae: null,
+    fecha_vencimiento_cae: null,
+    moneda: gasto.moneda || 'ARS',
+    neto: gasto.neto,
+    iva_alicuota: gasto.iva ?? 21,
+    iva_monto: gasto.neto * ((gasto.iva ?? 21) / 100),
+    percepciones: 0,
+    total: gasto.importe_total,
+    empresa: gasto.empresa || null,
+    concepto: gasto.concepto_gasto || null,
+    observaciones: gasto.observaciones || null,
+    estado: gasto.estado || 'activo',
+    estado_pago: (gasto.estado_pago === 'pendiente-pago' ? 'pendiente' : gasto.estado_pago) as 'pendiente' | 'pagado' | 'anulado',
+    created_by: gasto.created_by || null,
+  };
+}
+
+/**
+ * Maps old GastoUpdate to new ComprobanteUpdate
+ */
+function mapGastoUpdateToComprobante(update: GastoUpdate): ComprobanteUpdate {
+  const result: ComprobanteUpdate = {};
+  if (update.proveedor !== undefined) result.entidad_nombre = update.proveedor;
+  if (update.tipo_factura !== undefined) result.tipo_comprobante = update.tipo_factura;
+  if (update.numero_factura !== undefined) result.numero_comprobante = update.numero_factura;
+  if (update.fecha_factura !== undefined) result.fecha_comprobante = update.fecha_factura;
+  if (update.moneda !== undefined) result.moneda = update.moneda;
+  if (update.neto !== undefined) result.neto = update.neto;
+  if (update.iva !== undefined) {
+    result.iva_alicuota = update.iva;
+    if (update.neto !== undefined) {
+      result.iva_monto = update.neto * (update.iva / 100);
+    }
+  }
+  if (update.importe_total !== undefined) result.total = update.importe_total;
+  if (update.empresa !== undefined) result.empresa = update.empresa;
+  if (update.concepto_gasto !== undefined) result.concepto = update.concepto_gasto;
+  if (update.observaciones !== undefined) result.observaciones = update.observaciones;
+  if (update.estado !== undefined) result.estado = update.estado;
+  if (update.estado_pago !== undefined) {
+    result.estado_pago = (update.estado_pago === 'pendiente-pago' ? 'pendiente' : update.estado_pago) as 'pendiente' | 'pagado' | 'anulado';
+  }
+  return result;
+}
+
+/**
+ * Maps old ExperienceGastoInsert context to new ExperienceComprobanteInsert
+ */
+function mapContextInsert(context: Omit<ExperienceGastoInsert, 'gasto_id' | 'formulario_id'>, comprobanteId: string, formularioId: string): ExperienceComprobanteInsert {
+  return {
+    comprobante_id: comprobanteId,
+    formulario_id: formularioId,
+    factura_emitida_a: context.factura_emitida_a || null,
+    empresa: context.empresa || null,
+    empresa_programa: context.empresa_programa || null,
+    fecha_comprobante: context.fecha_comprobante || null,
+    acuerdo_pago: context.acuerdo_pago || null,
+    forma_pago: context.forma_pago || null,
+    pais: context.pais || 'argentina',
   };
 }
 
@@ -56,22 +137,23 @@ export async function findById(id: string): Promise<RepositoryResult<ExperienceG
 }
 
 /**
- * Crea un gasto de Experience completo (transacción: gastos + formulario + contexto)
+ * Crea un gasto de Experience completo (transacción: comprobantes + formulario + contexto)
  */
 export async function create(input: {
   gasto: GastoInsert;
   formulario: ExperienceFormularioInsert;
   context: Omit<ExperienceGastoInsert, 'gasto_id' | 'formulario_id'>;
 }): Promise<RepositoryResult<ExperienceGastoFullRow>> {
-  // 1. Crear gasto base
-  const { data: gastoData, error: gastoError } = await supabase
-    .from('gastos')
-    .insert(input.gasto)
+  // 1. Map and insert into comprobantes (core)
+  const comprobanteData = mapGastoToComprobante(input.gasto);
+  const { data: comprobante, error: comprobanteError } = await supabase
+    .from(COMPROBANTES_TABLE)
+    .insert(comprobanteData)
     .select()
     .single();
 
-  if (gastoError || !gastoData) {
-    return { data: null, error: mapSupabaseError(gastoError || { message: 'Error al crear gasto' }) };
+  if (comprobanteError || !comprobante) {
+    return { data: null, error: mapSupabaseError(comprobanteError || { message: 'Error al crear comprobante' }) };
   }
 
   // 2. Crear formulario (header)
@@ -82,29 +164,26 @@ export async function create(input: {
     .single();
 
   if (formularioError || !formularioData) {
-    // Rollback: eliminar gasto creado
-    await supabase.from('gastos').delete().eq('id', gastoData.id);
+    // Rollback: eliminar comprobante creado
+    await supabase.from(COMPROBANTES_TABLE).delete().eq('id', comprobante.id);
     return { data: null, error: mapSupabaseError(formularioError || { message: 'Error al crear formulario' }) };
   }
 
-  // 3. Crear contexto (relación)
+  // 3. Insert into experience_comprobantes (context)
+  const contextInsert = mapContextInsert(input.context, comprobante.id, formularioData.id);
   const { error: contextError } = await supabase
-    .from('experience_gastos')
-    .insert({
-      gasto_id: gastoData.id,
-      formulario_id: formularioData.id,
-      ...input.context,
-    });
+    .from(CONTEXT_TABLE)
+    .insert(contextInsert);
 
   if (contextError) {
-    // Rollback: eliminar gasto y formulario
-    await supabase.from('gastos').delete().eq('id', gastoData.id);
+    // Rollback: eliminar comprobante y formulario
+    await supabase.from(COMPROBANTES_TABLE).delete().eq('id', comprobante.id);
     await supabase.from('experience_formularios').delete().eq('id', formularioData.id);
     return { data: null, error: mapSupabaseError(contextError) };
   }
 
   // 4. Obtener registro completo desde la vista
-  return findById(gastoData.id);
+  return findById(comprobante.id);
 }
 
 /**
@@ -134,61 +213,59 @@ export async function createWithMultipleGastos(input: {
     return { data: [], error: mapSupabaseError(formularioError || { message: 'Error al crear formulario' }) };
   }
 
-  const createdGastoIds: string[] = [];
+  const createdComprobanteIds: string[] = [];
 
-  // 2. Create each gasto + context
+  // 2. Create each comprobante + context
   for (let i = 0; i < input.gastos.length; i++) {
     const item = input.gastos[i];
     console.log(`[Experience:createWithMultipleGastos] Creating gasto ${i + 1}/${input.gastos.length}:`, item.gasto.neto);
 
-    // Create gasto base
-    const { data: gastoData, error: gastoError } = await supabase
-      .from('gastos')
-      .insert(item.gasto)
+    // Map and insert into comprobantes
+    const comprobanteData = mapGastoToComprobante(item.gasto);
+    const { data: comprobante, error: comprobanteError } = await supabase
+      .from(COMPROBANTES_TABLE)
+      .insert(comprobanteData)
       .select()
       .single();
 
-    if (gastoError || !gastoData) {
-      console.error(`[Experience:createWithMultipleGastos] Error creating gasto ${i + 1}:`, gastoError);
-      // Rollback: delete all created gastos and the formulario
-      for (const gastoId of createdGastoIds) {
-        await supabase.from('gastos').delete().eq('id', gastoId);
+    if (comprobanteError || !comprobante) {
+      console.error(`[Experience:createWithMultipleGastos] Error creating comprobante ${i + 1}:`, comprobanteError);
+      // Rollback: delete all created comprobantes and the formulario
+      for (const comprobanteId of createdComprobanteIds) {
+        await supabase.from(COMPROBANTES_TABLE).delete().eq('id', comprobanteId);
       }
       await supabase.from('experience_formularios').delete().eq('id', formularioData.id);
-      return { data: [], error: mapSupabaseError(gastoError || { message: 'Error al crear gasto' }) };
+      return { data: [], error: mapSupabaseError(comprobanteError || { message: 'Error al crear comprobante' }) };
     }
 
-    console.log(`[Experience:createWithMultipleGastos] Gasto ${i + 1} created with id:`, gastoData.id);
-    createdGastoIds.push(gastoData.id);
+    console.log(`[Experience:createWithMultipleGastos] Comprobante ${i + 1} created with id:`, comprobante.id);
+    createdComprobanteIds.push(comprobante.id);
 
-    // Create context linking gasto to formulario
+    // Create context linking comprobante to formulario
+    const contextInsert = mapContextInsert(item.context, comprobante.id, formularioData.id);
     const { error: contextError } = await supabase
-      .from('experience_gastos')
-      .insert({
-        gasto_id: gastoData.id,
-        formulario_id: formularioData.id,
-        ...item.context,
-      });
+      .from(CONTEXT_TABLE)
+      .insert(contextInsert);
 
     if (contextError) {
-      console.error(`[Experience:createWithMultipleGastos] Error creating context for gasto ${i + 1}:`, contextError);
+      console.error(`[Experience:createWithMultipleGastos] Error creating context for comprobante ${i + 1}:`, contextError);
       // Rollback
-      for (const gastoId of createdGastoIds) {
-        await supabase.from('gastos').delete().eq('id', gastoId);
+      for (const comprobanteId of createdComprobanteIds) {
+        await supabase.from(COMPROBANTES_TABLE).delete().eq('id', comprobanteId);
       }
       await supabase.from('experience_formularios').delete().eq('id', formularioData.id);
       return { data: [], error: mapSupabaseError(contextError) };
     }
-    console.log(`[Experience:createWithMultipleGastos] Context for gasto ${i + 1} created`);
+    console.log(`[Experience:createWithMultipleGastos] Context for comprobante ${i + 1} created`);
   }
 
   // 3. Fetch all created records from the view
-  console.log(`[Experience:createWithMultipleGastos] Fetching ${createdGastoIds.length} created gastos from view`);
+  console.log(`[Experience:createWithMultipleGastos] Fetching ${createdComprobanteIds.length} created comprobantes from view`);
   const results: ExperienceGastoFullRow[] = [];
-  for (const gastoId of createdGastoIds) {
-    const result = await findById(gastoId);
+  for (const comprobanteId of createdComprobanteIds) {
+    const result = await findById(comprobanteId);
     if (result.error) {
-      console.error(`[Experience:createWithMultipleGastos] Error fetching gasto ${gastoId} from view:`, result.error);
+      console.error(`[Experience:createWithMultipleGastos] Error fetching comprobante ${comprobanteId} from view:`, result.error);
       // Return the error instead of silently ignoring it
       return { data: results, error: result.error };
     }
@@ -197,7 +274,7 @@ export async function createWithMultipleGastos(input: {
     }
   }
 
-  console.log(`[Experience:createWithMultipleGastos] Returning ${results.length} gastos`);
+  console.log(`[Experience:createWithMultipleGastos] Returning ${results.length} comprobantes`);
   return { data: results, error: null };
 }
 
@@ -211,34 +288,32 @@ export async function addGastoToFormulario(
     context: Omit<ExperienceGastoInsert, 'gasto_id' | 'formulario_id'>;
   }
 ): Promise<RepositoryResult<ExperienceGastoFullRow>> {
-  // 1. Create gasto base
-  const { data: gastoData, error: gastoError } = await supabase
-    .from('gastos')
-    .insert(input.gasto)
+  // 1. Map and insert into comprobantes
+  const comprobanteData = mapGastoToComprobante(input.gasto);
+  const { data: comprobante, error: comprobanteError } = await supabase
+    .from(COMPROBANTES_TABLE)
+    .insert(comprobanteData)
     .select()
     .single();
 
-  if (gastoError || !gastoData) {
-    return { data: null, error: mapSupabaseError(gastoError || { message: 'Error al crear gasto' }) };
+  if (comprobanteError || !comprobante) {
+    return { data: null, error: mapSupabaseError(comprobanteError || { message: 'Error al crear comprobante' }) };
   }
 
-  // 2. Create context linking gasto to existing formulario
+  // 2. Create context linking comprobante to existing formulario
+  const contextInsert = mapContextInsert(input.context, comprobante.id, formularioId);
   const { error: contextError } = await supabase
-    .from('experience_gastos')
-    .insert({
-      gasto_id: gastoData.id,
-      formulario_id: formularioId,
-      ...input.context,
-    });
+    .from(CONTEXT_TABLE)
+    .insert(contextInsert);
 
   if (contextError) {
-    // Rollback: delete gasto
-    await supabase.from('gastos').delete().eq('id', gastoData.id);
+    // Rollback: delete comprobante
+    await supabase.from(COMPROBANTES_TABLE).delete().eq('id', comprobante.id);
     return { data: null, error: mapSupabaseError(contextError) };
   }
 
   // 3. Return complete record
-  return findById(gastoData.id);
+  return findById(comprobante.id);
 }
 
 /**
@@ -258,15 +333,16 @@ export async function update(
     return { data: null, error: current.error || { code: 'NOT_FOUND', message: 'Gasto no encontrado' } };
   }
 
-  // 1. Actualizar gasto base si hay cambios
+  // 1. Actualizar comprobante base si hay cambios
   if (input.gasto && Object.keys(input.gasto).length > 0) {
-    const { error: gastoError } = await supabase
-      .from('gastos')
-      .update({ ...input.gasto, updated_at: new Date().toISOString() })
+    const comprobanteUpdate = mapGastoUpdateToComprobante(input.gasto);
+    const { error: comprobanteError } = await supabase
+      .from(COMPROBANTES_TABLE)
+      .update({ ...comprobanteUpdate, updated_at: new Date().toISOString() })
       .eq('id', gastoId);
 
-    if (gastoError) {
-      return { data: null, error: mapSupabaseError(gastoError) };
+    if (comprobanteError) {
+      return { data: null, error: mapSupabaseError(comprobanteError) };
     }
   }
 
@@ -285,9 +361,9 @@ export async function update(
   // 3. Actualizar contexto si hay cambios
   if (input.context && Object.keys(input.context).length > 0) {
     const { error: contextError } = await supabase
-      .from('experience_gastos')
+      .from(CONTEXT_TABLE)
       .update(input.context)
-      .eq('gasto_id', gastoId);
+      .eq('comprobante_id', gastoId);
 
     if (contextError) {
       return { data: null, error: mapSupabaseError(contextError) };
@@ -310,31 +386,31 @@ export async function remove(gastoId: string): Promise<RepositoryResult<null>> {
 
   const formularioId = current.data.formulario_id;
 
-  // Eliminar gasto (cascadea a experience_gastos por ON DELETE CASCADE)
-  const { error: gastoError } = await supabase
-    .from('gastos')
+  // Eliminar comprobante (cascadea a experience_comprobantes por ON DELETE CASCADE)
+  const { error: comprobanteError } = await supabase
+    .from(COMPROBANTES_TABLE)
     .delete()
     .eq('id', gastoId);
 
-  if (gastoError) {
-    return { data: null, error: mapSupabaseError(gastoError) };
+  if (comprobanteError) {
+    return { data: null, error: mapSupabaseError(comprobanteError) };
   }
 
-  // Verificar si hay otros gastos en el formulario
-  const { data: remainingGastos } = await supabase
-    .from('experience_gastos')
+  // Verificar si hay otros comprobantes en el formulario
+  const { data: remainingComprobantes } = await supabase
+    .from(CONTEXT_TABLE)
     .select('id')
     .eq('formulario_id', formularioId);
 
-  // Si no quedan gastos, eliminar el formulario
-  if (!remainingGastos || remainingGastos.length === 0) {
+  // Si no quedan comprobantes, eliminar el formulario
+  if (!remainingComprobantes || remainingComprobantes.length === 0) {
     const { error: formularioError } = await supabase
       .from('experience_formularios')
       .delete()
       .eq('id', formularioId);
 
     if (formularioError) {
-      // Log pero no fallar - el gasto principal ya fue eliminado
+      // Log pero no fallar - el comprobante principal ya fue eliminado
       console.warn('Error eliminando formulario huérfano:', formularioError);
     }
   }
