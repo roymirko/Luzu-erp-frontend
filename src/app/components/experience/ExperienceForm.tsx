@@ -65,7 +65,7 @@ const MAX_OBSERVACIONES_LENGTH = 250;
 
 export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }: ExperienceFormProps) {
   const { isDark } = useTheme();
-  const { currentUser } = useData();
+  const { currentUser, users } = useData();
   const { gastos: contextGastos, loading: contextLoading, addMultipleGastos, addGastoToFormulario, updateGasto, getGastosByFormularioId, getGastoById } = useExperience();
 
   // Form-level state
@@ -544,7 +544,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                 <Label className={labelClass}>Responsable</Label>
                 <Input
                   type="text"
-                  value={existingFormulario?.responsable || currentUser?.nombre || ''}
+                  value={existingFormulario?.responsable || (currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '')}
                   disabled
                   className={disabledSelectClass}
                 />

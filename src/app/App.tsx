@@ -592,12 +592,20 @@ function ExperienceEditarPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { getGastoById } = useExperience();
+  const { users } = useData();
 
   const existingGasto = id ? getGastoById(id) : undefined;
 
+  // Look up user name from createdBy UUID
+  const getResponsableName = (createdById: string | undefined) => {
+    if (!createdById) return '-';
+    const user = users.find(u => u.id === createdById);
+    return user ? `${user.firstName} ${user.lastName}` : '-';
+  };
+
   const existingFormulario = existingGasto
     ? {
-        responsable: existingGasto.formularioCreatedBy || existingGasto.createdBy || '',
+        responsable: getResponsableName(existingGasto.formularioCreatedBy || existingGasto.createdBy),
         fechaRegistro: existingGasto.formularioCreatedAt?.toISOString() || existingGasto.createdAt?.toISOString(),
         formularioEstado: existingGasto.formularioEstado as 'abierto' | 'cerrado' | 'anulado' | undefined,
       }

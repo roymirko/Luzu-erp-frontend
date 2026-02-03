@@ -99,7 +99,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
       if (itemsWithImpl.length === 0) return [];
 
       const linkedGastos = gastos.filter(g =>
-        (g as any).idFormularioComercial === form.id
+        g.ordenPublicidadId === form.id
       );
 
       const totalPresupuesto = itemsWithImpl.reduce((sum, item) => {
@@ -140,7 +140,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
     // Add standalone gastos not linked to formularios
     const formIds = new Set(formularios.map(f => f.id));
     const standaloneGastos = gastos
-      .filter(g => !(g as any).idFormularioComercial || !formIds.has((g as any).idFormularioComercial))
+      .filter(g => !g.ordenPublicidadId || !formIds.has(g.ordenPublicidadId))
       .map((gasto) => ({
         id: gasto.id,
         formId: gasto.id,
@@ -185,8 +185,8 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
         })
         .map((item) => {
           const linkedGasto = gastos.find(g =>
-            (g as any).idFormularioComercial === form.id &&
-            (g as any).formItemId === item.id
+            g.ordenPublicidadId === form.id &&
+            g.itemOrdenPublicidadId === item.id
           );
 
           const presupuestoImpl = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));

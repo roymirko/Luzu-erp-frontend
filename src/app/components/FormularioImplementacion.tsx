@@ -407,6 +407,27 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         if (created.length < importesToCreate.length) {
           hasError = true;
         }
+
+        // Update state with real DB IDs for successfully created gastos
+        // This prevents re-creating them if form stays open due to partial failure
+        if (created.length > 0) {
+          // Map temp UUIDs to real DB IDs (by order, since inputs/created have same order)
+          const tempIdToDbId = new Map<string, string>();
+          for (let i = 0; i < Math.min(importesToCreate.length, created.length); i++) {
+            tempIdToDbId.set(importesToCreate[i].id, created[i].id);
+          }
+
+          // Update loadedGastoIdsRef with new DB IDs
+          for (const gasto of created) {
+            loadedGastoIdsRef.current.add(gasto.id);
+          }
+
+          // Update importes state with real DB IDs
+          setImportes(prev => prev.map(imp => {
+            const dbId = tempIdToDbId.get(imp.id);
+            return dbId ? { ...imp, id: dbId } : imp;
+          }));
+        }
       }
 
       // Show result message

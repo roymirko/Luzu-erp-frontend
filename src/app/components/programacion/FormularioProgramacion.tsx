@@ -100,7 +100,7 @@ export function FormularioProgramacion({
     getGastoById,
     getGastosByFormularioId,
   } = useProgramacion();
-  const { currentUser } = useData();
+  const { currentUser, users } = useData();
 
   // Section 1: Cargar Datos
   const [unidadNegocio] = useState("Media");
@@ -479,9 +479,10 @@ export function FormularioProgramacion({
 
   // Get responsable name for edit mode
   const responsableName = existingGasto?.createdBy
-    ? currentUser?.id === existingGasto.createdBy
-      ? `${currentUser.firstName} ${currentUser.lastName}`
-      : existingGasto.createdBy
+    ? (() => {
+        const user = users.find(u => u.id === existingGasto.createdBy);
+        return user ? `${user.firstName} ${user.lastName}` : '-';
+      })()
     : "";
 
   const fechaRegistro = existingGasto?.createdAt
