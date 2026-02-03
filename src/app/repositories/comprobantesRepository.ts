@@ -1,6 +1,7 @@
 import { supabase } from '../services/supabase';
 import type {
   ComprobanteRow,
+  ComprobanteFullRow,
   ComprobanteInsert,
   ComprobanteUpdate,
   RepositoryResult,
@@ -162,4 +163,54 @@ export async function search(term: string, tipoMovimiento?: 'ingreso' | 'egreso'
   }
 
   return { data: data as ComprobanteRow[], error: null };
+}
+
+const VIEW_NAME = 'comprobantes_full';
+
+export async function findAllWithContext(): Promise<RepositoryListResult<ComprobanteFullRow>> {
+  const { data, error } = await supabase
+    .from(VIEW_NAME)
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return { data: [], error: mapSupabaseError(error) };
+  }
+
+  return { data: data as ComprobanteFullRow[], error: null };
+}
+
+export async function findWithContextByTipo(tipoMovimiento: 'ingreso' | 'egreso'): Promise<RepositoryListResult<ComprobanteFullRow>> {
+  const { data, error } = await supabase
+    .from(VIEW_NAME)
+    .select('*')
+    .eq('tipo_movimiento', tipoMovimiento)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return { data: [], error: mapSupabaseError(error) };
+  }
+
+  return { data: data as ComprobanteFullRow[], error: null };
+}
+
+export async function searchWithContext(term: string, tipoMovimiento?: 'ingreso' | 'egreso'): Promise<RepositoryListResult<ComprobanteFullRow>> {
+  let query = supabase
+    .from(VIEW_NAME)
+    .select('*')
+    .or(`entidad_nombre.ilike.%${term}%,concepto.ilike.%${term}%,numero_comprobante.ilike.%${term}%,impl_nombre_campana.ilike.%${term}%,prog_programa.ilike.%${term}%,exp_nombre_campana.ilike.%${term}%`)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (tipoMovimiento) {
+    query = query.eq('tipo_movimiento', tipoMovimiento);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    return { data: [], error: mapSupabaseError(error) };
+  }
+
+  return { data: data as ComprobanteFullRow[], error: null };
 }

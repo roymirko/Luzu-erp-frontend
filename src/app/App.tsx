@@ -21,6 +21,8 @@ import {
   Key,
   Plus,
   Sparkles,
+  DollarSign,
+  Building,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 // Lazy-loaded heavy components
@@ -40,6 +42,8 @@ import { ProgramacionProvider } from "./contexts/ProgramacionContext";
 import { ExperienceProvider, useExperience } from "./contexts/ExperienceContext";
 import { Experience } from "./components/Experience";
 import { ExperienceForm } from "./components/experience/ExperienceForm";
+import { Finanzas } from "./components/finanzas/Finanzas";
+import { Administracion } from "./components/administracion/Administracion";
 import { Avatar, AvatarFallback } from "./components/ui/avatar";
 import { Button } from "./components/ui/button";
 import { ActionCard } from "./components/ui/action-card";
@@ -81,6 +85,18 @@ const menuItems = [
     path: "/experience",
     label: "Experience",
     icon: <Sparkles className="h-5 w-5" />,
+  },
+  {
+    id: "finanzas",
+    path: "/finanzas",
+    label: "Finanzas",
+    icon: <DollarSign className="h-5 w-5" />,
+  },
+  {
+    id: "administracion",
+    path: "/administracion",
+    label: "Administración",
+    icon: <Building className="h-5 w-5" />,
   },
 ];
 
@@ -223,6 +239,18 @@ function AppContent() {
       return [
         { label: "Inicio", path: null },
         { label: "Backoffice", path: null },
+      ];
+    }
+    if (path === "/finanzas") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Finanzas", path: null },
+      ];
+    }
+    if (path === "/administracion") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Administración", path: null },
       ];
     }
     return [{ label: "Inicio", path: null }];
@@ -424,6 +452,8 @@ function AppContent() {
               <Route path="/experience" element={<ExperiencePage />} />
               <Route path="/experience/nuevo" element={<ExperienceNuevoPage />} />
               <Route path="/experience/editar/:id" element={<ExperienceEditarPage />} />
+              <Route path="/finanzas" element={<FinanzasPage />} />
+              <Route path="/administracion" element={<AdministracionPage />} />
               <Route path="/backoffice" element={<Suspense fallback={<LoadingFallback />}><FormBuilder /></Suspense>} />
             </Routes>
           </div>
@@ -581,6 +611,14 @@ function ExperienceEditarPage() {
       onSave={() => navigate("/experience")}
     />
   );
+}
+
+function FinanzasPage() {
+  return <Finanzas />;
+}
+
+function AdministracionPage() {
+  return <Administracion />;
 }
 
 export default function App() {

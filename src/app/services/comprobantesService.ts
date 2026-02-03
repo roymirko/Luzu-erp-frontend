@@ -1,14 +1,15 @@
 import * as comprobantesRepo from '../repositories/comprobantesRepository';
-import type { ComprobanteRow, ComprobanteInsert } from '../repositories/types';
+import type { ComprobanteRow, ComprobanteFullRow, ComprobanteInsert } from '../repositories/types';
 import type {
   Comprobante,
+  ComprobanteWithContext,
   CreateComprobanteInput,
   UpdateComprobanteInput,
   ComprobanteValidationResult,
   TipoMovimiento,
   EstadoPago,
-  calcularTotal,
 } from '../types/comprobantes';
+import { isComprobanteLocked } from '../types/comprobantes';
 
 function mapFromDB(row: ComprobanteRow): Comprobante {
   return {
@@ -219,4 +220,110 @@ export async function search(term: string, tipoMovimiento?: TipoMovimiento): Pro
   }
 
   return { data: result.data.map(mapFromDB), error: null };
+}
+
+// ============================================
+// Functions with context (comprobantes_full view)
+// ============================================
+
+function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
+  return {
+    // Base comprobante fields
+    id: row.id,
+    tipoMovimiento: row.tipo_movimiento,
+    entidadId: row.entidad_id ?? undefined,
+    entidadNombre: row.entidad_nombre,
+    entidadCuit: row.entidad_cuit ?? undefined,
+    tipoComprobante: row.tipo_comprobante as any,
+    puntoVenta: row.punto_venta ?? undefined,
+    numeroComprobante: row.numero_comprobante ?? undefined,
+    fechaComprobante: row.fecha_comprobante ? new Date(row.fecha_comprobante) : undefined,
+    cae: row.cae ?? undefined,
+    fechaVencimientoCae: row.fecha_vencimiento_cae ? new Date(row.fecha_vencimiento_cae) : undefined,
+    moneda: row.moneda as 'ARS' | 'USD',
+    neto: row.neto,
+    ivaAlicuota: row.iva_alicuota,
+    ivaMonto: row.iva_monto,
+    percepciones: row.percepciones,
+    total: row.total,
+    empresa: row.empresa ?? undefined,
+    concepto: row.concepto ?? undefined,
+    observaciones: row.observaciones ?? undefined,
+    estado: row.estado as any,
+    estadoPago: row.estado_pago,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+    createdBy: row.created_by ?? undefined,
+    // Context fields
+    areaOrigen: row.area_origen,
+    // Implementacion
+    implementacionComprobanteId: row.implementacion_comprobante_id ?? undefined,
+    ordenPublicidadId: row.orden_publicidad_id ?? undefined,
+    sector: row.sector ?? undefined,
+    rubroGasto: row.rubro_gasto ?? undefined,
+    subRubro: row.sub_rubro ?? undefined,
+    implFacturaEmitidaA: row.impl_factura_emitida_a ?? undefined,
+    implNombreCampana: row.impl_nombre_campana ?? undefined,
+    implOrdenPublicidad: row.impl_orden_publicidad ?? undefined,
+    // Programacion
+    programacionComprobanteId: row.programacion_comprobante_id ?? undefined,
+    programacionFormularioId: row.programacion_formulario_id ?? undefined,
+    progPrograma: row.prog_programa ?? undefined,
+    progMesGestion: row.prog_mes_gestion ?? undefined,
+    progUnidadNegocio: row.prog_unidad_negocio ?? undefined,
+    progCategoriaNegocio: row.prog_categoria_negocio ?? undefined,
+    // Experience
+    experienceComprobanteId: row.experience_comprobante_id ?? undefined,
+    experienceFormularioId: row.experience_formulario_id ?? undefined,
+    expNombreCampana: row.exp_nombre_campana ?? undefined,
+    expMesGestion: row.exp_mes_gestion ?? undefined,
+  };
+}
+
+export async function getAllWithContext(): Promise<{ data: ComprobanteWithContext[]; error: string | null }> {
+  const result = await comprobantesRepo.findAllWithContext();
+
+  if (result.error) {
+    console.error('Error fetching comprobantes with context:', result.error);
+    return { data: [], error: result.error.message };
+  }
+
+  return { data: result.data.map(mapFromDBWithContext), error: null };
+}
+
+export async function getWithContextByTipo(tipoMovimiento: TipoMovimiento): Promise<{ data: ComprobanteWithContext[]; error: string | null }> {
+  const result = await comprobantesRepo.findWithContextByTipo(tipoMovimiento);
+
+  if (result.error) {
+    console.error('Error fetching comprobantes by tipo:', result.error);
+    return { data: [], error: result.error.message };
+  }
+
+  return { data: result.data.map(mapFromDBWithContext), error: null };
+}
+
+export async function searchWithContext(term: string, tipoMovimiento?: TipoMovimiento): Promise<{ data: ComprobanteWithContext[]; error: string | null }> {
+  const result = await comprobantesRepo.searchWithContext(term, tipoMovimiento);
+
+  if (result.error) {
+    console.error('Error searching comprobantes:', result.error);
+    return { data: [], error: result.error.message };
+  }
+
+  return { data: result.data.map(mapFromDBWithContext), error: null };
+}
+
+export async function updateEstadoPagoWithValidation(id: string, nuevoEstado: EstadoPago): Promise<{ data: Comprobante | null; error: string | null }> {
+  // First get current state
+  const current = await getById(id);
+  if (current.error || !current.data) {
+    return { data: null, error: current.error || 'Comprobante no encontrado' };
+  }
+
+  // Check if locked
+  if (isComprobanteLocked(current.data.estadoPago)) {
+    return { data: null, error: `No se puede modificar un comprobante con estado "${current.data.estadoPago}"` };
+  }
+
+  return update({ id, estadoPago: nuevoEstado });
 }

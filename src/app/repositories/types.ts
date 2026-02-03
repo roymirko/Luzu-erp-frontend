@@ -489,7 +489,7 @@ export interface ComprobanteRow {
   concepto: string | null;
   observaciones: string | null;
   estado: string;
-  estado_pago: 'pendiente' | 'pagado' | 'anulado';
+  estado_pago: 'pendiente' | 'pagado' | 'pedir_info' | 'anulado';
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -550,4 +550,30 @@ export interface ExperienceComprobanteRow {
 }
 
 export type ExperienceComprobanteInsert = Omit<ExperienceComprobanteRow, 'id'>;
-export type ExperienceComprobanteUpdate = Partial<Omit<ExperienceComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>
+export type ExperienceComprobanteUpdate = Partial<Omit<ExperienceComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>;
+
+// Vista comprobantes_full (para queries con contexto)
+export interface ComprobanteFullRow extends ComprobanteRow {
+  area_origen: 'implementacion' | 'programacion' | 'experience' | 'directo';
+  // Implementacion context
+  implementacion_comprobante_id: string | null;
+  orden_publicidad_id: string | null;
+  sector: string | null;
+  rubro_gasto: string | null;
+  sub_rubro: string | null;
+  impl_factura_emitida_a: string | null;
+  impl_nombre_campana: string | null;
+  impl_orden_publicidad: string | null;
+  // Programacion context
+  programacion_comprobante_id: string | null;
+  programacion_formulario_id: string | null;
+  prog_programa: string | null;
+  prog_mes_gestion: string | null;
+  prog_unidad_negocio: string | null;
+  prog_categoria_negocio: string | null;
+  // Experience context
+  experience_comprobante_id: string | null;
+  experience_formulario_id: string | null;
+  exp_nombre_campana: string | null;
+  exp_mes_gestion: string | null;
+}

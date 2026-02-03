@@ -1,0 +1,281 @@
+// Luzu ERP Database Schema
+// View at: https://dbdiagram.io/d
+
+// ============================================
+// CORE TABLES
+// ============================================
+
+Table usuarios {
+  id uuid [pk]
+  email text [unique, not null]
+  first_name text [not null]
+  last_name text [not null]
+  avatar text
+  active boolean [default: true]
+  fecha_creacion timestamptz
+  fecha_actualizacion timestamptz
+  last_login timestamptz
+  creado_por text
+  metadata jsonb
+}
+
+Table roles {
+  id uuid [pk]
+  name text [unique, not null]
+  description text
+  permissions jsonb
+  fecha_creacion timestamptz
+}
+
+Table areas {
+  id uuid [pk]
+  name text [not null]
+  code text [unique, not null]
+  description text
+  manager_id text
+  active boolean [default: true]
+  fecha_creacion timestamptz
+  fecha_actualizacion timestamptz
+  creado_por text
+  metadata jsonb
+}
+
+Table usuario_area_roles {
+  id uuid [pk]
+  usuario_id uuid [ref: > usuarios.id]
+  area_id uuid [ref: > areas.id]
+  rol_id uuid [ref: > roles.id]
+  assigned_at timestamptz
+  assigned_by text
+}
+
+Table registros_auditoria {
+  id uuid [pk]
+  fecha timestamptz
+  user_id text [not null]
+  user_email text
+  user_role text
+  action text [not null]
+  entity text [not null]
+  entity_id text [not null]
+  entity_name text
+  details text
+  result text [note: 'success | error | warning']
+  metadata jsonb
+  ip_address text
+  user_agent text
+}
+
+// ============================================
+// ENTIDADES (Proveedores + Clientes)
+// ============================================
+
+Table entidades {
+  id uuid [pk]
+  razon_social text [not null]
+  nombre_fantasia text
+  cuit text [unique, not null]
+  tipo_entidad text [note: 'proveedor | cliente | ambos']
+  condicion_iva text [note: 'responsable_inscripto | monotributista | exento | consumidor_final | no_responsable']
+  direccion text
+  localidad text
+  provincia text
+  email text
+  telefono text
+  empresa text
+  activo boolean [default: true]
+  created_at timestamptz
+  updated_at timestamptz
+  created_by text
+}
+
+// ============================================
+// COMERCIAL MODULE
+// ============================================
+
+Table ordenes_publicidad {
+  id uuid [pk]
+  fecha text
+  mes_servicio text
+  responsable text
+  orden_publicidad text
+  total_venta text
+  unidad_negocio text
+  categoria_negocio text
+  proyecto text
+  razon_social text
+  categoria text
+  empresa_agencia text
+  marca text
+  nombre_campana text
+  acuerdo_pago text
+  tipo_importe text [note: 'canje | factura']
+  observaciones text
+  fecha_creacion timestamptz
+  fecha_actualizacion timestamptz
+  creado_por text
+}
+
+Table items_orden_publicidad {
+  id uuid [pk]
+  orden_publicidad_id uuid [ref: > ordenes_publicidad.id]
+  programa text
+  monto text
+  nc_programa text
+  nc_porcentaje text
+  proveedor_fee text
+  fee_programa text
+  fee_porcentaje text
+  implementacion text
+  talentos text
+  tecnica text
+  fecha_creacion timestamptz
+}
+
+// ============================================
+// COMPROBANTES (Ingresos + Egresos)
+// ============================================
+
+Table comprobantes {
+  id uuid [pk]
+  tipo_movimiento text [not null, note: 'ingreso | egreso']
+  entidad_id uuid [ref: > entidades.id]
+  entidad_nombre text [not null]
+  entidad_cuit text
+  tipo_comprobante text [note: 'FA | FB | FC | FE | NCA | NCB | NCC | NDA | NDB | NDC | REC | TKT | OTR']
+  punto_venta text
+  numero_comprobante text
+  fecha_comprobante date
+  cae text
+  fecha_vencimiento_cae date
+  moneda text [default: 'ARS']
+  neto decimal [not null]
+  iva_alicuota decimal [default: 21]
+  iva_monto decimal
+  percepciones decimal
+  total decimal [not null]
+  empresa text
+  concepto text
+  observaciones text
+  estado text [default: 'pendiente', note: 'pendiente | activo | cerrado | anulado']
+  estado_pago text [default: 'pendiente', note: 'pendiente | pagado | pedir_info | anulado']
+  created_at timestamptz
+  updated_at timestamptz
+  created_by text
+}
+
+// ============================================
+// IMPLEMENTACION MODULE
+// ============================================
+
+Table implementacion_comprobantes {
+  id uuid [pk]
+  comprobante_id uuid [ref: - comprobantes.id]
+  orden_publicidad_id uuid [ref: > ordenes_publicidad.id]
+  item_orden_publicidad_id uuid [ref: > items_orden_publicidad.id]
+  factura_emitida_a text
+  sector text
+  rubro_gasto text
+  sub_rubro text
+  condicion_pago text
+  forma_pago text
+  fecha_pago date
+  adjuntos jsonb
+}
+
+// ============================================
+// PROGRAMACION MODULE
+// ============================================
+
+Table programacion_formularios {
+  id uuid [pk]
+  mes_gestion varchar(7)
+  mes_venta varchar(7)
+  mes_inicio varchar(7)
+  unidad_negocio text
+  categoria_negocio text
+  programa text
+  ejecutivo text
+  sub_rubro_empresa text
+  detalle_campana text
+  estado text [default: 'pendiente']
+  created_at timestamptz
+  updated_at timestamptz
+  created_by text
+}
+
+Table programacion_comprobantes {
+  id uuid [pk]
+  comprobante_id uuid [ref: - comprobantes.id]
+  formulario_id uuid [ref: > programacion_formularios.id]
+  categoria text
+  acuerdo_pago text
+  cliente text
+  monto decimal
+  valor_imponible decimal
+  bonificacion decimal
+  factura_emitida_a text
+  forma_pago text
+}
+
+// ============================================
+// EXPERIENCE MODULE
+// ============================================
+
+Table experience_formularios {
+  id uuid [pk]
+  mes_gestion varchar(7)
+  nombre_campana text
+  detalle_campana text
+  subrubro text
+  estado text [default: 'activo']
+  created_at timestamptz
+  updated_at timestamptz
+  created_by text
+}
+
+Table experience_comprobantes {
+  id uuid [pk]
+  comprobante_id uuid [ref: - comprobantes.id]
+  formulario_id uuid [ref: > experience_formularios.id]
+  factura_emitida_a text
+  empresa text
+  empresa_programa text
+  fecha_comprobante date
+  acuerdo_pago text
+  forma_pago text
+  pais text [default: 'argentina']
+}
+
+// ============================================
+// TABLE GROUPS
+// ============================================
+
+TableGroup core {
+  usuarios
+  roles
+  areas
+  usuario_area_roles
+  registros_auditoria
+}
+
+TableGroup entidades_group {
+  entidades
+}
+
+TableGroup comercial {
+  ordenes_publicidad
+  items_orden_publicidad
+}
+
+TableGroup comprobantes_group {
+  comprobantes
+  implementacion_comprobantes
+  programacion_comprobantes
+  experience_comprobantes
+}
+
+TableGroup formularios {
+  programacion_formularios
+  experience_formularios
+}

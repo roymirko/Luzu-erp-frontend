@@ -12,7 +12,7 @@ export type TipoComprobante =
   | 'REC' | 'TKT' | 'OTR';       // Recibo, Ticket, Otro
 
 export type EstadoComprobante = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPago = 'pendiente' | 'pagado' | 'anulado';
+export type EstadoPago = 'pendiente' | 'pagado' | 'pedir_info' | 'anulado';
 export type Moneda = 'ARS' | 'USD';
 export type TipoGasto = 'implementacion' | 'programacion' | 'experience';
 
@@ -182,3 +182,60 @@ export const TIPO_MOVIMIENTO_LABELS: Record<TipoMovimiento, string> = {
   ingreso: 'Ingreso',
   egreso: 'Egreso',
 };
+
+export type AreaOrigen = 'implementacion' | 'programacion' | 'experience' | 'directo';
+
+/**
+ * Comprobante con contexto de origen (vista comprobantes_full)
+ */
+export interface ComprobanteWithContext extends Comprobante {
+  areaOrigen: AreaOrigen;
+  // Implementacion context
+  implementacionComprobanteId?: string;
+  ordenPublicidadId?: string;
+  sector?: string;
+  rubroGasto?: string;
+  subRubro?: string;
+  implFacturaEmitidaA?: string;
+  implNombreCampana?: string;
+  implOrdenPublicidad?: string;
+  // Programacion context
+  programacionComprobanteId?: string;
+  programacionFormularioId?: string;
+  progPrograma?: string;
+  progMesGestion?: string;
+  progUnidadNegocio?: string;
+  progCategoriaNegocio?: string;
+  // Experience context
+  experienceComprobanteId?: string;
+  experienceFormularioId?: string;
+  expNombreCampana?: string;
+  expMesGestion?: string;
+}
+
+/**
+ * Labels para área origen
+ */
+export const AREA_ORIGEN_LABELS: Record<AreaOrigen, string> = {
+  implementacion: 'Implementación',
+  programacion: 'Programación',
+  experience: 'Experience',
+  directo: 'Directo',
+};
+
+/**
+ * Labels para estado de pago
+ */
+export const ESTADO_PAGO_LABELS: Record<EstadoPago, string> = {
+  pendiente: 'Pendiente',
+  pagado: 'Pagado',
+  pedir_info: 'Pedir Info',
+  anulado: 'Anulado',
+};
+
+/**
+ * Determina si un comprobante está bloqueado (no editable)
+ */
+export function isComprobanteLocked(estadoPago: EstadoPago): boolean {
+  return estadoPago === 'pagado' || estadoPago === 'anulado';
+}
