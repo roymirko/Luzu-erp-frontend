@@ -4,8 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && cd server && npm install",
     "dev": "vite",
+    "start": "cd server && npm run start",
     "server": "cd server && npm run dev",
     "server:start": "cd server && npm run start",
     "seed": "cd server && npm run seed",
