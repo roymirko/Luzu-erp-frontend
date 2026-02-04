@@ -35,6 +35,12 @@ function mapFromDB(row: ComprobanteRow): Comprobante {
     observaciones: row.observaciones ?? undefined,
     estado: row.estado as any,
     estadoPago: row.estado_pago,
+    // Payment fields
+    formaPago: row.forma_pago as any,
+    cotizacion: row.cotizacion ?? undefined,
+    banco: row.banco ?? undefined,
+    numeroOperacion: row.numero_operacion ?? undefined,
+    fechaPago: row.fecha_pago ? new Date(row.fecha_pago) : undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,
@@ -42,11 +48,11 @@ function mapFromDB(row: ComprobanteRow): Comprobante {
 }
 
 function mapToDBInsert(input: CreateComprobanteInput): ComprobanteInsert {
-  // Calculate IVA and total if not provided
+  // Calculate IVA and neto from total if not provided
   const ivaAlicuota = input.ivaAlicuota ?? 21;
-  const ivaMonto = input.ivaMonto ?? (input.neto * ivaAlicuota / 100);
+  const ivaMonto = input.ivaMonto ?? (input.total * ivaAlicuota / 100);
   const percepciones = input.percepciones ?? 0;
-  const total = input.total ?? (input.neto + ivaMonto + percepciones);
+  const neto = input.neto ?? (input.total - ivaMonto - percepciones);
 
   return {
     tipo_movimiento: input.tipoMovimiento || 'egreso',
@@ -60,16 +66,22 @@ function mapToDBInsert(input: CreateComprobanteInput): ComprobanteInsert {
     cae: input.cae || null,
     fecha_vencimiento_cae: input.fechaVencimientoCae?.toISOString().split('T')[0] || null,
     moneda: input.moneda || 'ARS',
-    neto: input.neto,
+    neto: neto,
     iva_alicuota: ivaAlicuota,
     iva_monto: ivaMonto,
     percepciones: percepciones,
-    total: total,
+    total: input.total,
     empresa: input.empresa || null,
     concepto: input.concepto || null,
     observaciones: input.observaciones || null,
     estado: 'activo',
     estado_pago: 'pendiente',
+    // Payment fields
+    forma_pago: input.formaPago || null,
+    cotizacion: input.cotizacion || null,
+    banco: input.banco || null,
+    numero_operacion: input.numeroOperacion || null,
+    fecha_pago: input.fechaPago?.toISOString().split('T')[0] || null,
     created_by: input.createdBy || null,
   };
 }
@@ -81,8 +93,8 @@ export function validateCreate(input: CreateComprobanteInput): ComprobanteValida
     errors.push({ field: 'entidadNombre', message: 'Debe seleccionar una entidad' });
   }
 
-  if (input.neto === undefined || input.neto < 0) {
-    errors.push({ field: 'neto', message: 'Debe ingresar un importe neto válido' });
+  if (input.total === undefined || input.total < 0) {
+    errors.push({ field: 'total', message: 'Debe ingresar un importe total válido' });
   }
 
   return { valid: errors.length === 0, errors };
@@ -185,6 +197,12 @@ export async function update(input: UpdateComprobanteInput): Promise<{ data: Com
   if (fields.observaciones !== undefined) updateData.observaciones = fields.observaciones;
   if (fields.estado !== undefined) updateData.estado = fields.estado;
   if (fields.estadoPago !== undefined) updateData.estado_pago = fields.estadoPago;
+  // Payment fields
+  if (fields.formaPago !== undefined) updateData.forma_pago = fields.formaPago;
+  if (fields.cotizacion !== undefined) updateData.cotizacion = fields.cotizacion;
+  if (fields.banco !== undefined) updateData.banco = fields.banco;
+  if (fields.numeroOperacion !== undefined) updateData.numero_operacion = fields.numeroOperacion;
+  if (fields.fechaPago !== undefined) updateData.fecha_pago = fields.fechaPago?.toISOString().split('T')[0];
 
   const result = await comprobantesRepo.update(id, updateData);
 
@@ -251,6 +269,12 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     observaciones: row.observaciones ?? undefined,
     estado: row.estado as any,
     estadoPago: row.estado_pago,
+    // Payment fields
+    formaPago: row.forma_pago as any,
+    cotizacion: row.cotizacion ?? undefined,
+    banco: row.banco ?? undefined,
+    numeroOperacion: row.numero_operacion ?? undefined,
+    fechaPago: row.fecha_pago ? new Date(row.fecha_pago) : undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,

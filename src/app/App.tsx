@@ -132,29 +132,12 @@ function AppContent() {
     navigate("/");
   };
 
-  const handleLogin = async (email?: string) => {
-    const targetEmail = email || "gaby@luzutv.com.ar";
-    const result = await login(targetEmail);
+  const handleLogin = async (email: string, password: string) => {
+    const result = await login(email, password);
     if (result.success) {
       setIsAuthenticated(true);
-      return;
     }
-
-    if (targetEmail === "gaby@luzutv.com.ar") {
-      const adminMock = {
-        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-        email: "gaby@luzutv.com.ar",
-        firstName: "Gabriela",
-        lastName: "Rivero",
-        active: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: "system",
-        metadata: { position: "CEO", avatar: undefined },
-      };
-      setCurrentUser(adminMock);
-      setIsAuthenticated(true);
-    }
+    return result;
   };
 
   const handleCloseProfile = useCallback(() => setProfilePanelOpen(false), []);

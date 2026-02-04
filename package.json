@@ -6,6 +6,9 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "server": "cd server && npm run dev",
+    "server:start": "cd server && npm run start",
+    "seed": "cd server && npm run seed",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed"

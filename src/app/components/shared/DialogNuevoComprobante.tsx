@@ -24,8 +24,8 @@ import { cn } from '@/app/components/ui/utils';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import * as comprobantesService from '@/app/services/comprobantesService';
-import type { Comprobante, TipoMovimiento, TipoComprobante, Moneda } from '@/app/types/comprobantes';
-import { TIPO_COMPROBANTE_LABELS, calcularTotal } from '@/app/types/comprobantes';
+import type { Comprobante, TipoMovimiento, TipoComprobante, Moneda, FormaPago } from '@/app/types/comprobantes';
+import { TIPO_COMPROBANTE_LABELS, FORMA_PAGO_LABELS, calcularDesdeTotal } from '@/app/types/comprobantes';
 
 interface DialogNuevoComprobanteProps {
   open: boolean;
@@ -37,6 +37,8 @@ interface DialogNuevoComprobanteProps {
 const TIPO_COMPROBANTE_OPTIONS: TipoComprobante[] = [
   'FA', 'FB', 'FC', 'FE', 'NCA', 'NCB', 'NCC', 'NDA', 'NDB', 'NDC', 'REC', 'TKT', 'OTR'
 ];
+
+const FORMA_PAGO_OPTIONS: FormaPago[] = ['transferencia', 'cheque', 'efectivo', 'tarjeta', 'otro'];
 
 interface FormState {
   tipoMovimiento: TipoMovimiento;
@@ -58,6 +60,12 @@ interface FormState {
   empresa: string;
   concepto: string;
   observaciones: string;
+  // Payment fields
+  formaPago: FormaPago | '';
+  cotizacion: string;
+  banco: string;
+  numeroOperacion: string;
+  fechaPago: string;
 }
 
 const initialFormState: FormState = {
@@ -80,6 +88,12 @@ const initialFormState: FormState = {
   empresa: '',
   concepto: '',
   observaciones: '',
+  // Payment fields
+  formaPago: '',
+  cotizacion: '',
+  banco: '',
+  numeroOperacion: '',
+  fechaPago: '',
 };
 
 export function DialogNuevoComprobante({
@@ -98,20 +112,20 @@ export function DialogNuevoComprobante({
     }
   }, [open, defaultTipoMovimiento]);
 
-  // Auto-calculate IVA and Total
+  // Auto-calculate IVA and Neto from Total
   useEffect(() => {
-    const neto = parseFloat(form.neto) || 0;
+    const total = parseFloat(form.total) || 0;
     const ivaAlicuota = parseFloat(form.ivaAlicuota) || 0;
     const percepciones = parseFloat(form.percepciones) || 0;
 
-    const { ivaMonto, total } = calcularTotal(neto, ivaAlicuota, percepciones);
+    const { ivaMonto, neto } = calcularDesdeTotal(total, ivaAlicuota, percepciones);
 
     setForm(prev => ({
       ...prev,
       ivaMonto: ivaMonto.toFixed(2),
-      total: total.toFixed(2),
+      neto: neto.toFixed(2),
     }));
-  }, [form.neto, form.ivaAlicuota, form.percepciones]);
+  }, [form.total, form.ivaAlicuota, form.percepciones]);
 
   const handleChange = (field: keyof FormState, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -132,9 +146,9 @@ export function DialogNuevoComprobante({
       return;
     }
 
-    const neto = parseFloat(form.neto);
-    if (isNaN(neto) || neto <= 0) {
-      toast.error('Debe ingresar un importe neto válido');
+    const total = parseFloat(form.total);
+    if (isNaN(total) || total <= 0) {
+      toast.error('Debe ingresar un importe total válido');
       return;
     }
 
@@ -152,14 +166,20 @@ export function DialogNuevoComprobante({
         cae: form.cae || undefined,
         fechaVencimientoCae: form.fechaVencimientoCae ? new Date(form.fechaVencimientoCae) : undefined,
         moneda: form.moneda,
-        neto: neto,
+        total: total,
         ivaAlicuota: parseFloat(form.ivaAlicuota) || 21,
         ivaMonto: parseFloat(form.ivaMonto) || 0,
         percepciones: parseFloat(form.percepciones) || 0,
-        total: parseFloat(form.total) || neto,
+        neto: parseFloat(form.neto) || 0,
         empresa: form.empresa || undefined,
         concepto: form.concepto || undefined,
         observaciones: form.observaciones || undefined,
+        // Payment fields
+        formaPago: form.formaPago as FormaPago || undefined,
+        cotizacion: form.cotizacion ? parseFloat(form.cotizacion) : undefined,
+        banco: form.banco || undefined,
+        numeroOperacion: form.numeroOperacion || undefined,
+        fechaPago: form.fechaPago ? new Date(form.fechaPago) : undefined,
       });
 
       if (error) {
@@ -343,14 +363,14 @@ export function DialogNuevoComprobante({
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className={labelClass}>Neto *</Label>
+                  <Label className={labelClass}>Total *</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={form.neto}
-                    onChange={(e) => handleChange('neto', e.target.value)}
+                    value={form.total}
+                    onChange={(e) => handleChange('total', e.target.value)}
                     placeholder="0.00"
-                    className={inputClass}
+                    className={cn(inputClass, "font-semibold")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -372,7 +392,6 @@ export function DialogNuevoComprobante({
                     type="number"
                     step="0.01"
                     value={form.ivaMonto}
-                    onChange={(e) => handleChange('ivaMonto', e.target.value)}
                     placeholder="0.00"
                     className={cn(inputClass, "bg-gray-100 dark:bg-gray-900")}
                     readOnly
@@ -390,17 +409,81 @@ export function DialogNuevoComprobante({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className={labelClass}>Total</Label>
+                  <Label className={labelClass}>Neto</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={form.total}
-                    onChange={(e) => handleChange('total', e.target.value)}
+                    value={form.neto}
                     placeholder="0.00"
-                    className={cn(inputClass, "bg-gray-100 dark:bg-gray-900 font-semibold")}
+                    className={cn(inputClass, "bg-gray-100 dark:bg-gray-900")}
                     readOnly
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Pago/Cobro */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className={cn("text-sm font-semibold mb-4", isDark ? "text-gray-300" : "text-gray-700")}>
+                Datos de {form.tipoMovimiento === 'ingreso' ? 'Cobro' : 'Pago'}
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className={labelClass}>Forma de Pago</Label>
+                  <Select
+                    value={form.formaPago}
+                    onValueChange={(v) => handleChange('formaPago', v)}
+                  >
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FORMA_PAGO_OPTIONS.map((fp) => (
+                        <SelectItem key={fp} value={fp}>
+                          {FORMA_PAGO_LABELS[fp]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <FormDatePicker
+                  label={`Fecha de ${form.tipoMovimiento === 'ingreso' ? 'Cobro' : 'Pago'}`}
+                  value={form.fechaPago}
+                  onChange={(v) => handleChange('fechaPago', v)}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label className={labelClass}>Banco</Label>
+                  <Input
+                    value={form.banco}
+                    onChange={(e) => handleChange('banco', e.target.value)}
+                    placeholder="Nombre del banco"
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClass}>Nro. Operación</Label>
+                  <Input
+                    value={form.numeroOperacion}
+                    onChange={(e) => handleChange('numeroOperacion', e.target.value)}
+                    placeholder="Número de operación"
+                    className={inputClass}
+                  />
+                </div>
+                {form.moneda === 'USD' && (
+                  <div className="space-y-2">
+                    <Label className={labelClass}>Cotización</Label>
+                    <Input
+                      type="number"
+                      step="0.0001"
+                      value={form.cotizacion}
+                      onChange={(e) => handleChange('cotizacion', e.target.value)}
+                      placeholder="Tipo de cambio"
+                      className={inputClass}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

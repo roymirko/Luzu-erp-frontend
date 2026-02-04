@@ -4,6 +4,13 @@ import { useFormularios } from '../contexts/FormulariosContext';
 import { useImplementacion } from '../contexts/ImplementacionContext';
 import { Button } from './ui/button';
 import { Pencil } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from './ui/dialog';
 import { TableHeader } from './ui/table-header';
 import { FilterToggle } from './ui/filter-toggle';
 import { DataTable, DataTableHead, DataTableHeaderCell, DataTableBody, DataTableRow, DataTableCell, DataTableEmpty } from './ui/data-table';
@@ -34,6 +41,36 @@ const VIEW_MODE_OPTIONS = [
 
 type ViewMode = 'orden' | 'programa';
 
+type ProgramaRow = {
+  id: string;
+  formId: string;
+  itemId?: string;
+  linkedGastoId?: string;
+  estado: string;
+  mesServicio: string;
+  fechaRegistro: string;
+  responsable: string;
+  unidadNegocio: string;
+  categoriaNegocio: string;
+  marca: string;
+  empresaPrograma: string;
+  ordenPublicidad: string;
+  presupuesto: number;
+  sector: string;
+  rubroGasto: string;
+  subRubro: string;
+  nombreCampana: string;
+  acuerdoPago: string;
+  neto: number;
+};
+
+const InfoRow = ({ label, value }: { label: string; value?: string | number }) => (
+  <div>
+    <span className="text-sm text-muted-foreground">{label}</span>
+    <p className="font-medium">{value || '-'}</p>
+  </div>
+);
+
 interface TablaImplementacionesProps {
   onOpen?: (formId: string, itemId?: string) => void;
 }
@@ -41,10 +78,17 @@ interface TablaImplementacionesProps {
 export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {}) {
   const { isDark } = useTheme();
   const { formularios } = useFormularios();
-  const { gastos } = useImplementacion();
+  const { gastos, getGastoById } = useImplementacion();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('orden');
+  const [selectedRow, setSelectedRow] = useState<ProgramaRow | null>(null);
+
+  // Get linked gasto details when a row is selected
+  const selectedGasto = useMemo(() => {
+    if (!selectedRow?.linkedGastoId) return null;
+    return getGastoById(selectedRow.linkedGastoId);
+  }, [selectedRow?.linkedGastoId, getGastoById]);
 
   const formatPesos = (value: string | number) => {
     const num = typeof value === 'number' ? value : parseFloat(String(value).replace(/[^0-9.-]/g, ''));
@@ -329,7 +373,13 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
             </DataTableEmpty>
           ) : (
             currentRows.map((row) => (
-              <DataTableRow key={row.id} onClick={() => onOpen && onOpen(row.formId, row.itemId)}>
+              <DataTableRow key={row.id} onClick={() => {
+                if (viewMode === 'programa') {
+                  setSelectedRow(row as ProgramaRow);
+                } else {
+                  onOpen?.(row.formId, row.itemId);
+                }
+              }}>
                 <DataTableCell>
                   <StatusBadge label={getStatusLabel(row.estado)} variant={getStatusVariant(row.estado)} />
                 </DataTableCell>
@@ -391,6 +441,68 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
+
+      <Dialog open={!!selectedRow} onOpenChange={(open) => !open && setSelectedRow(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalle del Gasto</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4 py-4">
+            {/* Datos de la orden */}
+            <InfoRow label="Estado" value={selectedRow?.estado} />
+            <InfoRow label="Programa" value={selectedRow?.empresaPrograma} />
+            <InfoRow label="Orden Publicidad" value={selectedRow?.ordenPublicidad} />
+            <InfoRow label="Presupuesto" value={formatPesos(selectedRow?.presupuesto || 0)} />
+            <InfoRow label="Neto" value={formatPesos(selectedRow?.neto || 0)} />
+            <InfoRow label="Responsable" value={selectedRow?.responsable} />
+            <InfoRow label="Mes Servicio" value={selectedRow?.mesServicio} />
+            <InfoRow label="Acuerdo Pago" value={selectedRow?.acuerdoPago} />
+
+            {/* Datos del gasto cargado */}
+            {selectedGasto && (
+              <>
+                <div className="col-span-2 border-t pt-3 mt-2">
+                  <span className="text-sm font-medium text-muted-foreground">Datos del gasto cargado</span>
+                </div>
+                <InfoRow label="Proveedor" value={selectedGasto.proveedor} />
+                <InfoRow label="Razón Social" value={selectedGasto.razonSocial} />
+                <InfoRow label="Empresa" value={selectedGasto.empresa} />
+                <InfoRow label="Factura emitida a" value={selectedGasto.facturaEmitidaA} />
+                <InfoRow label="Fecha Factura" value={selectedGasto.fechaFactura ? formatDateDDMMYYYY(selectedGasto.fechaFactura) : '-'} />
+                <InfoRow label="Condición Pago" value={selectedGasto.condicionPago ? `${selectedGasto.condicionPago} días` : '-'} />
+                <InfoRow label="Forma Pago" value={selectedGasto.formaPago} />
+                <InfoRow label="Concepto" value={selectedGasto.conceptoGasto} />
+                {selectedGasto.observaciones && (
+                  <div className="col-span-2">
+                    <InfoRow label="Observaciones" value={selectedGasto.observaciones} />
+                  </div>
+                )}
+              </>
+            )}
+
+            {!selectedGasto && selectedRow?.linkedGastoId === undefined && (
+              <div className="col-span-2 text-sm text-muted-foreground italic">
+                Sin gasto cargado aún
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSelectedRow(null)}>
+              Cerrar
+            </Button>
+            <Button onClick={() => {
+              if (selectedRow) {
+                onOpen?.(selectedRow.formId, selectedRow.itemId);
+                setSelectedRow(null);
+              }
+            }}>
+              Ver más
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

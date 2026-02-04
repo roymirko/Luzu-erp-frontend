@@ -33,6 +33,7 @@ import {
   mapUserAreaRoleFromDB,
   mapUserAreaRoleToDB
 } from '../utils/supabaseMappers';
+import { authApi, AuthUser } from '../services/api';
 
 interface DataContextType {
   // Estado
@@ -63,11 +64,12 @@ interface DataContextType {
   removeUserFromArea: (userId: string, areaId: string) => Promise<{ success: boolean }>;
   changeUserRoleInArea: (userId: string, areaId: string, newRoleId: string) => Promise<{ success: boolean }>;
 
-  // Autenticación simulada
-  login: (email: string) => Promise<{ success: boolean; user?: User }>;
+  // Autenticación
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: any }>;
   logout: () => void;
   setCurrentUser: (user: User | null) => void;
+  authToken: string | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -97,6 +99,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('erp_current_user');
     return saved ? JSON.parse(saved) : null;
+  });
+
+  const [authToken, setAuthToken] = useState<string | null>(() => {
+    return localStorage.getItem('erp_auth_token');
   });
 
   // Fetch initial data
@@ -1028,12 +1034,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // AUTENTICACIÓN
   // ============================================
 
-  const login = async (email: string) => {
-    // Simulación de login con Supabase Auth si se implementa, 
-    // pero por ahora seguimos "simulando" haciendo match con la tabla users.
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.active);
+  const login = async (email: string, password: string) => {
+    // Server-side JWT auth
+    const { data, error } = await authApi.login(email, password);
 
-    if (!user) {
+    if (error || !data) {
       addLog({
         userId: 'unknown',
         userEmail: email,
@@ -1042,26 +1047,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
         entity: 'session',
         entityId: 'login-attempt',
         entityName: email,
-        details: `Intento de login fallido: ${email}`,
+        details: `Intento de login fallido: ${email} - ${error || 'Unknown error'}`,
         result: 'error'
       });
-      return { success: false };
+      return { success: false, error: error || 'Login failed' };
     }
 
-    // Actualizar último login en DB
-    await supabase
-      .from('usuarios')
-      .update({ ultimo_acceso: new Date().toISOString() })
-      .eq('id', user.id);
+    // Store token
+    localStorage.setItem('erp_auth_token', data.token);
+    setAuthToken(data.token);
 
-    // Update local
-    const updatedUser = { ...user, lastLogin: new Date() };
+    // Map API user to app User
+    const user: User = {
+      id: data.user.id,
+      email: data.user.email,
+      firstName: data.user.firstName,
+      lastName: data.user.lastName,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 'system',
+      lastLogin: new Date(),
+      metadata: {
+        ...data.user.metadata,
+        userType: data.user.userType
+      }
+    };
 
-    setUsers(prev => prev.map(u =>
-      u.id === user.id ? updatedUser : u
-    ));
-
-    setCurrentUser(updatedUser);
+    setCurrentUser(user);
 
     // Log
     const userRole = userAreaRoles.find(uar => uar.userId === user.id);
@@ -1079,7 +1092,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       result: 'exito'
     });
 
-    return { success: true, user: updatedUser };
+    return { success: true, user };
   };
 
   const loginWithGoogle = async () => {
@@ -1116,8 +1129,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
     }
 
+    // Clear JWT token
+    localStorage.removeItem('erp_auth_token');
+    setAuthToken(null);
+
     setCurrentUser(null);
-    supabase.auth.signOut(); // Also sign out from Supabase
+    supabase.auth.signOut(); // Also sign out from Supabase (for Google OAuth)
   };
 
   return (
@@ -1146,7 +1163,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         login,
         loginWithGoogle,
         logout,
-        setCurrentUser
+        setCurrentUser,
+        authToken
       }}
     >
       {children}

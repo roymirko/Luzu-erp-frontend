@@ -29,14 +29,16 @@ import type {
   Comprobante,
   TipoComprobante,
   EstadoPago,
+  FormaPago,
 } from '@/app/types/comprobantes';
 import {
   TIPO_COMPROBANTE_LABELS,
   TIPO_MOVIMIENTO_LABELS,
   AREA_ORIGEN_LABELS,
   ESTADO_PAGO_LABELS,
+  FORMA_PAGO_LABELS,
   isComprobanteLocked,
-  calcularTotal,
+  calcularDesdeTotal,
 } from '@/app/types/comprobantes';
 
 interface DialogDetalleComprobanteProps {
@@ -49,6 +51,8 @@ interface DialogDetalleComprobanteProps {
 const TIPO_COMPROBANTE_OPTIONS: TipoComprobante[] = [
   'FA', 'FB', 'FC', 'FE', 'NCA', 'NCB', 'NCC', 'NDA', 'NDB', 'NDC', 'REC', 'TKT', 'OTR'
 ];
+
+const FORMA_PAGO_OPTIONS: FormaPago[] = ['transferencia', 'cheque', 'efectivo', 'tarjeta', 'otro'];
 
 function formatDate(date: Date | undefined): string {
   if (!date) return '';
@@ -83,6 +87,12 @@ export function DialogDetalleComprobante({
     empresa: '',
     concepto: '',
     observaciones: '',
+    // Payment fields
+    formaPago: '' as FormaPago | '',
+    cotizacion: '',
+    banco: '',
+    numeroOperacion: '',
+    fechaPago: '',
   });
 
   const isLocked = comprobante ? isComprobanteLocked(comprobante.estadoPago) : false;
@@ -106,24 +116,30 @@ export function DialogDetalleComprobante({
         empresa: comprobante.empresa || '',
         concepto: comprobante.concepto || '',
         observaciones: comprobante.observaciones || '',
+        // Payment fields
+        formaPago: comprobante.formaPago || '',
+        cotizacion: comprobante.cotizacion?.toString() || '',
+        banco: comprobante.banco || '',
+        numeroOperacion: comprobante.numeroOperacion || '',
+        fechaPago: formatDate(comprobante.fechaPago),
       });
     }
   }, [comprobante]);
 
-  // Auto-calculate IVA and Total
+  // Auto-calculate IVA and Neto from Total
   useEffect(() => {
-    const neto = parseFloat(form.neto) || 0;
+    const total = parseFloat(form.total) || 0;
     const ivaAlicuota = parseFloat(form.ivaAlicuota) || 0;
     const percepciones = parseFloat(form.percepciones) || 0;
 
-    const { ivaMonto, total } = calcularTotal(neto, ivaAlicuota, percepciones);
+    const { ivaMonto, neto } = calcularDesdeTotal(total, ivaAlicuota, percepciones);
 
     setForm(prev => ({
       ...prev,
       ivaMonto: ivaMonto.toFixed(2),
-      total: total.toFixed(2),
+      neto: neto.toFixed(2),
     }));
-  }, [form.neto, form.ivaAlicuota, form.percepciones]);
+  }, [form.total, form.ivaAlicuota, form.percepciones]);
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -152,6 +168,12 @@ export function DialogDetalleComprobante({
         empresa: form.empresa || undefined,
         concepto: form.concepto || undefined,
         observaciones: form.observaciones || undefined,
+        // Payment fields
+        formaPago: form.formaPago as FormaPago || undefined,
+        cotizacion: form.cotizacion ? parseFloat(form.cotizacion) : undefined,
+        banco: form.banco || undefined,
+        numeroOperacion: form.numeroOperacion || undefined,
+        fechaPago: form.fechaPago ? new Date(form.fechaPago) : undefined,
       });
 
       if (error) {
@@ -468,14 +490,14 @@ export function DialogDetalleComprobante({
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className={labelClass}>Neto</Label>
+                  <Label className={labelClass}>Total *</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={form.neto}
-                    onChange={(e) => handleChange('neto', e.target.value)}
+                    value={form.total}
+                    onChange={(e) => handleChange('total', e.target.value)}
                     disabled={isLocked}
-                    className={inputClass}
+                    className={cn(inputClass, "font-semibold")}
                   />
                 </div>
                 <div className="space-y-2">
@@ -512,14 +534,81 @@ export function DialogDetalleComprobante({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className={labelClass}>Total</Label>
+                  <Label className={labelClass}>Neto</Label>
                   <Input
                     type="number"
-                    value={form.total}
+                    value={form.neto}
                     readOnly
-                    className={cn(readonlyInputClass, "font-semibold")}
+                    className={readonlyInputClass}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Pago/Cobro */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className={cn("text-sm font-semibold mb-4", isDark ? "text-gray-300" : "text-gray-700")}>
+                Datos de {comprobante.tipoMovimiento === 'ingreso' ? 'Cobro' : 'Pago'}
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className={labelClass}>Forma de Pago</Label>
+                  <Select
+                    value={form.formaPago}
+                    onValueChange={(v) => handleChange('formaPago', v)}
+                    disabled={isLocked}
+                  >
+                    <SelectTrigger className={inputClass}>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FORMA_PAGO_OPTIONS.map((fp) => (
+                        <SelectItem key={fp} value={fp}>
+                          {FORMA_PAGO_LABELS[fp]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <FormDatePicker
+                  label={`Fecha de ${comprobante.tipoMovimiento === 'ingreso' ? 'Cobro' : 'Pago'}`}
+                  value={form.fechaPago}
+                  onChange={(v) => handleChange('fechaPago', v)}
+                  disabled={isLocked}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label className={labelClass}>Banco</Label>
+                  <Input
+                    value={form.banco}
+                    onChange={(e) => handleChange('banco', e.target.value)}
+                    disabled={isLocked}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClass}>Nro. Operación</Label>
+                  <Input
+                    value={form.numeroOperacion}
+                    onChange={(e) => handleChange('numeroOperacion', e.target.value)}
+                    disabled={isLocked}
+                    className={inputClass}
+                  />
+                </div>
+                {comprobante.moneda === 'USD' && (
+                  <div className="space-y-2">
+                    <Label className={labelClass}>Cotización</Label>
+                    <Input
+                      type="number"
+                      step="0.0001"
+                      value={form.cotizacion}
+                      onChange={(e) => handleChange('cotizacion', e.target.value)}
+                      disabled={isLocked}
+                      className={inputClass}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

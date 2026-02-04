@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import svgPaths from "../../imports/svg-fwymm7vmaf";
 import imgListasYoutubeadm1 from "../../assets/LISTAS-YOUTUBEADM.jpg";
 import imgListasYoutubeXm1 from "../../assets/LISTAS-YOUTUBE-XM.jpg";
@@ -14,7 +14,7 @@ import imgFondo1 from "../../assets/fondo.png";
 import imgGabrielProfile from "../../assets/GabrielRivero.jpg";
 
 interface LoginProps {
-  onLogin: (email?: string) => void;
+  onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   onGoogleLogin?: () => void;
 }
 
@@ -115,6 +115,29 @@ function ImageCarousel() {
 }
 
 export function Login({ onLogin, onGoogleLogin }: LoginProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Email y contraseña requeridos');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    const result = await onLogin(email, password);
+
+    if (!result.success) {
+      setError(result.error || 'Credenciales inválidas');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="bg-white relative w-screen h-screen overflow-hidden">
       {/* Fondo con opacidad */}
@@ -132,116 +155,89 @@ export function Login({ onLogin, onGoogleLogin }: LoginProps) {
       <div className="absolute bg-white left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[499px] shadow-[0_2px_10px_rgba(0,0,0,0.2)] border border-[rgba(0,0,0,0.22)]">
         {/* Header */}
         <div className="bg-white flex items-center gap-[16px] pl-[40px] pr-[32px] py-[16px] border-b border-[rgba(0,0,0,0.22)]">
-          <GoogleIcon />
+          <div className="size-[32px] rounded-full bg-[#EA173E] flex items-center justify-center text-white font-bold text-lg">
+            L
+          </div>
           <p className="font-sans text-[#3c4043] text-[18px] tracking-[0.002px]">
-            Sign in with Google
+            Iniciar sesión en Luzu ERP
           </p>
         </div>
 
         {/* Body */}
-        <div className="bg-white flex flex-col gap-[112px] items-center pb-[48px] pt-[32px] px-0">
-          {/* Main content */}
-          <div className="flex flex-col gap-[40px] items-center w-full">
-            {/* Heading */}
-            <div className="flex flex-col gap-[8px] items-center font-sans text-[#202124]">
-              <p className="text-[24px] leading-[32px]">
-                Choose an Account
-              </p>
-              <p className="text-[16px] leading-normal text-center tracking-[0.0018px] w-[420px]">
-                to continue to "My App"
-              </p>
+        <div className="bg-white flex flex-col gap-[32px] items-center pb-[48px] pt-[32px] px-[40px]">
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[24px] w-full">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-[8px]">
+              <label className="font-sans text-[#3c4043] text-[14px]">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+                className="w-full px-4 py-3 border border-[#DADCE0] rounded-md font-sans text-[14px] focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                disabled={loading}
+              />
             </div>
 
-            {/* User Account */}
-            <div className="w-full">
-              <div
-                className="bg-[#e8f0fe] flex flex-col gap-[12px] pb-0 pt-[12px] px-[40px] cursor-pointer hover:bg-[#d3e3fd] transition-colors"
-                onClick={() => onLogin('gaby@luzutv.com.ar')}
-              >
-                <div className="flex gap-[14px] items-center">
-                  <div className="bg-white overflow-clip rounded-full size-[32px] shrink-0">
-                    <img
-                      alt="Gabriela Rivero"
-                      className="size-full object-cover"
-                      src={imgGabrielProfile}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-px text-[#3c4043]">
-                    <p className="font-sans font-medium text-[14px]">
-                      Gabriela Rivero
-                    </p>
-                    <p className="font-sans font-light text-[12px] tracking-[0.024px]">
-                      gaby@luzutv.com.ar
-                    </p>
-                  </div>
-                </div>
-                <div className="h-0 w-full border-t border-[#DADCE0]" />
-              </div>
-
-              {/* Use another account - Trigger Google Auth */}
-              <div
-                className="flex flex-col gap-[12px] pb-0 pt-[12px] px-[40px] cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => onGoogleLogin?.()}
-              >
-                <div className="flex gap-[14px] items-center">
-                  <div className="relative shrink-0 size-[24px]">
-                    <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 24 24">
-                      <g>
-                        <mask height="24" id="mask0" maskUnits="userSpaceOnUse" style={{ maskType: "alpha" }} width="24" x="0" y="0">
-                          <rect fill="#D9D9D9" height="24" width="24" />
-                        </mask>
-                        <g mask="url(#mask0)">
-                          <path d={svgPaths.p3a7f8cc0} fill="#757575" />
-                        </g>
-                      </g>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-sans font-medium text-[#3c4043] text-[14px] tracking-[0.028px]">
-                      Use another account
-                    </p>
-                  </div>
-                </div>
-                <div className="h-0 w-full border-t border-[#DADCE0]" />
-              </div>
+            <div className="flex flex-col gap-[8px]">
+              <label className="font-sans text-[#3c4043] text-[14px]">Contraseña</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 border border-[#DADCE0] rounded-md font-sans text-[14px] focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
+                disabled={loading}
+              />
             </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#1a73e8] text-white py-3 rounded-md font-sans font-medium text-[14px] hover:bg-[#1557b0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Ingresando...' : 'Ingresar'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 w-full">
+            <div className="flex-1 h-px bg-[#DADCE0]" />
+            <span className="text-[#5f6368] text-[12px]">o</span>
+            <div className="flex-1 h-px bg-[#DADCE0]" />
           </div>
 
+          {/* Google OAuth */}
+          <button
+            onClick={() => onGoogleLogin?.()}
+            className="w-full flex items-center justify-center gap-3 border border-[#DADCE0] py-3 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            <GoogleIcon />
+            <span className="font-sans text-[#3c4043] text-[14px]">Continuar con Google</span>
+          </button>
+
           {/* Footer */}
-          <div className="flex items-center justify-between px-[32px] w-[484px]">
+          <div className="flex items-center justify-between w-full pt-4">
             <div className="flex gap-[8px] items-center px-0 py-[4px]">
               <p className="font-sans text-[#202124] text-[12px] tracking-[0.024px]">
-                English
+                Español
               </p>
-              <div className="relative size-[16px]">
-                <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-                  <g>
-                    <mask height="16" id="mask1" maskUnits="userSpaceOnUse" style={{ maskType: "alpha" }} width="16" x="0" y="0">
-                      <rect fill="black" height="16" width="16" />
-                    </mask>
-                    <g mask="url(#mask1)">
-                      <g>
-                        <path d={svgPaths.p3f5b3680} fill="#202124" />
-                      </g>
-                    </g>
-                  </g>
-                </svg>
-              </div>
             </div>
             <div className="flex gap-[12px] items-start">
               <div className="flex items-center justify-end p-[4px]">
                 <p className="font-sans text-[#80868b] text-[12px] tracking-[0.024px]">
-                  Help
+                  Ayuda
                 </p>
               </div>
               <div className="flex items-center justify-end p-[4px]">
                 <p className="font-sans text-[#80868b] text-[12px] tracking-[0.024px]">
-                  Privacy
-                </p>
-              </div>
-              <div className="flex items-center justify-end p-[4px]">
-                <p className="font-sans text-[#80868b] text-[12px] tracking-[0.024px]">
-                  Terms
+                  Privacidad
                 </p>
               </div>
             </div>

@@ -19,7 +19,10 @@ export const mapUserFromDB = (dbUser: any): User => ({
     updatedAt: toDate(dbUser.fecha_actualizacion ?? dbUser.actualizado_el ?? dbUser.updated_at),
     lastLogin: dbUser.ultimo_acceso ? toDate(dbUser.ultimo_acceso) : (dbUser.last_login ? toDate(dbUser.last_login) : undefined),
     createdBy: dbUser.creado_por ?? dbUser.created_by,
-    metadata: dbUser.metadatos ?? dbUser.metadata ?? {}
+    metadata: {
+        ...(dbUser.metadatos ?? dbUser.metadata ?? {}),
+        userType: dbUser.user_type
+    }
 });
 
 export const mapUserToDB = (user: Partial<User>) => {
@@ -92,35 +95,58 @@ export const mapUserAreaRoleToDB = (uar: Partial<UserAreaRole>) => {
 };
 
 // LOGS (registros_auditoria)
-export const mapLogFromDB = (dbLog: any): AuditLog => ({
-    id: dbLog.id,
-    timestamp: toDate(dbLog.fecha ?? dbLog.timestamp),
-    userId: dbLog.usuario_id ?? dbLog.user_id,
-    userEmail: dbLog.usuario_correo ?? dbLog.user_email ?? '',
-    userRole: (dbLog.usuario_rol as RoleType) || (dbLog.user_role as RoleType) || RoleType.VISUALIZADOR,
-    action: (dbLog.accion ?? dbLog.action) as LogAction,
-    entity: (dbLog.entidad ?? dbLog.entity) as LogEntity,
-    entityId: dbLog.entidad_id ?? dbLog.entity_id,
-    entityName: dbLog.entidad_nombre ?? dbLog.entity_name ?? '',
-    details: dbLog.detalles ?? dbLog.details ?? '',
-    result: (dbLog.resultado ?? dbLog.result) as LogResult,
-    metadata: dbLog.metadatos ?? dbLog.metadata,
-    ipAddress: dbLog.ip ?? dbLog.ip_address,
-    userAgent: dbLog.user_agent
-});
+export const mapLogFromDB = (dbLog: any): AuditLog => {
+    const rawResult = dbLog.resultado ?? dbLog.result ?? 'success';
+    return {
+        id: dbLog.id,
+        timestamp: toDate(dbLog.fecha ?? dbLog.timestamp),
+        userId: dbLog.usuario_id ?? dbLog.user_id,
+        userEmail: dbLog.usuario_correo ?? dbLog.user_email ?? '',
+        userRole: (dbLog.usuario_rol as RoleType) || (dbLog.user_role as RoleType) || RoleType.VISUALIZADOR,
+        action: (dbLog.accion ?? dbLog.action) as LogAction,
+        entity: (dbLog.entidad ?? dbLog.entity) as LogEntity,
+        entityId: dbLog.entidad_id ?? dbLog.entity_id,
+        entityName: dbLog.entidad_nombre ?? dbLog.entity_name ?? '',
+        details: dbLog.detalles ?? dbLog.details ?? '',
+        result: mapResultFromDB(rawResult),
+        metadata: dbLog.metadatos ?? dbLog.metadata,
+        ipAddress: dbLog.ip ?? dbLog.ip_address,
+        userAgent: dbLog.user_agent
+    };
+};
+
+// Map result from app (Spanish) to DB (English)
+const mapResultToDB = (result: LogResult): string => {
+    const map: Record<LogResult, string> = {
+        'exito': 'success',
+        'error': 'error',
+        'advertencia': 'warning'
+    };
+    return map[result] || 'success';
+};
+
+// Map result from DB (English) to app (Spanish)
+const mapResultFromDB = (result: string): LogResult => {
+    const map: Record<string, LogResult> = {
+        'success': 'exito',
+        'error': 'error',
+        'warning': 'advertencia'
+    };
+    return (map[result] || 'exito') as LogResult;
+};
 
 export const mapLogToDB = (log: Partial<AuditLog>) => {
     const dbLog: any = {};
-    if (log.userId) dbLog.usuario_id = log.userId;
-    if (log.userEmail) dbLog.usuario_correo = log.userEmail;
-    if (log.userRole) dbLog.usuario_rol = log.userRole;
-    if (log.action) dbLog.accion = log.action;
-    if (log.entity) dbLog.entidad = log.entity;
-    if (log.entityId) dbLog.entidad_id = log.entityId;
-    if (log.entityName) dbLog.entidad_nombre = log.entityName;
-    if (log.details) dbLog.detalles = log.details;
-    if (log.result) dbLog.resultado = log.result;
-    if (log.metadata) dbLog.metadatos = log.metadata;
+    if (log.userId) dbLog.user_id = log.userId;
+    if (log.userEmail) dbLog.user_email = log.userEmail;
+    if (log.userRole) dbLog.user_role = log.userRole;
+    if (log.action) dbLog.action = log.action;
+    if (log.entity) dbLog.entity = log.entity;
+    if (log.entityId) dbLog.entity_id = log.entityId;
+    if (log.entityName) dbLog.entity_name = log.entityName;
+    if (log.details) dbLog.details = log.details;
+    if (log.result) dbLog.result = mapResultToDB(log.result);
+    if (log.metadata) dbLog.metadata = log.metadata;
     return dbLog;
 };
 

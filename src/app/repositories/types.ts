@@ -490,6 +490,13 @@ export interface ComprobanteRow {
   observaciones: string | null;
   estado: string;
   estado_pago: 'pendiente' | 'pagado' | 'pedir_info' | 'anulado';
+  // Payment/collection fields (migration 004)
+  forma_pago: string | null;
+  cotizacion: number | null;
+  banco: string | null;
+  numero_operacion: string | null;
+  fecha_pago: string | null;
+  // Audit
   created_at: string;
   updated_at: string;
   created_by: string | null;

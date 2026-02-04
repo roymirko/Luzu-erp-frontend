@@ -15,6 +15,15 @@ export type EstadoComprobante = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
 export type EstadoPago = 'pendiente' | 'pagado' | 'pedir_info' | 'anulado';
 export type Moneda = 'ARS' | 'USD';
 export type TipoGasto = 'implementacion' | 'programacion' | 'experience';
+export type FormaPago = 'transferencia' | 'cheque' | 'efectivo' | 'tarjeta' | 'otro';
+
+export const FORMA_PAGO_LABELS: Record<FormaPago, string> = {
+  transferencia: 'Transferencia',
+  cheque: 'Cheque',
+  efectivo: 'Efectivo',
+  tarjeta: 'Tarjeta',
+  otro: 'Otro',
+};
 
 /**
  * Comprobante base - representa un registro en la tabla `comprobantes`
@@ -49,6 +58,12 @@ export interface Comprobante {
   // Estado
   estado: EstadoComprobante;
   estadoPago: EstadoPago;
+  // Pago/Cobro
+  formaPago?: FormaPago;
+  cotizacion?: number;
+  banco?: string;
+  numeroOperacion?: string;
+  fechaPago?: Date;
   // Audit
   createdAt: Date;
   updatedAt: Date;
@@ -70,14 +85,20 @@ export interface CreateComprobanteInput {
   cae?: string;
   fechaVencimientoCae?: Date;
   moneda?: Moneda;
-  neto: number;
+  neto?: number;
   ivaAlicuota?: number;
   ivaMonto?: number;
   percepciones?: number;
-  total?: number;
+  total: number;
   empresa?: string;
   concepto?: string;
   observaciones?: string;
+  // Pago/Cobro
+  formaPago?: FormaPago;
+  cotizacion?: number;
+  banco?: string;
+  numeroOperacion?: string;
+  fechaPago?: Date;
   createdBy?: string;
 }
 
@@ -128,16 +149,17 @@ export interface ComprobanteValidationResult {
 }
 
 /**
- * Calcula el total a partir del neto, IVA y percepciones
+ * Calcula neto e IVA a partir del total (bruto)
+ * Usuario ingresa total → IVA = total × alicuota% → Neto = total - IVA - percepciones
  */
-export function calcularTotal(
-  neto: number,
+export function calcularDesdeTotal(
+  total: number,
   ivaAlicuota: number = 21,
   percepciones: number = 0
-): { ivaMonto: number; total: number } {
-  const ivaMonto = neto * (ivaAlicuota / 100);
-  const total = neto + ivaMonto + percepciones;
-  return { ivaMonto, total };
+): { ivaMonto: number; neto: number } {
+  const ivaMonto = total * (ivaAlicuota / 100);
+  const neto = total - ivaMonto - percepciones;
+  return { ivaMonto, neto };
 }
 
 /**
@@ -149,8 +171,8 @@ export function validateComprobante(input: CreateComprobanteInput): ComprobanteV
   if (!input.entidadNombre?.trim()) {
     errors.push({ field: 'entidadNombre', message: 'Debe seleccionar una entidad' });
   }
-  if (input.neto === undefined || input.neto < 0) {
-    errors.push({ field: 'neto', message: 'Debe ingresar un importe neto válido' });
+  if (input.total === undefined || input.total < 0) {
+    errors.push({ field: 'total', message: 'Debe ingresar un importe total válido' });
   }
 
   return { valid: errors.length === 0, errors };

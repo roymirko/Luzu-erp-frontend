@@ -17,18 +17,28 @@ User accounts table.
 ```sql
 CREATE TABLE usuarios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL UNIQUE,
-  first_name TEXT NOT NULL,
-  last_name TEXT NOT NULL,
+  correo TEXT NOT NULL UNIQUE,
+  nombre TEXT NOT NULL,
+  apellido TEXT NOT NULL,
   avatar TEXT,
-  active BOOLEAN DEFAULT TRUE NOT NULL,
-  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
-  fecha_actualizacion TIMESTAMPTZ DEFAULT NOW(),
-  last_login TIMESTAMPTZ,
+  activo BOOLEAN DEFAULT TRUE NOT NULL,
+  creado_el TIMESTAMPTZ DEFAULT NOW(),
+  actualizado_el TIMESTAMPTZ DEFAULT NOW(),
+  ultimo_acceso TIMESTAMPTZ,
   creado_por TEXT,
-  metadata JSONB DEFAULT '{}'::jsonb
+  metadatos JSONB DEFAULT '{}'::jsonb,
+  -- Auth fields (migration 003)
+  password_hash TEXT,
+  user_type TEXT DEFAULT 'editor' CHECK (user_type IN ('administrador', 'implementacion', 'programacion', 'administracion', 'finanzas'))
 );
 ```
+
+**User Types:**
+- `administrador` - Admin, can manage users
+- `implementacion` - Implementation area
+- `programacion` - Programming area
+- `administracion` - Administration area
+- `finanzas` - Finance area
 
 ### roles
 User roles (Administrador, Editor, Visualizador).
@@ -208,7 +218,13 @@ CREATE TABLE comprobantes (
   observaciones TEXT,
   -- Estado
   estado TEXT DEFAULT 'pendiente',
-  estado_pago TEXT DEFAULT 'pendiente' CHECK (estado_pago IN ('pendiente', 'pagado', 'anulado')),
+  estado_pago TEXT DEFAULT 'pendiente' CHECK (estado_pago IN ('pendiente', 'pagado', 'pedir_info', 'anulado')),
+  -- Payment/Collection fields (migration 004)
+  forma_pago TEXT,
+  cotizacion DECIMAL(15,4),
+  banco TEXT,
+  numero_operacion TEXT,
+  fecha_pago DATE,
   -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -353,6 +369,7 @@ Full views for UI:
 ### Estado Pago
 - `pendiente` - Payment pending
 - `pagado` - Paid
+- `pedir_info` - Request more info
 - `anulado` - Cancelled
 
 ### Formulario Estado
@@ -377,6 +394,16 @@ Full views for UI:
 | REC | Recibo |
 | TKT | Ticket |
 | OTR | Otro |
+
+## Forma Pago Values
+
+| Value | Description |
+|-------|-------------|
+| transferencia | Bank transfer |
+| cheque | Check |
+| efectivo | Cash |
+| tarjeta | Card payment |
+| otro | Other |
 
 ## Standard Patterns
 

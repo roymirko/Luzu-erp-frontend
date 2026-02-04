@@ -54,6 +54,11 @@ export interface Area {
 }
 
 /**
+ * USER TYPES (system-level roles)
+ */
+export type UserType = 'administrador' | 'implementacion' | 'programacion' | 'administracion' | 'finanzas';
+
+/**
  * MODELO: USUARIO
  * Representa un usuario del sistema
  */
@@ -73,6 +78,7 @@ export interface User {
     googleId?: string; // ID de Google OAuth
     avatar?: string;
     source?: string;
+    userType?: UserType; // System-level user type
   };
 }
 
