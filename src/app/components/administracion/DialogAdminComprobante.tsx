@@ -97,6 +97,13 @@ export function DialogAdminComprobante({
   // Get URL to source form based on area origen
   const getFormularioUrl = (): string | null => {
     if (!comprobante) return null;
+    // DEBUG: Log IDs to diagnose navigation issue
+    console.log('[DialogAdminComprobante] Navigation debug:', {
+      areaOrigen: comprobante.areaOrigen,
+      ordenPublicidadId: comprobante.ordenPublicidadId,
+      itemOrdenPublicidadId: comprobante.itemOrdenPublicidadId,
+      implementacionComprobanteId: comprobante.implementacionComprobanteId,
+    });
     switch (comprobante.areaOrigen) {
       case 'implementacion':
         if (!comprobante.ordenPublicidadId) return null;

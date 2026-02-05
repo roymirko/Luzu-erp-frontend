@@ -106,8 +106,11 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     // Helper to format currency
     const formatCurrency = (val: number) =>
       new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
+    // DEBUG: Log to diagnose empty form issue
+    console.log('[FormularioImplementacion] Loading with:', { formId, itemId, formularios: formularios.length });
     if (!formId) return null;
     const formulario = formularios.find((f) => f.id === formId);
+    console.log('[FormularioImplementacion] Found formulario:', formulario ? { id: formulario.id, op: formulario.ordenPublicidad } : 'NOT FOUND');
     if (!formulario) return null;
 
     const item = itemId ? formulario.importeRows?.find((row) => row.id === itemId) : null;
