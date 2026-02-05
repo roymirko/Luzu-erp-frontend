@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { useData } from '@/app/contexts/DataContext';
 import { useExperience } from '@/app/contexts/ExperienceContext';
@@ -44,7 +44,6 @@ interface GastoItem {
 interface FormErrors {
   subrubro?: string;
   nombreCampana?: string;
-  detalleCampana?: string;
 }
 
 interface ExistingFormulario {
@@ -60,7 +59,6 @@ interface ExperienceFormProps {
   onSave?: () => void;
 }
 
-const MAX_DETALLE_LENGTH = 250;
 const MAX_OBSERVACIONES_LENGTH = 250;
 
 export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }: ExperienceFormProps) {
@@ -100,7 +98,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
   const [rubroGasto] = useState('gastos-evento');
   const [subrubro, setSubrubro] = useState('');
   const [nombreCampana, setNombreCampana] = useState('');
-  const [detalleCampana, setDetalleCampana] = useState('');
 
   // Section 2: Gastos (repeatable)
   const [gastos, setGastos] = useState<GastoItem[]>([
@@ -122,11 +119,15 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
   ]);
 
   const [saving, setSaving] = useState(false);
+  const [savingGastos, setSavingGastos] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<FormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [collapsedGastos, setCollapsedGastos] = useState<Set<string>>(new Set());
   const [loadingData, setLoadingData] = useState(!!gastoId);
   const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Track IDs of gastos loaded from DB (to distinguish from locally added)
+  const loadedGastoIdsRef = useRef<Set<string>>(new Set());
 
   // Load existing data when editing - wait for context to finish loading
   useEffect(() => {
@@ -148,7 +149,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       // Load formulario-level fields
       setSubrubro(existingGasto.subrubro || '');
       setNombreCampana(existingGasto.nombreCampana || '');
-      setDetalleCampana(existingGasto.detalleCampana || '');
 
       // Get all gastos from same formulario and sort by createdAt (oldest first)
       const formularioGastos = contextGastos
@@ -175,6 +175,8 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         }));
         console.log('[ExperienceForm] Mapped gastos:', mappedGastos);
         setGastos(mappedGastos);
+        // Track loaded gasto IDs
+        loadedGastoIdsRef.current = new Set(mappedGastos.map(g => g.id));
       }
 
       setDataLoaded(true);
@@ -191,9 +193,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     }
     if (!nombreCampana?.trim()) {
       newErrors.nombreCampana = 'Requerido';
-    }
-    if (!detalleCampana?.trim()) {
-      newErrors.detalleCampana = 'Requerido';
     }
 
     return newErrors;
@@ -212,11 +211,12 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     if (!g.razonSocial?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar una razón social`;
     }
-    if (!g.acuerdoPago?.trim()) {
-      return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
-    }
     if (!g.formaPago?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
+    }
+    // Acuerdo de pago solo requerido si forma de pago es cheque
+    if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) {
+      return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     }
     if (!g.neto || g.neto <= 0) {
       return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
@@ -289,6 +289,90 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     });
   };
 
+  // Get existing gasto info (for formularioId)
+  const existingGasto = gastoId ? contextGastos.find(g => g.id === gastoId) : undefined;
+
+  // Save a single gasto to the database
+  const handleSaveGasto = async (gasto: GastoItem, index: number): Promise<boolean> => {
+    const isExisting = loadedGastoIdsRef.current.has(gasto.id);
+    console.log('[ExperienceForm] Guardando gasto individual:', gasto.id, 'isExisting:', isExisting);
+
+    setSavingGastos(prev => new Set(prev).add(gasto.id));
+    try {
+      if (isExisting) {
+        // Update existing gasto
+        const success = await updateGasto({
+          id: gasto.id,
+          neto: gasto.neto,
+          empresa: gasto.empresa,
+          empresaPrograma: gasto.empresaPrograma,
+          observaciones: gasto.observaciones,
+          facturaEmitidaA: gasto.facturaEmitidaA,
+          proveedor: gasto.proveedor,
+          razonSocial: gasto.razonSocial,
+          acuerdoPago: gasto.acuerdoPago,
+          formaPago: gasto.formaPago,
+          pais: gasto.pais,
+          fechaComprobante: gasto.fechaComprobante,
+        });
+
+        if (success) {
+          toggleGastoCollapse(gasto.id);
+          toast.success(`Gasto #${index + 1} actualizado`);
+          return true;
+        } else {
+          toast.error(`Error al actualizar gasto #${index + 1}`);
+          return false;
+        }
+      } else {
+        // For new gastos, we need a formularioId
+        if (!existingGasto?.formularioId) {
+          toast.error('Debe guardar el formulario primero para agregar nuevos gastos');
+          return false;
+        }
+
+        const result = await addGastoToFormulario(existingGasto.formularioId, {
+          facturaEmitidaA: gasto.facturaEmitidaA,
+          empresa: gasto.empresa,
+          empresaPrograma: gasto.empresaPrograma,
+          fechaComprobante: gasto.fechaComprobante,
+          razonSocial: gasto.razonSocial,
+          proveedor: gasto.proveedor,
+          acuerdoPago: gasto.acuerdoPago,
+          formaPago: gasto.formaPago,
+          pais: gasto.pais,
+          neto: gasto.neto,
+          observaciones: gasto.observaciones,
+          createdBy: currentUser?.id,
+        });
+
+        if (result) {
+          // Update the gasto ID in state with the real DB ID
+          loadedGastoIdsRef.current.add(result.id);
+          setGastos(prev => prev.map(g =>
+            g.id === gasto.id ? { ...g, id: result.id } : g
+          ));
+          toggleGastoCollapse(result.id);
+          toast.success(`Gasto #${index + 1} creado`);
+          return true;
+        } else {
+          toast.error(`Error al crear gasto #${index + 1}`);
+          return false;
+        }
+      }
+    } catch (err) {
+      console.error('[ExperienceForm] Error guardando gasto:', err);
+      toast.error(`Error inesperado al guardar gasto #${index + 1}`);
+      return false;
+    } finally {
+      setSavingGastos(prev => {
+        const next = new Set(prev);
+        next.delete(gasto.id);
+        return next;
+      });
+    }
+  };
+
   const hasErrors = (formErrors: FormErrors): boolean => {
     return Object.keys(formErrors).length > 0;
   };
@@ -334,7 +418,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           const result = await updateGasto({
             id: g.id,
             // Only update formulario fields on the first gasto to avoid conflicts
-            ...(i === 0 ? { nombreCampana, detalleCampana, subrubro } : {}),
+            ...(i === 0 ? { nombreCampana, subrubro } : {}),
             proveedor: g.proveedor,
             razonSocial: g.razonSocial,
             neto: g.neto,
@@ -408,7 +492,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         const result = await addMultipleGastos({
           mesGestion: new Date().toISOString().slice(0, 7),
           nombreCampana,
-          detalleCampana,
           subrubro,
           createdBy: currentUser?.id,
           gastos: gastosToCreate,
@@ -629,31 +712,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             </div>
 
             {/* Row 3: Detalle/campaña */}
-            <div className="space-y-1">
-              <Label className={labelClass}>
-                Detalle/campaña<span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                value={detalleCampana}
-                onChange={(e) => {
-                  if (e.target.value.length <= MAX_DETALLE_LENGTH) {
-                    setDetalleCampana(e.target.value);
-                  }
-                }}
-                placeholder="Concepto de gasto"
-                maxLength={MAX_DETALLE_LENGTH}
-                disabled={isFormularioCerrado}
-                className={cn(
-                  isFormularioCerrado
-                    ? 'min-h-[72px] resize-none opacity-60 cursor-not-allowed'
-                    : textareaClass,
-                  errors.detalleCampana && 'border-red-500'
-                )}
-              />
-              <div className={cn('text-xs text-right', isDark ? 'text-gray-500' : 'text-gray-400')}>
-                {detalleCampana.length}/{MAX_DETALLE_LENGTH}
-              </div>
-            </div>
           </div>
 
           {/* Section 2: Carga de importes */}
@@ -703,20 +761,21 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                       removeGastoItem(gasto.id);
                     }
                   }}
-                  onSave={() => {
+                  onSave={async () => {
                     const error = validateSingleGasto(gasto, index);
                     if (error) {
                       toast.error(error);
                       return;
                     }
-                    toggleGastoCollapse(gasto.id);
-                    toast.success(`Gasto #${index + 1} validado correctamente`);
+                    await handleSaveGasto(gasto, index);
                   }}
+                  isSaving={savingGastos.has(gasto.id)}
                   showFormaPago
                   showPais
                   showCharacterCount
                   showButtonsBorder
                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
+                  observacionesLabel="Detalle de gasto"
                   programOptions={availableProgramOptions}
                   acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
                   formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}

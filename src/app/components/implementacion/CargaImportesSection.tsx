@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { cn } from '@/app/components/ui/utils';
 import { GastoCard, type GastoData, type GastoCardErrors } from '@/app/components/shared';
+import { toast } from 'sonner';
 import type { BloqueImporte, EstadoOP, EstadoPGM } from './index';
 
 export interface ImportesErrors {
@@ -24,8 +25,7 @@ interface CargaImportesSectionProps {
   onUpdateImporte: (id: string, field: keyof BloqueImporte, value: string) => void;
   onAddImporte: () => void;
   onRemoveImporte: (id: string) => void;
-  onSave?: () => void;
-  onCancel?: () => void;
+  onSaveGasto: (importe: BloqueImporte, index: number) => Promise<boolean>;
   errors?: ImportesErrors;
   // Status props
   isNewGasto?: boolean;
@@ -68,8 +68,7 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     onUpdateImporte,
     onAddImporte,
     onRemoveImporte,
-    onSave,
-    onCancel,
+    onSaveGasto,
     errors = {},
     // Status props with defaults
     isNewGasto = true,
@@ -83,6 +82,9 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     return new Set(importes.filter(imp => existingGastoIds.has(imp.id)).map(imp => imp.id));
   });
 
+  // Track saving state for each importe
+  const [savingImportes, setSavingImportes] = useState<Set<string>>(new Set());
+
   const toggleCollapse = (id: string) => {
     setCollapsedImportes(prev => {
       const next = new Set(prev);
@@ -93,6 +95,47 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
       }
       return next;
     });
+  };
+
+  // Validate a single importe
+  const validateImporte = (imp: BloqueImporte, index: number): string | null => {
+    if (!imp.facturaEmitidaA) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
+    if (!imp.empresa) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
+    if (!imp.empresaPgm) return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
+    if (!imp.fechaComprobante) return `Gasto #${index + 1}: Fecha requerida`;
+    if (!imp.proveedor || !imp.razonSocial) return `Gasto #${index + 1}: Debe seleccionar proveedor`;
+    if (!imp.formaPago) return `Gasto #${index + 1}: Debe seleccionar forma de pago`;
+    if (imp.formaPago === 'cheque' && !imp.condicionPago) return `Gasto #${index + 1}: Debe seleccionar acuerdo de pago`;
+    if (!imp.neto) return `Gasto #${index + 1}: Debe ingresar un importe`;
+    return null;
+  };
+
+  // Handle save for individual gasto - validate and save to DB
+  const handleGastoSave = async (imp: BloqueImporte, index: number) => {
+    console.log('[CargaImportesSection] handleGastoSave llamado para:', imp.id, index);
+
+    const error = validateImporte(imp, index);
+    if (error) {
+      console.log('[CargaImportesSection] Validación fallida:', error);
+      toast.error(error);
+      return;
+    }
+    console.log('[CargaImportesSection] Validación pasó, llamando onSaveGasto');
+
+    setSavingImportes(prev => new Set(prev).add(imp.id));
+    try {
+      const success = await onSaveGasto(imp, index);
+      console.log('[CargaImportesSection] Resultado de onSaveGasto:', success);
+      if (success) {
+        toggleCollapse(imp.id);
+      }
+    } finally {
+      setSavingImportes(prev => {
+        const next = new Set(prev);
+        next.delete(imp.id);
+        return next;
+      });
+    }
   };
 
   return (
@@ -107,6 +150,7 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
           const isImporteNew = !existingGastoIds.has(imp.id);
           const gastoData = toGastoData(imp);
           const isCollapsed = collapsedImportes.has(imp.id);
+          const isSaving = savingImportes.has(imp.id);
 
           return (
             <GastoCard
@@ -115,7 +159,7 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
               gasto={gastoData}
               index={idx}
               isNew={isImporteNew}
-              isDisabled={isCerrado}
+              isDisabled={isCerrado || isSaving}
               estado={estadoOP}
               estadoPago={imp.estadoPgm}
               isCollapsed={isCollapsed}
@@ -125,11 +169,17 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
                 onUpdateImporte(imp.id, mappedField, value);
               }}
               onRemove={importes.length > 1 && isImporteNew ? () => onRemoveImporte(imp.id) : undefined}
-              onSave={onSave}
-              onCancel={onCancel}
+              onSave={async () => { await handleGastoSave(imp, idx); }}
+              onCancel={() => {
+                if (importes.length > 1 && isImporteNew) {
+                  onRemoveImporte(imp.id);
+                }
+              }}
               errors={errors[imp.id]}
               showFormaPago
               programOptions={programasConPresupuesto}
+              isSaving={isSaving}
+              observacionesLabel="Detalle de gasto"
             />
           );
         })}

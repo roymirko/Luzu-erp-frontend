@@ -503,11 +503,13 @@ export function DialogNuevoComprobante({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className={labelClass}>Observaciones</Label>
+                  <Label className={labelClass}>
+                    {form.tipoMovimiento === 'egreso' ? 'Detalle de gasto' : 'Observaciones'}
+                  </Label>
                   <Textarea
                     value={form.observaciones}
                     onChange={(e) => handleChange('observaciones', e.target.value)}
-                    placeholder="Observaciones adicionales"
+                    placeholder={form.tipoMovimiento === 'egreso' ? 'Detalle del gasto' : 'Observaciones adicionales'}
                     rows={3}
                     className={cn(
                       isDark

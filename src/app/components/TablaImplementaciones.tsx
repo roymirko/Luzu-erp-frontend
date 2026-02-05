@@ -23,14 +23,14 @@ const ITEMS_PER_PAGE = 10;
 // Vista por Orden de Publicidad (agrupado)
 const COLUMNS_ORDEN = [
   'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
-  'Categoría de negocio', 'Marca', 'Orden de Publicidad', 'Presupuesto', 'Cant. de programas',
+  'Categoría de negocio', 'Marca', 'Orden de Publicidad', 'Presupuesto', 'Dinero Disponible', 'Cant. de programas',
   'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Neto Total', 'Acciones'
 ];
 
 // Vista por Programa (individual)
 const COLUMNS_PROGRAMA = [
   'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
-  'Categoría de negocio', 'Marca', 'Empresa/Programa', 'Detalle de Publicidad', 'Presupuesto',
+  'Categoría de negocio', 'Marca', 'Empresa/Programa', 'Detalle de Publicidad', 'Presupuesto', 'Dinero Disponible',
   'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Acuerdo de pago', 'Neto', 'Acciones'
 ];
 
@@ -172,6 +172,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
         marca: form.marca || '-',
         ordenPublicidad: form.ordenPublicidad,
         presupuesto: totalPresupuesto,
+        dineroDisponible: totalPresupuesto - totalNeto,
         cantidadProgramas: itemsWithImpl.length,
         sector: 'Implementación',
         rubroGasto: 'Gasto de venta',
@@ -185,26 +186,31 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
     const formIds = new Set(formularios.map(f => f.id));
     const standaloneGastos = gastos
       .filter(g => !g.ordenPublicidadId || !formIds.has(g.ordenPublicidadId))
-      .map((gasto) => ({
-        id: gasto.id,
-        formId: gasto.id,
-        itemId: undefined,
-        estado: gasto.estado === 'pendiente' ? 'Pendiente' : gasto.estado === 'activo' ? 'Activo' : gasto.estado === 'cerrado' ? 'Cerrado' : 'Anulado',
-        mesServicio: formatMesServicio(gasto.mesServicio),
-        fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
-        responsable: gasto.responsable || '-',
-        unidadNegocio: gasto.unidadNegocio || '-',
-        categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-        marca: gasto.marca || '-',
-        ordenPublicidad: gasto.ordenPublicidad || '-',
-        presupuesto: gasto.neto || 0,
-        cantidadProgramas: gasto.importes?.length || 1,
-        sector: gasto.sector || '-',
-        rubroGasto: gasto.rubroGasto || '-',
-        subRubro: gasto.subRubro || '-',
-        nombreCampana: gasto.nombreCampana || '-',
-        netoTotal: gasto.importes?.reduce((sum: number, imp: any) => sum + (parseFloat(imp.neto) || 0), 0) || gasto.neto || 0,
-      }));
+      .map((gasto) => {
+        const netoTotal = gasto.importes?.reduce((sum: number, imp: any) => sum + (parseFloat(imp.neto) || 0), 0) || gasto.neto || 0;
+        const presupuesto = gasto.neto || 0;
+        return {
+          id: gasto.id,
+          formId: gasto.id,
+          itemId: undefined,
+          estado: gasto.estado === 'pendiente' ? 'Pendiente' : gasto.estado === 'activo' ? 'Activo' : gasto.estado === 'cerrado' ? 'Cerrado' : 'Anulado',
+          mesServicio: formatMesServicio(gasto.mesServicio),
+          fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
+          responsable: gasto.responsable || '-',
+          unidadNegocio: gasto.unidadNegocio || '-',
+          categoriaNegocio: gasto.categoriaNegocio || 'N/A',
+          marca: gasto.marca || '-',
+          ordenPublicidad: gasto.ordenPublicidad || '-',
+          presupuesto,
+          dineroDisponible: presupuesto - netoTotal,
+          cantidadProgramas: gasto.importes?.length || 1,
+          sector: gasto.sector || '-',
+          rubroGasto: gasto.rubroGasto || '-',
+          subRubro: gasto.subRubro || '-',
+          nombreCampana: gasto.nombreCampana || '-',
+          netoTotal,
+        };
+      });
 
     return [...fromFormularios, ...standaloneGastos].filter((row) => {
       if (!searchTerm) return true;
@@ -234,6 +240,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
           );
 
           const presupuestoImpl = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
+          const netoGastado = linkedGasto?.neto || 0;
 
           return {
             id: linkedGasto ? linkedGasto.id : `${form.id}-${item.id}`,
@@ -250,12 +257,13 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
             empresaPrograma: item.programa || '-',
             ordenPublicidad: form.ordenPublicidad,
             presupuesto: presupuestoImpl,
+            dineroDisponible: presupuestoImpl - netoGastado,
             sector: 'Implementación',
             rubroGasto: linkedGasto?.rubroGasto || 'Gasto de venta',
             subRubro: linkedGasto?.subRubro || '-',
             nombreCampana: form.nombreCampana || '-',
             acuerdoPago: linkedGasto?.acuerdoPago || '-',
-            neto: linkedGasto?.neto || 0,
+            neto: netoGastado,
           };
         });
     });
@@ -267,29 +275,34 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
       .filter(g => !formItemIds.has(g.id))
       .flatMap((gasto) => {
         if (gasto.importes && gasto.importes.length > 0) {
-          return gasto.importes.map((imp: any) => ({
-            id: imp.id,
-            formId: gasto.id,
-            itemId: imp.id,
-            linkedGastoId: gasto.id,
-            estado: imp.estadoPgm === 'pagado' ? 'Pagado' : 'Pendiente de pago',
-            mesServicio: formatMesServicio(gasto.mesServicio),
-            fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
-            responsable: gasto.responsable || '-',
-            unidadNegocio: gasto.unidadNegocio || '-',
-            categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-            marca: gasto.marca || '-',
-            empresaPrograma: imp.empresaPgm || imp.programa || '-',
-            ordenPublicidad: gasto.ordenPublicidad || '-',
-            presupuesto: parseFloat(imp.neto) || 0,
-            sector: gasto.sector || '-',
-            rubroGasto: gasto.rubroGasto || '-',
-            subRubro: gasto.subRubro || '-',
-            nombreCampana: gasto.nombreCampana || '-',
-            acuerdoPago: imp.condicionPago || gasto.acuerdoPago || '-',
-            neto: parseFloat(imp.neto) || 0,
-          }));
+          return gasto.importes.map((imp: any) => {
+            const netoImp = parseFloat(imp.neto) || 0;
+            return {
+              id: imp.id,
+              formId: gasto.id,
+              itemId: imp.id,
+              linkedGastoId: gasto.id,
+              estado: imp.estadoPgm === 'pagado' ? 'Pagado' : 'Pendiente de pago',
+              mesServicio: formatMesServicio(gasto.mesServicio),
+              fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
+              responsable: gasto.responsable || '-',
+              unidadNegocio: gasto.unidadNegocio || '-',
+              categoriaNegocio: gasto.categoriaNegocio || 'N/A',
+              marca: gasto.marca || '-',
+              empresaPrograma: imp.empresaPgm || imp.programa || '-',
+              ordenPublicidad: gasto.ordenPublicidad || '-',
+              presupuesto: netoImp,
+              dineroDisponible: 0, // Standalone gastos: presupuesto = neto, so disponible = 0
+              sector: gasto.sector || '-',
+              rubroGasto: gasto.rubroGasto || '-',
+              subRubro: gasto.subRubro || '-',
+              nombreCampana: gasto.nombreCampana || '-',
+              acuerdoPago: imp.condicionPago || gasto.acuerdoPago || '-',
+              neto: netoImp,
+            };
+          });
         }
+        const netoGasto = gasto.neto || 0;
         return [{
           id: gasto.id,
           formId: gasto.id,
@@ -304,13 +317,14 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
           marca: gasto.marca || '-',
           empresaPrograma: '-',
           ordenPublicidad: gasto.ordenPublicidad || '-',
-          presupuesto: gasto.neto || 0,
+          presupuesto: netoGasto,
+          dineroDisponible: 0, // Standalone gastos: presupuesto = neto, so disponible = 0
           sector: gasto.sector || '-',
           rubroGasto: gasto.rubroGasto || '-',
           subRubro: gasto.subRubro || '-',
           nombreCampana: gasto.nombreCampana || '-',
           acuerdoPago: gasto.acuerdoPago || '-',
-          neto: gasto.neto || 0,
+          neto: netoGasto,
         }];
       });
 
@@ -394,6 +408,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
                   <>
                     <DataTableCell>{row.ordenPublicidad}</DataTableCell>
                     <DataTableCell>{formatPesos(row.presupuesto)}</DataTableCell>
+                    <DataTableCell>{formatPesos(row.dineroDisponible)}</DataTableCell>
                     <DataTableCell>{row.cantidadProgramas}</DataTableCell>
                     <DataTableCell muted>{row.sector}</DataTableCell>
                     <DataTableCell muted>{row.rubroGasto}</DataTableCell>
@@ -406,6 +421,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
                     <DataTableCell>{row.empresaPrograma}</DataTableCell>
                     <DataTableCell>{row.ordenPublicidad}</DataTableCell>
                     <DataTableCell>{formatPesos(row.presupuesto)}</DataTableCell>
+                    <DataTableCell>{formatPesos(row.dineroDisponible)}</DataTableCell>
                     <DataTableCell muted>{row.sector}</DataTableCell>
                     <DataTableCell muted>{row.rubroGasto}</DataTableCell>
                     <DataTableCell muted>{row.subRubro}</DataTableCell>

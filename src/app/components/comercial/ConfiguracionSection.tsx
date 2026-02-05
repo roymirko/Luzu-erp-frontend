@@ -2,16 +2,21 @@ import { ChevronDown } from 'lucide-react';
 import { Label } from '@/app/components/ui/label';
 import React from 'react';
 
+// Categorías disponibles según unidad de negocio
+const CATEGORIAS_POR_UNIDAD: Record<string, string[]> = {
+  'Media': ['Media', 'PEM', 'PEP', 'BC'],
+  // Experience, Productora, E-commerce, Estructura → bloqueado
+};
+
 interface ConfiguracionSectionProps {
   isDark: boolean;
   unidadNegocio: string;
   setUnidadNegocio: (v: string) => void;
-  categoriasNegocio: string[];
+  unidadesNegocioOptions: string[];
   categoriaNegocio: string;
   setCategoriaNegocio: (v: string) => void;
   proyecto: string;
   setProyecto: (v: string) => void;
-  isCategoriaNegocioDisabled: () => boolean;
   isProyectoDisabled: () => boolean;
   ProveedorSelector: React.ComponentType<any>;
   proveedorValue: { proveedor: string; razonSocial: string; proveedorId: string | null };
@@ -23,17 +28,20 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
     isDark,
     unidadNegocio,
     setUnidadNegocio,
-    categoriasNegocio,
+    unidadesNegocioOptions,
     categoriaNegocio,
     setCategoriaNegocio,
     proyecto,
     setProyecto,
-    isCategoriaNegocioDisabled,
     isProyectoDisabled,
     ProveedorSelector,
     proveedorValue,
     onProveedorChange,
   } = props;
+
+  // Categoría de negocio solo habilitada para Media
+  const isCategoriaDisabled = !unidadNegocio || unidadNegocio !== 'Media';
+  const categoriasDisponibles = CATEGORIAS_POR_UNIDAD[unidadNegocio] || [];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -45,14 +53,20 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
         <div className="relative">
           <select
             value={unidadNegocio}
-            onChange={(e) => setUnidadNegocio(e.target.value)}
+            onChange={(e) => {
+              setUnidadNegocio(e.target.value);
+              // Limpiar categoría si cambia a una unidad sin categorías
+              if (e.target.value !== 'Media') {
+                setCategoriaNegocio('');
+              }
+            }}
             className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
               ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
               : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
               } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
           >
             <option value="">Seleccionar</option>
-            {categoriasNegocio.map((unidad) => (
+            {unidadesNegocioOptions.map((unidad) => (
               <option key={unidad} value={unidad}>{unidad}</option>
             ))}
           </select>
@@ -63,19 +77,20 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
       <div className="space-y-2">
         <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'} flex items-center gap-1`}>
           Categoría de Negocio
+          {!isCategoriaDisabled && <span className="text-red-500">*</span>}
         </Label>
         <div className="relative">
           <select
             value={categoriaNegocio}
             onChange={(e) => setCategoriaNegocio(e.target.value)}
-            disabled={isCategoriaNegocioDisabled()}
+            disabled={isCategoriaDisabled}
             className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${isDark
               ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
               : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]'
               } focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            <option value="">Seleccionar</option>
-            {unidadNegocio && categoriasNegocio.map((cat) => (
+            <option value="">{isCategoriaDisabled ? 'No aplica' : 'Seleccionar'}</option>
+            {categoriasDisponibles.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>

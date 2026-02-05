@@ -124,9 +124,6 @@ export function validateCreate(input: CreateGastoImplementacionInput): GastoVali
   if (!input.empresa?.trim()) {
     errors.push({ field: 'empresa', message: 'Debe seleccionar una empresa' });
   }
-  if (!input.conceptoGasto?.trim()) {
-    errors.push({ field: 'conceptoGasto', message: 'Debe ingresar un concepto de gasto' });
-  }
   if (!input.neto || input.neto <= 0) {
     errors.push({ field: 'neto', message: 'El importe neto es requerido' });
   }
@@ -216,10 +213,14 @@ export async function create(input: CreateGastoImplementacionInput): Promise<{ d
  * Creates multiple gastos de implementacion (one per input)
  */
 export async function createMultiple(inputs: CreateGastoImplementacionInput[]): Promise<{ data: GastoImplementacion[]; error: string | null }> {
+  console.log('[ImplementacionService] createMultiple inputs:', inputs);
+
   // Validate all inputs first
-  for (const input of inputs) {
+  for (let i = 0; i < inputs.length; i++) {
+    const input = inputs[i];
     const validation = validateCreate(input);
     if (!validation.valid) {
+      console.error('[ImplementacionService] Validación fallida para input', i, ':', validation.errors);
       return { data: [], error: validation.errors.map(e => e.message).join(', ') };
     }
   }
@@ -228,11 +229,13 @@ export async function createMultiple(inputs: CreateGastoImplementacionInput[]): 
     gasto: mapToGastoInsert(input),
     context: mapToContextInsert(input),
   }));
+  console.log('[ImplementacionService] Items mapeados para inserción:', items);
 
   const result = await implementacionRepo.createMultiple(items);
+  console.log('[ImplementacionService] Resultado del repositorio:', result);
 
   if (result.error) {
-    console.error('Error creating gastos:', result.error);
+    console.error('[ImplementacionService] Error creating gastos:', result.error);
     return { data: result.data.map(mapFromDB), error: result.error.message };
   }
 

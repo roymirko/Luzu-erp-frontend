@@ -181,6 +181,8 @@ export async function create(
 ): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
   // 1. Map and insert into comprobantes (core)
   const comprobanteData = mapGastoToComprobante(gasto);
+  console.log('[ImplementacionRepo] Insertando comprobante:', comprobanteData);
+
   const { data: comprobante, error: comprobanteError } = await supabase
     .from(COMPROBANTES_TABLE)
     .insert(comprobanteData)
@@ -188,23 +190,31 @@ export async function create(
     .single();
 
   if (comprobanteError || !comprobante) {
+    console.error('[ImplementacionRepo] Error insertando comprobante:', comprobanteError);
     return { data: null, error: mapSupabaseError(comprobanteError || { message: 'Error al crear comprobante' }) };
   }
+  console.log('[ImplementacionRepo] Comprobante creado:', comprobante.id);
 
   // 2. Insert into implementacion_comprobantes (context)
   const contextInsert = mapContextInsert(context, comprobante.id);
+  console.log('[ImplementacionRepo] Insertando contexto:', contextInsert);
+
   const { error: contextError } = await supabase
     .from(CONTEXT_TABLE)
     .insert(contextInsert);
 
   if (contextError) {
+    console.error('[ImplementacionRepo] Error insertando contexto:', contextError);
     // Rollback: delete the comprobante we just created
     await supabase.from(COMPROBANTES_TABLE).delete().eq('id', comprobante.id);
     return { data: null, error: mapSupabaseError(contextError) };
   }
+  console.log('[ImplementacionRepo] Contexto insertado exitosamente');
 
   // 3. Return full record from view
-  return findById(comprobante.id);
+  const result = await findById(comprobante.id);
+  console.log('[ImplementacionRepo] Registro completo desde vista:', result);
+  return result;
 }
 
 /**

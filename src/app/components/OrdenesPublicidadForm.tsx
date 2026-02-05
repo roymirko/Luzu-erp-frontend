@@ -70,7 +70,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   };
 
   const UNIDADES_NEGOCIO = getFieldOptions('Unidad de Negocio');
-  const CATEGORIAS_NEGOCIO_OPTIONS = getFieldOptions('Categoría de Negocio');
   const CATEGORIAS_MARCA = getFieldOptions('Categoría');
   const ACUERDOS_PAGO = getFieldOptions('Acuerdo de Pago');
 
@@ -84,6 +83,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   const [categoriaNegocio, setCategoriaNegocio] = useState('');
   const [proyecto, setProyecto] = useState('');
   const [razonSocial, setRazonSocial] = useState('');
+  const [empresaAgencia, setEmpresaAgencia] = useState('');
   const [categoria, setCategoria] = useState('');
   const [marca, setMarca] = useState('');
   const [nombreCampana, setNombreCampana] = useState('');
@@ -116,12 +116,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
       tecnica: '',
     },
   ]);
-
-
-  // Validar si categoría de negocio debe estar bloqueada
-  const isCategoriaNegocioDisabled = () => {
-    return !unidadNegocio || !['Media'].includes(unidadNegocio);
-  };
 
   // Validar si proyecto debe estar bloqueado
   const isProyectoDisabled = () => {
@@ -177,6 +171,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
       setCategoriaNegocio(formularioExistente.categoriaNegocio || '');
       setProyecto(formularioExistente.proyecto || '');
       setRazonSocial(formularioExistente.razonSocial || '');
+      setEmpresaAgencia(formularioExistente.empresaAgencia || '');
       setCategoria(formularioExistente.categoria || '');
       setMarca(formularioExistente.marca || '');
       setNombreCampana(formularioExistente.nombreCampana || '');
@@ -467,17 +462,17 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                 isDark={isDark}
                 unidadNegocio={unidadNegocio}
                 setUnidadNegocio={setUnidadNegocio}
-                categoriasNegocio={UNIDADES_NEGOCIO}
+                unidadesNegocioOptions={UNIDADES_NEGOCIO}
                 categoriaNegocio={categoriaNegocio}
                 setCategoriaNegocio={setCategoriaNegocio}
                 proyecto={proyecto}
                 setProyecto={setProyecto}
-                isCategoriaNegocioDisabled={isCategoriaNegocioDisabled}
                 isProyectoDisabled={isProyectoDisabled}
                 ProveedorSelector={ProveedorSelector}
-                proveedorValue={{ proveedor: '', razonSocial: razonSocial || '', proveedorId: null }}
+                proveedorValue={{ proveedor: empresaAgencia, razonSocial: razonSocial || '', proveedorId: null }}
                 onProveedorChange={(next) => {
                   setRazonSocial(next.razonSocial);
+                  setEmpresaAgencia(next.proveedor);
                 }}
               />
 
@@ -722,6 +717,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   categoriaNegocio,
                   proyecto,
                   razonSocial,
+                  empresaAgencia,
                   categoria,
                   marca,
                   nombreCampana,

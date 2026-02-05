@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useProgramacion } from "../../contexts/ProgramacionContext";
 import { useData } from "../../contexts/DataContext";
@@ -33,7 +33,6 @@ interface FormularioProgramacionProps {
 interface FormErrors {
   subrubro?: string;
   nombreCampana?: string;
-  detalleCampana?: string;
   proveedor?: string;
   razonSocial?: string;
 }
@@ -84,7 +83,6 @@ const FACTURA_EMITIDA_A_OPTIONS = FACTURAS_OPTIONS;
 
 const SUB_RUBROS = ["Producción", "Diseño", "Edición", "Técnica"];
 const CATEGORIAS_NEGOCIO = ["PE", "Media"];
-const MAX_DETALLE_LENGTH = 250;
 
 export function FormularioProgramacion({
   gastoId,
@@ -92,8 +90,6 @@ export function FormularioProgramacion({
 }: FormularioProgramacionProps) {
   const { isDark } = useTheme();
   const {
-    gastos: contextGastos,
-    addGasto,
     addMultipleGastos,
     addGastoToFormulario,
     updateGasto,
@@ -108,7 +104,6 @@ export function FormularioProgramacion({
   const [rubroGasto] = useState("Gasto de programación"); // readonly
   const [subrubro, setSubrubro] = useState("");
   const [nombreCampana, setNombreCampana] = useState("");
-  const [detalleCampana, setDetalleCampana] = useState("");
 
   // Section 2: Carga de importes - shared proveedor for all gastos
   const [razonSocial, setRazonSocial] = useState("");
@@ -131,11 +126,17 @@ export function FormularioProgramacion({
   ]);
 
   const [saving, setSaving] = useState(false);
+  const [savingGastos, setSavingGastos] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<FormErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [collapsedGastos, setCollapsedGastos] = useState<Set<string>>(
     new Set(),
   );
+
+  // Track if initial data has been loaded to prevent re-running useEffect
+  const dataLoadedRef = useRef(false);
+  // Track IDs of gastos loaded from DB (to distinguish from locally added)
+  const loadedGastoIdsRef = useRef<Set<string>>(new Set());
 
   const isEditing = !!gastoId;
   const existingGasto = gastoId ? getGastoById(gastoId) : undefined;
@@ -151,33 +152,36 @@ export function FormularioProgramacion({
     existingGasto?.formularioEstado === "anulado";
 
   useEffect(() => {
+    // Only load data once on initial mount
+    if (dataLoadedRef.current) return;
+
     if (existingGasto && formularioGastos.length > 0) {
+      dataLoadedRef.current = true;
+
       // Use data from the first gasto for shared fields
       const firstGasto = formularioGastos[0];
       setCategoriaNegocio(firstGasto.categoriaNegocio || "");
       setSubrubro(firstGasto.subRubroEmpresa || "");
       setNombreCampana(firstGasto.programa || "");
-      setDetalleCampana(
-        firstGasto.detalleCampana || firstGasto.conceptoGasto || "",
-      );
       setRazonSocial(firstGasto.razonSocial || "");
       setProveedor(firstGasto.proveedor || "");
 
-      // Map ALL gastos from this formulario
-      setGastos(
-        formularioGastos.map((g) => ({
-          id: g.id,
-          facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
-          empresa: g.empresa || "",
-          empresaPrograma: g.categoria || "",
-          fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-          acuerdoPago: g.acuerdoPago || "",
-          formaPago: g.formaPago || "",
-          neto: g.neto || 0,
-          observaciones: g.observaciones || "",
-          estado: g.estadoPago === "pago" ? "pagado" : "pendiente-pago",
-        })),
-      );
+      // Map ALL gastos from this formulario and track their IDs
+      const loadedGastos = formularioGastos.map((g) => ({
+        id: g.id,
+        facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
+        empresa: g.empresa || "",
+        empresaPrograma: g.categoria || "",
+        fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        acuerdoPago: g.acuerdoPago || "",
+        formaPago: g.formaPago || "",
+        neto: g.neto || 0,
+        observaciones: g.observaciones || "",
+        estado: g.estadoPago === "pago" ? "pagado" : "pendiente-pago",
+      }));
+
+      setGastos(loadedGastos);
+      loadedGastoIdsRef.current = new Set(loadedGastos.map(g => g.id));
     }
   }, [existingGasto, formularioGastos.length]);
 
@@ -190,9 +194,6 @@ export function FormularioProgramacion({
     if (!nombreCampana?.trim()) {
       newErrors.nombreCampana = "Requerido";
     }
-    if (!detalleCampana?.trim()) {
-      newErrors.detalleCampana = "Requerido";
-    }
     if (!razonSocial?.trim()) {
       newErrors.razonSocial = "Requerido";
     }
@@ -204,7 +205,6 @@ export function FormularioProgramacion({
   }, [
     subrubro,
     nombreCampana,
-    detalleCampana,
     razonSocial,
     proveedor,
   ]);
@@ -220,11 +220,12 @@ export function FormularioProgramacion({
       if (!g.empresaPrograma?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
       }
-      if (!g.acuerdoPago?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
-      }
       if (!g.formaPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
+      }
+      // Acuerdo de pago solo requerido si forma de pago es cheque
+      if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
       }
       if (!g.neto || g.neto <= 0) {
         return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
@@ -249,7 +250,6 @@ export function FormularioProgramacion({
   }, [
     subrubro,
     nombreCampana,
-    detalleCampana,
     razonSocial,
     proveedor,
     hasAttemptedSubmit,
@@ -312,6 +312,89 @@ export function FormularioProgramacion({
     });
   };
 
+  // Save a single gasto to the database
+  const handleSaveGasto = async (gasto: GastoItem, index: number): Promise<boolean> => {
+    // Validate proveedor and razonSocial (shared fields)
+    if (!proveedor || !razonSocial) {
+      toast.error('Debe seleccionar un proveedor antes de guardar');
+      return false;
+    }
+
+    const isExisting = loadedGastoIdsRef.current.has(gasto.id);
+    console.log('[FormProgramacion] Guardando gasto individual:', gasto.id, 'isExisting:', isExisting);
+
+    setSavingGastos(prev => new Set(prev).add(gasto.id));
+    try {
+      if (isExisting) {
+        // Update existing gasto
+        const success = await updateGasto({
+          id: gasto.id,
+          neto: gasto.neto,
+          empresa: gasto.empresa,
+          observaciones: gasto.observaciones,
+          facturaEmitidaA: gasto.facturaEmitidaA,
+          categoria: gasto.empresaPrograma,
+          acuerdoPago: gasto.acuerdoPago,
+          formaPago: gasto.formaPago,
+          fechaFactura: gasto.fechaComprobante ? new Date(gasto.fechaComprobante) : undefined,
+        });
+
+        if (success) {
+          toggleGastoCollapse(gasto.id);
+          toast.success(`Gasto #${index + 1} actualizado`);
+          return true;
+        } else {
+          toast.error(`Error al actualizar gasto #${index + 1}`);
+          return false;
+        }
+      } else {
+        // For new gastos, we need a formularioId
+        if (!existingGasto?.formularioId) {
+          toast.error('Debe guardar el formulario primero para agregar nuevos gastos');
+          return false;
+        }
+
+        const result = await addGastoToFormulario(existingGasto.formularioId, {
+          proveedor,
+          razonSocial,
+          neto: gasto.neto,
+          empresa: gasto.empresa,
+          observaciones: gasto.observaciones,
+          facturaEmitidaA: gasto.facturaEmitidaA,
+          categoria: gasto.empresaPrograma,
+          acuerdoPago: gasto.acuerdoPago,
+          formaPago: gasto.formaPago,
+          fechaFactura: gasto.fechaComprobante ? new Date(gasto.fechaComprobante) : undefined,
+          createdBy: currentUser?.id,
+        });
+
+        if (result) {
+          // Update the gasto ID in state with the real DB ID
+          loadedGastoIdsRef.current.add(result.id);
+          setGastos(prev => prev.map(g =>
+            g.id === gasto.id ? { ...g, id: result.id } : g
+          ));
+          toggleGastoCollapse(result.id);
+          toast.success(`Gasto #${index + 1} creado`);
+          return true;
+        } else {
+          toast.error(`Error al crear gasto #${index + 1}`);
+          return false;
+        }
+      }
+    } catch (err) {
+      console.error('[FormProgramacion] Error guardando gasto:', err);
+      toast.error(`Error inesperado al guardar gasto #${index + 1}`);
+      return false;
+    } finally {
+      setSavingGastos(prev => {
+        const next = new Set(prev);
+        next.delete(gasto.id);
+        return next;
+      });
+    }
+  };
+
   // Get already selected programs to prevent duplicates
   const getSelectedPrograms = (excludeId: string) => {
     return gastos
@@ -354,10 +437,10 @@ export function FormularioProgramacion({
         // Get the formularioId from the existing gasto
         const formularioId = existingGasto.formularioId;
 
-        // Separate gastos into existing (in DB) and new (not in DB)
-        const existingGastoIds = new Set(contextGastos.map(g => g.id));
-        const gastosToUpdate = gastos.filter(g => existingGastoIds.has(g.id));
-        const gastosToCreateNew = gastos.filter(g => !existingGastoIds.has(g.id));
+        // Use loaded IDs to distinguish existing vs new gastos
+        const loadedIds = loadedGastoIdsRef.current;
+        const gastosToUpdate = gastos.filter(g => loadedIds.has(g.id));
+        const gastosToCreateNew = gastos.filter(g => !loadedIds.has(g.id));
 
         let allSucceeded = true;
         let failedCount = 0;
@@ -373,7 +456,6 @@ export function FormularioProgramacion({
               categoriaNegocio,
               subRubroEmpresa: subrubro,
               programa: nombreCampana,
-              conceptoGasto: detalleCampana,
             } : {}),
             proveedor,
             razonSocial,
@@ -397,6 +479,8 @@ export function FormularioProgramacion({
 
         // Create new gastos (added to existing formulario)
         if (formularioId && gastosToCreateNew.length > 0) {
+          const tempIdToDbId = new Map<string, string>();
+
           for (const g of gastosToCreateNew) {
             const result = await addGastoToFormulario(formularioId, {
               proveedor,
@@ -412,11 +496,23 @@ export function FormularioProgramacion({
               createdBy: currentUser?.id,
             });
 
-            if (!result) {
+            if (result) {
+              // Map temp UUID to real DB ID and add to loaded refs
+              tempIdToDbId.set(g.id, result.id);
+              loadedGastoIdsRef.current.add(result.id);
+            } else {
               allSucceeded = false;
               failedCount++;
               console.error(`Failed to create new gasto`);
             }
+          }
+
+          // Update local gastos state with real DB IDs
+          if (tempIdToDbId.size > 0) {
+            setGastos(prev => prev.map(g => {
+              const dbId = tempIdToDbId.get(g.id);
+              return dbId ? { ...g, id: dbId } : g;
+            }));
           }
         }
 
@@ -444,7 +540,6 @@ export function FormularioProgramacion({
           categoriaNegocio,
           programa: nombreCampana,
           subRubroEmpresa: subrubro,
-          detalleCampana,
           ejecutivo: currentUser
             ? `${currentUser.firstName} ${currentUser.lastName}`
             : undefined,
@@ -721,35 +816,6 @@ export function FormularioProgramacion({
               </div>
             </div>
 
-            {/* Row 4: Detalle/campaña */}
-            <div className="space-y-1">
-              <Label className={labelClass}>
-                Detalle/campaña<span className="text-red-500">*</span>
-              </Label>
-              <Textarea
-                value={detalleCampana}
-                onChange={(e) => {
-                  if (e.target.value.length <= MAX_DETALLE_LENGTH) {
-                    setDetalleCampana(e.target.value);
-                  }
-                }}
-                placeholder="Concepto de gasto"
-                disabled={isFormularioCerrado}
-                maxLength={MAX_DETALLE_LENGTH}
-                className={cn(
-                  textareaClass,
-                  errors.detalleCampana && "border-red-500",
-                )}
-              />
-              <div
-                className={cn(
-                  "text-xs text-right",
-                  isDark ? "text-gray-500" : "text-gray-400",
-                )}
-              >
-                {detalleCampana.length}/{MAX_DETALLE_LENGTH}
-              </div>
-            </div>
           </div>
 
           {/* Section 2: Carga de importes */}
@@ -827,21 +893,22 @@ export function FormularioProgramacion({
                       removeGastoItem(gasto.id);
                     }
                   }}
-                  onSave={() => {
+                  onSave={async () => {
                     const error = validateSingleGasto(gasto, index);
                     if (error) {
                       toast.error(error);
                       return;
                     }
-                    toggleGastoCollapse(gasto.id);
-                    toast.success(`Gasto #${index + 1} guardado`);
+                    await handleSaveGasto(gasto, index);
                   }}
+                  isSaving={savingGastos.has(gasto.id)}
                   showProveedorSelector={false}
                   showFormaPago
                   showCharacterCount
                   showAttachments
                   showButtonsBorder
                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
+                  observacionesLabel="Detalle de gasto"
                   programOptions={availableProgramOptions}
                   facturaOptions={FACTURA_EMITIDA_A_OPTIONS}
                   empresaOptions={EMPRESAS_OPTIONS}

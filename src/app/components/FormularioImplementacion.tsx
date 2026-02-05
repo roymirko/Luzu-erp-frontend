@@ -4,8 +4,6 @@ import { useFormularios } from '../contexts/FormulariosContext';
 import { useData } from '../contexts/DataContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Button } from './ui/button';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
 import { cn } from './ui/utils';
@@ -18,7 +16,7 @@ import {
   type EstadoOP,
 } from './implementacion';
 import type { CreateGastoImplementacionInput, GastoImplementacion } from '../types/implementacion';
-import { IMPLEMENTACION_DEFAULTS, FIELD_MAX_LENGTHS } from '@/app/utils/implementacionConstants';
+import { IMPLEMENTACION_DEFAULTS } from '@/app/utils/implementacionConstants';
 
 interface FormularioImplementacionProps {
   gastoId?: string;
@@ -28,9 +26,7 @@ interface FormularioImplementacionProps {
 }
 
 interface FormErrors {
-  cargaDatos: {
-    conceptoGasto?: string;
-  };
+  cargaDatos: Record<string, never>;
   importes: ImportesErrors;
 }
 
@@ -64,7 +60,6 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
 function bloqueToCreateInput(
   bloque: BloqueImporte,
   shared: {
-    conceptoGasto: string;
     ordenPublicidadId?: string;
     defaultItemOrdenPublicidadId?: string;
     rubroGasto?: string;
@@ -77,7 +72,7 @@ function bloqueToCreateInput(
     fechaFactura: bloque.fechaComprobante,
     neto: parseFloat(bloque.neto) || 0,
     empresa: bloque.empresa,
-    conceptoGasto: shared.conceptoGasto,
+    conceptoGasto: bloque.observaciones || '', // Use observaciones as conceptoGasto
     observaciones: bloque.observaciones,
     ordenPublicidadId: shared.ordenPublicidadId,
     // Use the bloque's itemId if set (from program selection), otherwise use the default
@@ -94,10 +89,12 @@ function bloqueToCreateInput(
 export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: FormularioImplementacionProps) {
   const { isDark } = useTheme();
   const {
+    addGasto,
     addMultipleGastos,
     updateGasto,
     getGastoById,
     getGastosByItemOrdenId,
+    getGastosByOrdenId,
   } = useImplementacion();
   const { formularios } = useFormularios();
   const { currentUser } = useData();
@@ -116,8 +113,16 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       : 0;
 
     // Calculate remaining budget per program
+    // Solo mostrar programas que tengan presupuesto asignado (implementacion no es null/undefined/vacío)
     const programasConPresupuesto = formulario.importeRows
-      ?.filter((row) => row.programa)
+      ?.filter((row) => {
+        // Debe tener nombre de programa
+        if (!row.programa) return false;
+        // Debe tener presupuesto asignado (puede ser 0 o negativo, pero debe estar definido)
+        const impl = row.implementacion;
+        if (impl === null || impl === undefined || impl === '') return false;
+        return true;
+      })
       .map((row) => {
         const presupuesto = parseFloat(String(row.implementacion || '0').replace(/[^0-9.-]/g, '')) || 0;
         // Get all existing gastos for this program item
@@ -152,7 +157,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
   // Form state
   const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
   const [empresa, setEmpresa] = useState('');
-  const [conceptoGasto, setConceptoGasto] = useState('');
   const [importes, setImportes] = useState<BloqueImporte[]>([]);
   const [estadoOP, setEstadoOP] = useState<EstadoOP>('pendiente');
   const [saving, setSaving] = useState(false);
@@ -167,64 +171,97 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
   // Load existing gastos if editing
   useEffect(() => {
+    console.log('[FormImplementacion] useEffect ejecutado - gastoId:', gastoId, 'formId:', formId, 'itemId:', itemId);
+    console.log('[FormImplementacion] dataLoadedRef.current:', dataLoadedRef.current, 'lastLoadedItemIdRef.current:', lastLoadedItemIdRef.current);
+
     // Reset tracking when itemId changes (user navigated to different item)
     if (itemId !== lastLoadedItemIdRef.current) {
+      console.log('[FormImplementacion] itemId cambió, reseteando refs');
       dataLoadedRef.current = false;
       lastLoadedItemIdRef.current = itemId;
       loadedGastoIdsRef.current = new Set();
     }
 
+    // Skip if already loaded data for this item
+    if (dataLoadedRef.current) {
+      console.log('[FormImplementacion] Ya se cargaron datos, saltando');
+      return;
+    }
+
+    // Helper to initialize empty form
+    const initEmptyForm = () => {
+      console.log('[FormImplementacion] Inicializando formulario vacío');
+      setImportes([{
+        id: crypto.randomUUID(),
+        programa: '',
+        empresaPgm: '',
+        itemOrdenPublicidadId: itemId,
+        facturaEmitidaA: '',
+        empresa: '',
+        fechaComprobante: new Date().toISOString().split('T')[0],
+        proveedor: '',
+        razonSocial: '',
+        condicionPago: '30',
+        formaPago: '',
+        neto: '',
+        observaciones: '',
+        estadoPgm: 'pendiente',
+      }]);
+      dataLoadedRef.current = true;
+    };
+
+    // Helper to load gastos from array
+    const loadGastos = (gastos: GastoImplementacion[]) => {
+      console.log('[FormImplementacion] Cargando gastos existentes:', gastos.length);
+      const sortedGastos = [...gastos].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      const first = sortedGastos[0];
+      setFacturaEmitidaA(first.facturaEmitidaA);
+      setEmpresa(first.empresa);
+      setEstadoOP(first.estado);
+      setImportes(sortedGastos.map(gastoToBloqueImporte));
+      loadedGastoIdsRef.current = new Set(sortedGastos.map(g => g.id));
+      dataLoadedRef.current = true;
+    };
+
     if (gastoId) {
       // Editing a specific gasto
+      console.log('[FormImplementacion] Buscando gasto por ID:', gastoId);
       const existingGasto = getGastoById(gastoId);
+      console.log('[FormImplementacion] Gasto encontrado:', existingGasto);
       if (existingGasto) {
         setFacturaEmitidaA(existingGasto.facturaEmitidaA);
         setEmpresa(existingGasto.empresa);
-        setConceptoGasto(existingGasto.conceptoGasto);
         setEstadoOP(existingGasto.estado);
         setImportes([gastoToBloqueImporte(existingGasto)]);
         loadedGastoIdsRef.current = new Set([existingGasto.id]);
         dataLoadedRef.current = true;
       }
     } else if (formId && itemId) {
-      // Check for existing gastos for this item
+      // Load gastos for specific item
+      console.log('[FormImplementacion] Buscando gastos por itemId:', itemId);
       const existingGastos = getGastosByItemOrdenId(itemId);
+      console.log('[FormImplementacion] Gastos encontrados por item:', existingGastos.length, existingGastos);
       if (existingGastos.length > 0) {
-        // Sort gastos by createdAt (oldest first) to maintain stable order
-        const sortedGastos = [...existingGastos].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-        // Load first gasto's shared fields
-        const first = sortedGastos[0];
-        setFacturaEmitidaA(first.facturaEmitidaA);
-        setEmpresa(first.empresa);
-        setConceptoGasto(first.conceptoGasto);
-        setEstadoOP(first.estado);
-        setImportes(sortedGastos.map(gastoToBloqueImporte));
-        // Store the IDs of loaded gastos for update logic
-        loadedGastoIdsRef.current = new Set(sortedGastos.map(g => g.id));
-        dataLoadedRef.current = true;
-      } else if (!dataLoadedRef.current) {
-        // Only initialize with defaults if we haven't loaded data yet
-        setImportes([{
-          id: crypto.randomUUID(),
-          programa: '',
-          empresaPgm: '',
-          itemOrdenPublicidadId: itemId,
-          facturaEmitidaA: '',
-          empresa: '',
-          fechaComprobante: new Date().toISOString().split('T')[0],
-          proveedor: '',
-          razonSocial: '',
-          condicionPago: '30',
-          formaPago: '',
-          neto: '',
-          observaciones: '',
-          estadoPgm: 'pendiente',
-        }]);
+        loadGastos(existingGastos);
+      } else {
+        initEmptyForm();
       }
+    } else if (formId) {
+      // Load all gastos for the orden (no specific item)
+      console.log('[FormImplementacion] Buscando gastos por ordenId:', formId);
+      const existingGastos = getGastosByOrdenId(formId);
+      console.log('[FormImplementacion] Gastos encontrados por orden:', existingGastos.length, existingGastos);
+      if (existingGastos.length > 0) {
+        loadGastos(existingGastos);
+      } else {
+        initEmptyForm();
+      }
+    } else {
+      console.log('[FormImplementacion] No hay formId ni gastoId, no se hace nada');
     }
-  }, [gastoId, formId, itemId, getGastoById, getGastosByItemOrdenId]);
+  }, [gastoId, formId, itemId, getGastoById, getGastosByItemOrdenId, getGastosByOrdenId]);
 
   const isCerrado = estadoOP === 'cerrado' || estadoOP === 'anulado';
   // Use loaded gasto IDs from ref for determining existing vs new (not re-queried by itemId)
@@ -237,11 +274,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       cargaDatos: {},
       importes: {},
     };
-
-    // Concepto de gasto is still global
-    if (!conceptoGasto.trim()) {
-      newErrors.cargaDatos.conceptoGasto = 'Debe ingresar un concepto de gasto';
-    }
 
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
@@ -279,13 +311,13 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     }
 
     return newErrors;
-  }, [conceptoGasto, importes]);
+  }, [importes]);
 
   useEffect(() => {
     if (hasAttemptedSubmit) {
       setErrors(validateForm());
     }
-  }, [conceptoGasto, importes, hasAttemptedSubmit, validateForm]);
+  }, [importes, hasAttemptedSubmit, validateForm]);
 
   const addImporte = () => {
     // For new gastos, inherit facturaEmitidaA and empresa from global state (or last importe)
@@ -339,6 +371,67 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     );
   };
 
+  // Save a single gasto to the database
+  const handleSaveGasto = async (importe: BloqueImporte, index: number): Promise<boolean> => {
+    const isExisting = loadedGastoIdsRef.current.has(importe.id);
+    console.log('[FormImplementacion] Guardando gasto individual:', importe.id, 'isExisting:', isExisting);
+
+    try {
+      if (isExisting) {
+        // Update existing gasto
+        const success = await updateGasto({
+          id: importe.id,
+          proveedor: importe.proveedor,
+          razonSocial: importe.razonSocial,
+          fechaFactura: importe.fechaComprobante,
+          neto: parseFloat(importe.neto) || 0,
+          empresa: importe.empresa,
+          conceptoGasto: importe.observaciones || '',
+          observaciones: importe.observaciones,
+          facturaEmitidaA: importe.facturaEmitidaA,
+          sector: importe.empresaPgm,
+          condicionPago: importe.condicionPago,
+          formaPago: importe.formaPago,
+          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+        });
+
+        if (success) {
+          toast.success(`Gasto #${index + 1} actualizado`);
+          return true;
+        } else {
+          toast.error(`Error al actualizar gasto #${index + 1}`);
+          return false;
+        }
+      } else {
+        // Create new gasto
+        const input: CreateGastoImplementacionInput = bloqueToCreateInput(importe, {
+          ordenPublicidadId: formId,
+          defaultItemOrdenPublicidadId: itemId,
+          rubroGasto: IMPLEMENTACION_DEFAULTS.rubroGasto,
+          subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+        });
+
+        const created = await addGasto(input);
+        if (created) {
+          // Update the importe ID in state with the real DB ID
+          loadedGastoIdsRef.current.add(created.id);
+          setImportes(prev => prev.map(imp =>
+            imp.id === importe.id ? { ...imp, id: created.id } : imp
+          ));
+          toast.success(`Gasto #${index + 1} creado`);
+          return true;
+        } else {
+          toast.error(`Error al crear gasto #${index + 1}. Revise la consola para más detalles.`);
+          return false;
+        }
+      }
+    } catch (err) {
+      console.error('[FormImplementacion] Error guardando gasto:', err);
+      toast.error(`Error inesperado al guardar gasto #${index + 1}`);
+      return false;
+    }
+  };
+
   const hasErrors = (formErrors: FormErrors): boolean => {
     const hasCargaDatosErrors = Object.keys(formErrors.cargaDatos).length > 0;
     const hasImportesErrors = Object.keys(formErrors.importes).length > 0;
@@ -358,20 +451,24 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     setSaving(true);
     try {
       const sharedFields = {
-        conceptoGasto,
         ordenPublicidadId: formId,
         defaultItemOrdenPublicidadId: itemId,
         rubroGasto: IMPLEMENTACION_DEFAULTS.rubroGasto,
         subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
       };
 
+      console.log('[Implementacion] Guardando con sharedFields:', sharedFields);
+      console.log('[Implementacion] Importes actuales:', importes);
+
       // Use the loaded gasto IDs to distinguish between updates and creates
       // This ensures gastos are updated even if their itemOrdenPublicidadId changed
       const loadedIds = loadedGastoIdsRef.current;
+      console.log('[Implementacion] IDs cargados previamente:', Array.from(loadedIds));
 
       // Separate importes into existing (to update) and new (to create)
       const importesToUpdate = importes.filter(imp => loadedIds.has(imp.id));
       const importesToCreate = importes.filter(imp => !loadedIds.has(imp.id));
+      console.log('[Implementacion] Para actualizar:', importesToUpdate.length, 'Para crear:', importesToCreate.length);
 
       let updateCount = 0;
       let createCount = 0;
@@ -386,7 +483,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           fechaFactura: importe.fechaComprobante,
           neto: parseFloat(importe.neto) || 0,
           empresa: importe.empresa,
-          conceptoGasto,
+          conceptoGasto: importe.observaciones || '',
           observaciones: importe.observaciones,
           facturaEmitidaA: importe.facturaEmitidaA,
           sector: importe.empresaPgm,
@@ -436,7 +533,9 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
       // Show result message
       if (hasError) {
-        toast.error('Algunos gastos no pudieron ser guardados');
+        toast.error('Algunos gastos no pudieron ser guardados. Revise la consola para más detalles.');
+      } else if (updateCount === 0 && createCount === 0) {
+        toast.warning('No hay cambios para guardar');
       } else {
         const messages = [];
         if (updateCount > 0) messages.push(`${updateCount} actualizado(s)`);
@@ -460,20 +559,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
-
-  const labelClass = cn(
-    'flex items-center gap-1 text-sm font-semibold',
-    isDark ? 'text-gray-400' : 'text-[#374151]'
-  );
-
-  const textareaClass = cn(
-    'min-h-[72px] resize-none transition-colors text-sm',
-    isDark
-      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600'
-      : 'bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]',
-    'disabled:opacity-60 disabled:cursor-not-allowed',
-    errors.cargaDatos.conceptoGasto && 'border-red-500'
-  );
 
   return (
     <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
@@ -519,24 +604,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             formatCurrency={formatCurrency}
           />
 
-          {/* Detalle/campaña - Form level field */}
-          <div className="space-y-2">
-            <Label className={labelClass}>
-              Detalle/campaña <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              value={conceptoGasto}
-              onChange={(e) => setConceptoGasto(e.target.value)}
-              maxLength={FIELD_MAX_LENGTHS.conceptoGasto}
-              disabled={isCerrado}
-              placeholder="Concepto de gasto"
-              className={cn(textareaClass, errors.cargaDatos.conceptoGasto && 'border-red-500')}
-            />
-            {errors.cargaDatos.conceptoGasto && (
-              <p className="text-sm text-red-500">{errors.cargaDatos.conceptoGasto}</p>
-            )}
-          </div>
-
           {/* Carga de Importes Section */}
           <CargaImportesSection
             isDark={isDark}
@@ -546,8 +613,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             onUpdateImporte={updateImporte}
             onAddImporte={addImporte}
             onRemoveImporte={removeImporte}
-            onSave={handleGuardar}
-            onCancel={onClose}
+            onSaveGasto={handleSaveGasto}
             errors={errors.importes}
             // Status props
             isNewGasto={isNewGasto}

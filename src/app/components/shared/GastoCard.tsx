@@ -77,6 +77,7 @@ interface GastoCardProps {
   errors?: GastoCardErrors;
   isNew?: boolean;
   isDisabled?: boolean;
+  isSaving?: boolean;
 
   // Status - simple (just estado) or complex (estado + estadoPago)
   estado?: EstadoPago | EstadoOP;
@@ -103,6 +104,9 @@ interface GastoCardProps {
   // Character limits
   maxObservacionesLength?: number;
 
+  // Label overrides
+  observacionesLabel?: string;
+
   // Collapse control - can be controlled or uncontrolled
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -124,6 +128,7 @@ export function GastoCard(props: GastoCardProps) {
     errors = {},
     isNew = true,
     isDisabled = false,
+    isSaving = false,
     // Status
     estado = 'pendiente-pago',
     estadoPago,
@@ -143,6 +148,8 @@ export function GastoCard(props: GastoCardProps) {
     paisOptions = PAISES_OPTIONS,
     // Limits
     maxObservacionesLength = FIELD_MAX_LENGTHS.observaciones,
+    // Labels
+    observacionesLabel = 'Observaciones',
     // Collapse control
     isCollapsed: controlledIsCollapsed,
     onToggleCollapse,
@@ -373,10 +380,10 @@ export function GastoCard(props: GastoCardProps) {
             </div>
           )}
 
-          {/* Observaciones */}
+          {/* Observaciones / Detalle de gasto */}
           {showObservaciones && (
             <div className="space-y-1">
-              <Label className={labelClass}>Observaciones</Label>
+              <Label className={labelClass}>{observacionesLabel}</Label>
               <Textarea
                 value={gasto.observaciones || ''}
                 onChange={(e) => {
@@ -433,9 +440,10 @@ export function GastoCard(props: GastoCardProps) {
                   variant="outline"
                   size="sm"
                   onClick={onSave}
+                  disabled={isSaving}
                   className="border-[#0070ff] text-[#0070ff] hover:bg-[#0070ff]/10 text-xs"
                 >
-                  Guardar
+                  {isSaving ? 'Guardando...' : 'Guardar'}
                 </Button>
               )}
             </div>

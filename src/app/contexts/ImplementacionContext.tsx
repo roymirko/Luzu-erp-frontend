@@ -43,14 +43,16 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
   const fetchGastos = useCallback(async () => {
     setLoading(true);
     try {
+      console.log('[ImplementacionContext] Cargando todos los gastos...');
       const result = await implementacionService.getAll();
       if (result.error) {
-        console.error('Error fetching gastos:', result.error);
+        console.error('[ImplementacionContext] Error fetching gastos:', result.error);
         return;
       }
+      console.log('[ImplementacionContext] Gastos cargados:', result.data.length, result.data);
       setGastos(result.data);
     } catch (err) {
-      console.error('Error in fetchGastos:', err);
+      console.error('[ImplementacionContext] Error in fetchGastos:', err);
     } finally {
       setLoading(false);
     }
@@ -75,13 +77,16 @@ export function ImplementacionProvider({ children }: { children: ReactNode }) {
   const addMultipleGastos = async (inputs: CreateGastoImplementacionInput[]): Promise<GastoImplementacion[]> => {
     if (inputs.length === 0) return [];
 
+    console.log('[ImplementacionContext] Creando gastos, inputs:', inputs);
     const result = await implementacionService.createMultiple(inputs);
+    console.log('[ImplementacionContext] Resultado createMultiple:', result);
 
     if (result.error) {
-      console.error('Error adding multiple gastos:', result.error);
+      console.error('[ImplementacionContext] Error adding multiple gastos:', result.error);
       return result.data;
     }
 
+    console.log('[ImplementacionContext] Gastos creados exitosamente:', result.data);
     setGastos(prev => [...prev, ...result.data]);
     return result.data;
   };
