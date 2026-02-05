@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
-import { cn } from '@/app/components/ui/utils';
-import { useTheme } from '@/app/contexts/ThemeContext';
-import { Button } from '@/app/components/ui/button';
+import { ActionCard } from '@/app/components/ui/action-card';
 import { TablaComprobantes } from '@/app/components/shared/TablaComprobantes';
 import { DialogNuevoComprobante } from '@/app/components/shared/DialogNuevoComprobante';
 import { DialogAdminComprobante } from '@/app/components/administracion/DialogAdminComprobante';
@@ -11,7 +9,6 @@ import * as comprobantesService from '@/app/services/comprobantesService';
 import type { ComprobanteWithContext, Comprobante } from '@/app/types/comprobantes';
 
 export function Finanzas() {
-  const { isDark } = useTheme();
   const [comprobantes, setComprobantes] = useState<ComprobanteWithContext[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNuevo, setShowNuevo] = useState(false);
@@ -57,23 +54,12 @@ export function Finanzas() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className={cn("text-2xl font-bold", isDark ? "text-white" : "text-gray-900")}>
-            Finanzas
-          </h1>
-          <p className={cn("text-sm", isDark ? "text-gray-400" : "text-gray-500")}>
-            Gestión de comprobantes de todas las áreas
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowNuevo(true)}
-          className="gap-2 bg-[#fb2c36] hover:bg-[#fb2c36]/90 text-white"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo Ingreso
-        </Button>
-      </div>
+      <ActionCard
+        title="Nuevo Formulario"
+        description="Cargar nuevo ingreso/egreso"
+        icon={Plus}
+        onClick={() => setShowNuevo(true)}
+      />
 
       <TablaComprobantes
         comprobantes={comprobantes}

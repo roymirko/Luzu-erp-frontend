@@ -126,7 +126,10 @@ export function TablaFormularios({ onEditFormulario }: TablaFormulariosProps = {
             </DataTableEmpty>
           ) : (
             currentRows.map((row, index) => (
-              <DataTableRow key={viewMode === 'programa' ? `${row.id}-${row.programa?.id}-${startIndex + index}` : `${row.id}-${startIndex + index}`}>
+              <DataTableRow
+                key={viewMode === 'programa' ? `${row.id}-${row.programa?.id}-${startIndex + index}` : `${row.id}-${startIndex + index}`}
+                onClick={() => onEditFormulario?.(row.id)}
+              >
                 {viewMode === 'programa' ? (
                   <>
                     <DataTableCell>{row.mesServicio}</DataTableCell>
@@ -175,7 +178,10 @@ export function TablaFormularios({ onEditFormulario }: TablaFormulariosProps = {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onEditFormulario && onEditFormulario(row.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditFormulario?.(row.id);
+                      }}
                       className={isDark ? 'text-gray-400 hover:text-white hover:bg-[#1e1e1e]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}
                     >
                       <Pencil className="h-4 w-4" />

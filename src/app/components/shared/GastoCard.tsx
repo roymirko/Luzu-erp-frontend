@@ -284,41 +284,61 @@ export function GastoCard(props: GastoCardProps) {
             </div>
           )}
 
-          {/* Row 4: Acuerdo de pago / Forma de pago (or Neto if no formaPago) */}
+          {/* Row 4: Forma de pago / Acuerdo de pago (or Neto if no formaPago) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormSelect
-              label="Acuerdo de pago"
-              value={gasto.acuerdoPago}
-              onChange={(v) => onUpdate('acuerdoPago', v)}
-              options={acuerdoPagoOptions}
-              required
-              disabled={isDisabled}
-              error={errors.acuerdoPago}
-              isDark={isDark}
-            />
             {showFormaPago ? (
-              <FormSelect
-                label="Forma de pago"
-                value={gasto.formaPago || ''}
-                onChange={(v) => onUpdate('formaPago', v)}
-                options={formaPagoOptions}
-                required
-                disabled={isDisabled}
-                error={errors.formaPago}
-                isDark={isDark}
-              />
+              <>
+                <FormSelect
+                  label="Forma de pago"
+                  value={gasto.formaPago || ''}
+                  onChange={(v) => {
+                    onUpdate('formaPago', v);
+                    // Clear acuerdoPago if not cheque
+                    if (v !== 'cheque') {
+                      onUpdate('acuerdoPago', '');
+                    }
+                  }}
+                  options={formaPagoOptions}
+                  required
+                  disabled={isDisabled}
+                  error={errors.formaPago}
+                  isDark={isDark}
+                />
+                <FormSelect
+                  label="Acuerdo de pago"
+                  value={gasto.formaPago === 'cheque' ? gasto.acuerdoPago : ''}
+                  onChange={(v) => onUpdate('acuerdoPago', v)}
+                  options={acuerdoPagoOptions}
+                  required={gasto.formaPago === 'cheque'}
+                  disabled={isDisabled || gasto.formaPago !== 'cheque'}
+                  error={errors.acuerdoPago}
+                  isDark={isDark}
+                />
+              </>
             ) : (
-              <FormInput
-                label="Neto"
-                type="text"
-                value={formatNumberWithSeparators(gasto.neto)}
-                onChange={(v) => onUpdate('neto', parseFormattedNumber(v))}
-                required
-                disabled={isDisabled}
-                placeholder="$0"
-                error={errors.neto}
-                isDark={isDark}
-              />
+              <>
+                <FormSelect
+                  label="Acuerdo de pago"
+                  value={gasto.acuerdoPago}
+                  onChange={(v) => onUpdate('acuerdoPago', v)}
+                  options={acuerdoPagoOptions}
+                  required
+                  disabled={isDisabled}
+                  error={errors.acuerdoPago}
+                  isDark={isDark}
+                />
+                <FormInput
+                  label="Neto"
+                  type="text"
+                  value={formatNumberWithSeparators(gasto.neto)}
+                  onChange={(v) => onUpdate('neto', parseFormattedNumber(v))}
+                  required
+                  disabled={isDisabled}
+                  placeholder="$0"
+                  error={errors.neto}
+                  isDark={isDark}
+                />
+              </>
             )}
           </div>
 
