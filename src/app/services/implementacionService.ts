@@ -37,7 +37,7 @@ function mapFromDB(row: ImplementacionGastoFullRow): GastoImplementacion {
     conceptoGasto: row.concepto_gasto || '',
     observaciones: row.observaciones || '',
     estado: (row.estado || 'pendiente') as EstadoGasto,
-    estadoPago: (row.estado_pago || 'pendiente') as EstadoPago,
+    estadoPago: (row.estado_pago || 'creado') as EstadoPago,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by || undefined,
@@ -86,7 +86,7 @@ function mapToGastoInsert(input: CreateGastoImplementacionInput): GastoInsert {
     concepto_gasto: input.conceptoGasto || null,
     observaciones: input.observaciones || null,
     estado: 'activo',
-    estado_pago: 'pendiente-pago',
+    estado_pago: 'creado',
     created_by: input.createdBy || null,
   };
 }

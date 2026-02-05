@@ -23,7 +23,7 @@ export function ModalNuevoUsuario({ isOpen, onClose, onSuccess }: ModalNuevoUsua
     firstName: '',
     lastName: '',
     position: '',
-    areas: []
+    areas: [{ areaId: '', roleId: '' }]
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -94,7 +94,7 @@ export function ModalNuevoUsuario({ isOpen, onClose, onSuccess }: ModalNuevoUsua
           firstName: '',
           lastName: '',
           position: '',
-          areas: []
+          areas: [{ areaId: '', roleId: '' }]
         });
       } else {
         // Mostrar errores de validación

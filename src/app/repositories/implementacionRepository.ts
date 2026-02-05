@@ -52,7 +52,7 @@ function mapGastoToComprobante(gasto: GastoInsert): ComprobanteInsert {
     concepto: gasto.concepto_gasto || null,
     observaciones: gasto.observaciones || null,
     estado: gasto.estado || 'activo',
-    estado_pago: (gasto.estado_pago === 'pendiente-pago' ? 'pendiente' : gasto.estado_pago) as 'pendiente' | 'pagado' | 'anulado',
+    estado_pago: (gasto.estado_pago === 'pendiente-pago' ? 'creado' : gasto.estado_pago) as 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado',
     created_by: gasto.created_by || null,
   };
 }
@@ -80,7 +80,7 @@ function mapGastoUpdateToComprobante(update: GastoUpdate): ComprobanteUpdate {
   if (update.observaciones !== undefined) result.observaciones = update.observaciones;
   if (update.estado !== undefined) result.estado = update.estado;
   if (update.estado_pago !== undefined) {
-    result.estado_pago = (update.estado_pago === 'pendiente-pago' ? 'pendiente' : update.estado_pago) as 'pendiente' | 'pagado' | 'anulado';
+    result.estado_pago = (update.estado_pago === 'pendiente-pago' ? 'creado' : update.estado_pago) as 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
   }
   return result;
 }

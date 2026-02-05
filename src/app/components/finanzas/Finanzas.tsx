@@ -5,7 +5,7 @@ import { useTheme } from '@/app/contexts/ThemeContext';
 import { Button } from '@/app/components/ui/button';
 import { TablaComprobantes } from '@/app/components/shared/TablaComprobantes';
 import { DialogNuevoComprobante } from '@/app/components/shared/DialogNuevoComprobante';
-import { DialogDetalleComprobante } from '@/app/components/shared/DialogDetalleComprobante';
+import { DialogAdminComprobante } from '@/app/components/administracion/DialogAdminComprobante';
 import * as comprobantesService from '@/app/services/comprobantesService';
 import type { ComprobanteWithContext, Comprobante } from '@/app/types/comprobantes';
 
@@ -82,7 +82,7 @@ export function Finanzas() {
         defaultTipoMovimiento="ingreso"
       />
 
-      <DialogDetalleComprobante
+      <DialogAdminComprobante
         open={!!selectedComprobante}
         onOpenChange={(open) => !open && setSelectedComprobante(null)}
         comprobante={selectedComprobante}

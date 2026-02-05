@@ -37,7 +37,7 @@ function mapFromDB(row: ProgramacionGastoFullRow): GastoProgramacion {
     conceptoGasto: row.concepto_gasto || undefined,
     observaciones: row.observaciones || undefined,
     estado: (row.estado || 'pendiente') as EstadoGastoProgramacion,
-    estadoPago: (row.estado_pago || 'pendiente') as EstadoPago,
+    estadoPago: (row.estado_pago || 'creado') as EstadoPago,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by || undefined,
@@ -94,7 +94,7 @@ function mapToDBInserts(input: CreateGastoProgramacionInput): {
       concepto_gasto: input.conceptoGasto || null,
       observaciones: input.observaciones || null,
       estado: 'pendiente',
-      estado_pago: 'pendiente',
+      estado_pago: 'creado',
       created_by: input.createdBy || null,
     },
     formulario: {
@@ -304,7 +304,7 @@ export async function createMultiple(input: CreateMultipleGastosInput): Promise<
         concepto_gasto: null,
         observaciones: g.observaciones || null,
         estado: 'pendiente',
-        estado_pago: 'pendiente',
+        estado_pago: 'creado',
         created_by: input.createdBy || null,
       },
       context: {
@@ -368,7 +368,7 @@ export async function addGastoToFormulario(
       empresa: input.empresa || null,
       observaciones: input.observaciones || null,
       estado: 'pendiente',
-      estado_pago: 'pendiente',
+      estado_pago: 'creado',
       created_by: input.createdBy || null,
     },
     context: {

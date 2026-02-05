@@ -40,7 +40,7 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
     firstName: '',
     lastName: '',
     position: '',
-    areas: [],
+    areas: [{ areaId: '', roleId: '' }], // Pre-populate with one empty row
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -64,7 +64,7 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
         firstName: '',
         lastName: '',
         position: '',
-        areas: [],
+        areas: [{ areaId: '', roleId: '' }],
       });
       
       onOpenChange(false);

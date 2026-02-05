@@ -224,7 +224,7 @@ BEGIN
     tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'egreso', 'Producciones Audiovisuales S.A.', '30712345678',
-    25000, 21, 5250, 30250, 'ARS', 'Luzu TV', 'activo', 'pendiente', 'system'
+    25000, 21, 5250, 30250, 'ARS', 'Luzu TV', 'activo', 'creado', 'system'
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
   VALUES (v_comprobante, v_form1, 'FM Luzu', 30250, 'Luzu TV', '30', 'transferencia');
@@ -251,7 +251,7 @@ BEGIN
     tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'egreso', 'Talentos y Producción S.A.', '30745678901',
-    35000, 21, 7350, 42350, 'ARS', 'Luzu TV', 'activo', 'pendiente', 'system'
+    35000, 21, 7350, 42350, 'ARS', 'Luzu TV', 'activo', 'creado', 'system'
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
   VALUES (v_comprobante, v_form2, 'Nadie Dice Nada', 42350, 'Luzu TV', '30', 'transferencia');
@@ -278,7 +278,7 @@ BEGIN
     tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'egreso', 'Sonido Profesional S.R.L.', '30790123456',
-    28000, 21, 5880, 33880, 'ARS', 'Luzu TV', 'activo', 'pendiente', 'system'
+    28000, 21, 5880, 33880, 'ARS', 'Luzu TV', 'activo', 'creado', 'system'
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
   VALUES (v_comprobante, v_form3, 'Se Fue Larga', 33880, 'Luzu TV', '45', 'transferencia');
@@ -288,7 +288,7 @@ BEGIN
     tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'egreso', 'Iluminación y Escenografía S.A.', '30801234567',
-    32000, 21, 6720, 38720, 'ARS', 'Luzu TV SA', 'activo', 'pendiente', 'system'
+    32000, 21, 6720, 38720, 'ARS', 'Luzu TV SA', 'activo', 'creado', 'system'
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
   VALUES (v_comprobante, v_form3, 'La Novela', 38720, 'Luzu TV SA', '30', 'cheque');
@@ -305,7 +305,7 @@ BEGIN
     tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by
   ) VALUES (
     'egreso', 'Servicios de Contenido Digital S.A.', '30734567890',
-    45000, 21, 9450, 54450, 'ARS', 'Luzu TV', 'activo', 'pendiente', 'system'
+    45000, 21, 9450, 54450, 'ARS', 'Luzu TV', 'activo', 'creado', 'system'
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, factura_emitida_a, acuerdo_pago, forma_pago)
   VALUES (v_comprobante, v_form4, 'Algo Va A Picar', 54450, 'Luzu TV', '30', 'transferencia');
@@ -354,7 +354,7 @@ BEGIN
       'egreso', 'Producciones Audiovisuales S.A.', '30712345678',
       30000, 21, 6300, 36300, 'ARS',
       'Luzu TV', 'Producción audiovisual campaña Verano 2024',
-      'activo', 'pendiente', 'system'
+      'activo', 'creado', 'system'
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
@@ -392,7 +392,7 @@ BEGIN
       'egreso', 'Talentos y Producción S.A.', '30745678901',
       45000, 21, 9450, 54450, 'ARS',
       'Luzu TV', 'Talentos para campaña Cashback',
-      'activo', 'pendiente', 'system'
+      'activo', 'creado', 'system'
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
@@ -410,7 +410,7 @@ BEGIN
       'egreso', 'Equipamiento Técnico S.R.L.', '30756789012',
       25000, 21, 5250, 30250, 'ARS',
       'Luzu TV', 'Equipamiento técnico para grabación',
-      'activo', 'pendiente', 'system'
+      'activo', 'creado', 'system'
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
@@ -430,7 +430,7 @@ BEGIN
       'egreso', 'Estudio Creativo Buenos Aires S.A.', '30767890123',
       38000, 21, 7980, 45980, 'ARS',
       'Luzu TV', 'Diseño creativo campaña Amigos',
-      'activo', 'pendiente', 'system'
+      'activo', 'creado', 'system'
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
@@ -490,7 +490,7 @@ BEGIN
   ) VALUES (
     'egreso', 'Producciones Audiovisuales S.A.', '30712345678',
     'FA', '0001', '00001234', '2024-01-10',
-    40000, 21, 8400, 48400, 'ARS', 'activo', 'pendiente', v_user_email
+    40000, 21, 8400, 48400, 'ARS', 'activo', 'creado', v_user_email
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -531,7 +531,7 @@ BEGIN
   ) VALUES (
     'egreso', 'Iluminación y Escenografía S.A.', '30801234567',
     'FA', '0002', '00001111', '2024-02-05',
-    55000, 21, 11550, 66550, 'ARS', 'activo', 'pendiente', v_user_email
+    55000, 21, 11550, 66550, 'ARS', 'activo', 'creado', v_user_email
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -572,7 +572,7 @@ BEGIN
   ) VALUES (
     'egreso', 'Estudio Creativo Buenos Aires S.A.', '30767890123',
     'FA', '0003', '00003333', '2024-03-01',
-    70000, 21, 14700, 84700, 'ARS', 'activo', 'pendiente', v_user_email
+    70000, 21, 14700, 84700, 'ARS', 'activo', 'creado', v_user_email
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -589,7 +589,7 @@ BEGIN
   ) VALUES (
     'egreso', 'Talentos y Producción S.A.', '30745678901',
     'FA', '0003', '00004444', '2024-03-05',
-    28000, 21, 5880, 33880, 'ARS', 'Luzu TV SA', 'activo', 'pendiente', v_user_email
+    28000, 21, 5880, 33880, 'ARS', 'Luzu TV SA', 'activo', 'creado', v_user_email
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -613,7 +613,7 @@ BEGIN
   ) VALUES (
     'egreso', 'Media Tech Argentina S.R.L.', '30723456789',
     'FA', '0004', '00005555', '2024-03-15',
-    45000, 21, 9450, 54450, 'ARS', 'activo', 'pendiente', v_user_email
+    45000, 21, 9450, 54450, 'ARS', 'activo', 'creado', v_user_email
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, factura_emitida_a, empresa, empresa_programa,
@@ -638,6 +638,103 @@ BEGIN
   ) VALUES (
     v_comprobante, v_form4, 'Luzu TV SA', 'Luzu TV SA', 'optimo',
     '2024-03-18', '5', 'cheque', 'argentina'
+  );
+END $$;
+
+-- ============================================
+-- 10. COMPROBANTES DE INGRESOS (FACTURAS EMITIDAS)
+-- Ingresos directos por servicios publicitarios
+-- ============================================
+DO $$
+DECLARE
+  v_comprobante uuid;
+BEGIN
+  -- Ingreso 1: Factura a Coca Cola - Campaña Verano 2024
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'Coca Cola Argentina', '30500001234',
+    'FA', '0001', '00000001', '2024-01-20',
+    150000, 21, 31500, 181500, 'ARS', 'Luzu TV', 'Servicios publicitarios Campaña Verano 2024',
+    'activo', 'pagado', 'system'
+  );
+
+  -- Ingreso 2: Factura a Movistar - Campaña Conectados
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'Telefónica de Argentina', '30500005678',
+    'FA', '0001', '00000002', '2024-01-25',
+    80000, 21, 16800, 96800, 'ARS', 'Luzu TV', 'Servicios publicitarios Campaña Conectados',
+    'activo', 'creado', 'system'
+  );
+
+  -- Ingreso 3: Factura a MercadoPago - Campaña Cashback
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'Mercado Libre', '30500009012',
+    'FA', '0001', '00000003', '2024-02-05',
+    200000, 21, 42000, 242000, 'ARS', 'Luzu TV', 'Servicios publicitarios Campaña Cashback',
+    'activo', 'aprobado', 'system'
+  );
+
+  -- Ingreso 4: Factura a YPF - Campaña Energía Argentina
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'YPF S.A.', '30500003456',
+    'FA', '0001', '00000004', '2024-02-15',
+    120000, 21, 25200, 145200, 'ARS', 'Luzu TV', 'Servicios publicitarios Campaña Energía Argentina',
+    'activo', 'creado', 'system'
+  );
+
+  -- Ingreso 5: Factura a Quilmes - Campaña Amigos
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'Cervecería Quilmes', '30500007890',
+    'FA', '0001', '00000005', '2024-03-05',
+    180000, 21, 37800, 217800, 'ARS', 'Luzu TV', 'Servicios publicitarios Campaña Amigos',
+    'activo', 'pagado', 'system'
+  );
+
+  -- Ingreso 6: Factura a Banco Galicia - Campaña Digital
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'Banco Galicia', '30500002345',
+    'FA', '0001', '00000006', '2024-03-20',
+    90000, 21, 18900, 108900, 'ARS', 'Luzu TV SA', 'Servicios publicitarios Campaña Digital',
+    'activo', 'requiere_info', 'system'
+  );
+
+  -- Ingreso 7: Nota de crédito a Movistar (ajuste)
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'Telefónica de Argentina', '30500005678',
+    'NCA', '0001', '00000001', '2024-02-01',
+    -10000, 21, -2100, -12100, 'ARS', 'Luzu TV', 'Ajuste por bonificación acordada',
+    'activo', 'aprobado', 'system'
+  );
+
+  -- Ingreso 8: Factura en USD a cliente internacional
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, cotizacion, empresa, concepto, estado, estado_pago, created_by
+  ) VALUES (
+    'ingreso', 'Netflix Inc.', '30-71234567-9',
+    'FE', '0001', '00000001', '2024-03-10',
+    5000, 0, 0, 5000, 'USD', 850.00, 'Luzu TV', 'Branded content internacional',
+    'activo', 'creado', 'system'
   );
 END $$;
 

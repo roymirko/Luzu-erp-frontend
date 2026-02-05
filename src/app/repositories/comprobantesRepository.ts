@@ -130,7 +130,7 @@ export async function remove(id: string): Promise<RepositoryResult<null>> {
   return { data: null, error: null };
 }
 
-export async function findByEstadoPago(estadoPago: 'pendiente' | 'pagado' | 'anulado'): Promise<RepositoryListResult<ComprobanteRow>> {
+export async function findByEstadoPago(estadoPago: 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado'): Promise<RepositoryListResult<ComprobanteRow>> {
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .select('*')

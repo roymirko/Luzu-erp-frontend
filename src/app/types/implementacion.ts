@@ -1,5 +1,5 @@
 export type EstadoGasto = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPago = 'pendiente' | 'pagado' | 'anulado';
+export type EstadoPago = 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
 
 /**
  * Domain model for a gasto de implementacion

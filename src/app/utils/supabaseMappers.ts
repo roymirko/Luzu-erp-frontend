@@ -28,14 +28,14 @@ export const mapUserFromDB = (dbUser: any): User => ({
 export const mapUserToDB = (user: Partial<User>) => {
     const dbUser: any = {};
     if (user.id) dbUser.id = user.id;
-    if (user.email) dbUser.correo = user.email;
-    if (user.firstName) dbUser.nombre = user.firstName;
-    if (user.lastName) dbUser.apellido = user.lastName;
+    if (user.email) dbUser.email = user.email;
+    if (user.firstName) dbUser.first_name = user.firstName;
+    if (user.lastName) dbUser.last_name = user.lastName;
     if (user.avatar !== undefined) dbUser.avatar = user.avatar;
-    if (user.active !== undefined) dbUser.activo = user.active;
-    if (user.lastLogin) dbUser.ultimo_acceso = user.lastLogin.toISOString();
+    if (user.active !== undefined) dbUser.active = user.active;
+    if (user.lastLogin) dbUser.last_login = user.lastLogin.toISOString();
     if (user.createdBy) dbUser.creado_por = user.createdBy;
-    if (user.metadata) dbUser.metadatos = user.metadata;
+    if (user.metadata) dbUser.metadata = user.metadata;
     return dbUser;
 };
 
@@ -56,13 +56,13 @@ export const mapAreaFromDB = (dbArea: any): Area => ({
 export const mapAreaToDB = (area: Partial<Area>) => {
     const dbArea: any = {};
     if (area.id) dbArea.id = area.id;
-    if (area.name) dbArea.nombre = area.name;
-    if (area.code) dbArea.codigo = area.code;
-    if (area.description) dbArea.descripcion = area.description;
-    if (area.manager) dbArea.responsable_id = area.manager;
-    if (area.active !== undefined) dbArea.activo = area.active;
+    if (area.name) dbArea.name = area.name;
+    if (area.code) dbArea.code = area.code;
+    if (area.description) dbArea.description = area.description;
+    if (area.manager) dbArea.manager_id = area.manager;
+    if (area.active !== undefined) dbArea.active = area.active;
     if (area.createdBy) dbArea.creado_por = area.createdBy;
-    if (area.metadata) dbArea.metadatos = area.metadata;
+    if (area.metadata) dbArea.metadata = area.metadata;
     return dbArea;
 };
 
@@ -90,7 +90,7 @@ export const mapUserAreaRoleToDB = (uar: Partial<UserAreaRole>) => {
     if (uar.userId) dbUar.usuario_id = uar.userId;
     if (uar.areaId) dbUar.area_id = uar.areaId;
     if (uar.roleId) dbUar.rol_id = uar.roleId;
-    if (uar.assignedBy) dbUar.asignado_por = uar.assignedBy;
+    if (uar.assignedBy) dbUar.assigned_by = uar.assignedBy;
     return dbUar;
 };
 
@@ -344,7 +344,7 @@ export const mapBloqueImporteToDB = (item: BloqueImporte, expenseId: string) => 
     importe_total: (parseFloat(item.neto) || 0) * 1.21,
     fecha_factura: item.fechaComprobante || null,
     condicion_pago: item.condicionPago,
-    estado_pago: item.estadoPgm || 'pendiente',
+    estado_pago: item.estadoPgm || 'creado',
     adjuntos: item.documentoAdjunto ? [item.documentoAdjunto] : null
 });
 

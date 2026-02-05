@@ -489,13 +489,20 @@ export interface ComprobanteRow {
   concepto: string | null;
   observaciones: string | null;
   estado: string;
-  estado_pago: 'pendiente' | 'pagado' | 'pedir_info' | 'anulado';
+  estado_pago: 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
   // Payment/collection fields (migration 004)
   forma_pago: string | null;
   cotizacion: number | null;
   banco: string | null;
   numero_operacion: string | null;
   fecha_pago: string | null;
+  // Admin fields (migration 005)
+  condicion_iva: string | null;
+  comprobante_pago: string | null;
+  ingresos_brutos: number | null;
+  retencion_ganancias: number | null;
+  fecha_estimada_pago: string | null;
+  nota_admin: string | null;
   // Audit
   created_at: string;
   updated_at: string;
@@ -560,6 +567,7 @@ export type ExperienceComprobanteInsert = Omit<ExperienceComprobanteRow, 'id'>;
 export type ExperienceComprobanteUpdate = Partial<Omit<ExperienceComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>;
 
 // Vista comprobantes_full (para queries con contexto)
+// Note: ComprobanteFullRow inherits admin fields from ComprobanteRow
 export interface ComprobanteFullRow extends ComprobanteRow {
   area_origen: 'implementacion' | 'programacion' | 'experience' | 'directo';
   // Implementacion context

@@ -41,6 +41,13 @@ function mapFromDB(row: ComprobanteRow): Comprobante {
     banco: row.banco ?? undefined,
     numeroOperacion: row.numero_operacion ?? undefined,
     fechaPago: row.fecha_pago ? new Date(row.fecha_pago) : undefined,
+    // Admin fields
+    condicionIva: row.condicion_iva as any,
+    comprobantePago: row.comprobante_pago ?? undefined,
+    ingresosBrutos: row.ingresos_brutos ?? 0,
+    retencionGanancias: row.retencion_ganancias ?? 0,
+    fechaEstimadaPago: row.fecha_estimada_pago ? new Date(row.fecha_estimada_pago) : undefined,
+    notaAdmin: row.nota_admin ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,
@@ -75,7 +82,7 @@ function mapToDBInsert(input: CreateComprobanteInput): ComprobanteInsert {
     concepto: input.concepto || null,
     observaciones: input.observaciones || null,
     estado: 'activo',
-    estado_pago: 'pendiente',
+    estado_pago: 'creado',
     // Payment fields
     forma_pago: input.formaPago || null,
     cotizacion: input.cotizacion || null,
@@ -203,6 +210,13 @@ export async function update(input: UpdateComprobanteInput): Promise<{ data: Com
   if (fields.banco !== undefined) updateData.banco = fields.banco;
   if (fields.numeroOperacion !== undefined) updateData.numero_operacion = fields.numeroOperacion;
   if (fields.fechaPago !== undefined) updateData.fecha_pago = fields.fechaPago?.toISOString().split('T')[0];
+  // Admin fields
+  if (fields.condicionIva !== undefined) updateData.condicion_iva = fields.condicionIva;
+  if (fields.comprobantePago !== undefined) updateData.comprobante_pago = fields.comprobantePago;
+  if (fields.ingresosBrutos !== undefined) updateData.ingresos_brutos = fields.ingresosBrutos;
+  if (fields.retencionGanancias !== undefined) updateData.retencion_ganancias = fields.retencionGanancias;
+  if (fields.fechaEstimadaPago !== undefined) updateData.fecha_estimada_pago = fields.fechaEstimadaPago?.toISOString().split('T')[0];
+  if (fields.notaAdmin !== undefined) updateData.nota_admin = fields.notaAdmin;
 
   const result = await comprobantesRepo.update(id, updateData);
 
@@ -275,6 +289,13 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     banco: row.banco ?? undefined,
     numeroOperacion: row.numero_operacion ?? undefined,
     fechaPago: row.fecha_pago ? new Date(row.fecha_pago) : undefined,
+    // Admin fields
+    condicionIva: row.condicion_iva as any,
+    comprobantePago: row.comprobante_pago ?? undefined,
+    ingresosBrutos: row.ingresos_brutos ?? 0,
+    retencionGanancias: row.retencion_ganancias ?? 0,
+    fechaEstimadaPago: row.fecha_estimada_pago ? new Date(row.fecha_estimada_pago) : undefined,
+    notaAdmin: row.nota_admin ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,

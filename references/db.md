@@ -225,6 +225,13 @@ CREATE TABLE comprobantes (
   banco TEXT,
   numero_operacion TEXT,
   fecha_pago DATE,
+  -- Admin fields (migration 005)
+  condicion_iva TEXT,
+  comprobante_pago TEXT,
+  ingresos_brutos DECIMAL(15,2) DEFAULT 0,
+  retencion_ganancias DECIMAL(15,2) DEFAULT 0,
+  fecha_estimada_pago DATE,
+  nota_admin TEXT,
   -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -367,10 +374,11 @@ Full views for UI:
 - `anulado` - Cancelled
 
 ### Estado Pago
-- `pendiente` - Payment pending
-- `pagado` - Paid
-- `pedir_info` - Request more info
-- `anulado` - Cancelled
+- `creado` - Created (editable)
+- `aprobado` - Approved by Admin/Finanzas (locked)
+- `requiere_info` - Requires more info (editable)
+- `rechazado` - Rejected (locked)
+- `pagado` - Paid (only from aprobado, locked)
 
 ### Formulario Estado
 - `activo` / `abierto` - Open for editing

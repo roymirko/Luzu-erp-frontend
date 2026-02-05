@@ -59,14 +59,43 @@ function formatDate(date: Date | undefined): string {
   }).format(date);
 }
 
+function formatShortDate(date: Date | undefined): string {
+  if (!date) return '-';
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+  }).format(date);
+}
+
 function getEstadoPagoBadgeConfig(estadoPago: EstadoPago) {
   switch (estadoPago) {
-    case 'pendiente':
+    case 'creado':
       return {
-        bg: 'bg-[#fffae8]',
-        border: 'border-[#8f6e00]',
-        text: 'text-[#8f6e00]',
-        dot: 'bg-[#8f6e00]',
+        bg: 'bg-gray-100',
+        border: 'border-gray-400',
+        text: 'text-gray-700',
+        dot: 'bg-gray-500',
+      };
+    case 'aprobado':
+      return {
+        bg: 'bg-blue-50',
+        border: 'border-blue-400',
+        text: 'text-blue-700',
+        dot: 'bg-blue-500',
+      };
+    case 'requiere_info':
+      return {
+        bg: 'bg-[#FEF3C7]',
+        border: 'border-[#D97706]',
+        text: 'text-[#B45309]',
+        dot: 'bg-[#D97706]',
+      };
+    case 'rechazado':
+      return {
+        bg: 'bg-[#ffebef]',
+        border: 'border-[#ea173e]',
+        text: 'text-[#ea173e]',
+        dot: 'bg-[#ea173e]',
       };
     case 'pagado':
       return {
@@ -74,20 +103,6 @@ function getEstadoPagoBadgeConfig(estadoPago: EstadoPago) {
         border: 'border-[#118f00]',
         text: 'text-[#118f00]',
         dot: 'bg-[#118f00]',
-      };
-    case 'pedir_info':
-      return {
-        bg: 'bg-[#FEF3C7]',
-        border: 'border-[#D97706]',
-        text: 'text-[#B45309]',
-        dot: 'bg-[#D97706]',
-      };
-    case 'anulado':
-      return {
-        bg: 'bg-[#ffebef]',
-        border: 'border-[#ea173e]',
-        text: 'text-[#ea173e]',
-        dot: 'bg-[#ea173e]',
       };
     default:
       return {
@@ -228,14 +243,15 @@ export function TablaComprobantes({
             <DataTableHeaderCell>Concepto</DataTableHeaderCell>
             <DataTableHeaderCell className="text-right">Neto</DataTableHeaderCell>
             <DataTableHeaderCell className="text-right">Total</DataTableHeaderCell>
+            <DataTableHeaderCell>Est. Pago</DataTableHeaderCell>
             <DataTableHeaderCell>Acciones</DataTableHeaderCell>
           </tr>
         </DataTableHead>
         <DataTableBody>
           {loading ? (
-            <DataTableEmpty colSpan={9}>Cargando comprobantes...</DataTableEmpty>
+            <DataTableEmpty colSpan={10}>Cargando comprobantes...</DataTableEmpty>
           ) : paginatedComprobantes.length === 0 ? (
-            <DataTableEmpty colSpan={9}>
+            <DataTableEmpty colSpan={10}>
               {searchTerm || filterType !== 'todos'
                 ? 'No se encontraron comprobantes con los filtros aplicados'
                 : 'No hay comprobantes registrados'}
@@ -273,6 +289,9 @@ export function TablaComprobantes({
                 </DataTableCell>
                 <DataTableCell className="text-right font-medium">
                   {formatCurrency(comprobante.total, comprobante.moneda)}
+                </DataTableCell>
+                <DataTableCell muted>
+                  {formatShortDate(comprobante.fechaEstimadaPago)}
                 </DataTableCell>
                 <DataTableCell>
                   <Button

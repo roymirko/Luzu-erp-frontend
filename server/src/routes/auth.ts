@@ -7,14 +7,15 @@ const auth = new Hono();
 
 // POST /api/auth/login
 auth.post('/login', async (c) => {
-  const body = await c.req.json();
-  const { email, password } = body;
+  try {
+    const body = await c.req.json();
+    const { email, password } = body;
 
-  if (!email || !password) {
-    return c.json({ error: 'Email and password required' }, 400);
-  }
+    if (!email || !password) {
+      return c.json({ error: 'Email and password required' }, 400);
+    }
 
-  const user = await findUserByEmail(email);
+    const user = await findUserByEmail(email);
 
   if (!user) {
     return c.json({ error: 'Invalid credentials' }, 401);
@@ -56,6 +57,10 @@ auth.post('/login', async (c) => {
       metadata: user.metadata
     }
   });
+  } catch (err) {
+    console.error('Login error:', err);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
 });
 
 // GET /api/auth/me - Get current user

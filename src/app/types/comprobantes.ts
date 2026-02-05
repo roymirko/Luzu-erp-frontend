@@ -12,10 +12,24 @@ export type TipoComprobante =
   | 'REC' | 'TKT' | 'OTR';       // Recibo, Ticket, Otro
 
 export type EstadoComprobante = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPago = 'pendiente' | 'pagado' | 'pedir_info' | 'anulado';
+export type EstadoPago = 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
 export type Moneda = 'ARS' | 'USD';
 export type TipoGasto = 'implementacion' | 'programacion' | 'experience';
 export type FormaPago = 'transferencia' | 'cheque' | 'efectivo' | 'tarjeta' | 'otro';
+export type CondicionIva =
+  | 'responsable_inscripto'
+  | 'monotributista'
+  | 'exento'
+  | 'consumidor_final'
+  | 'no_responsable';
+
+export const CONDICION_IVA_LABELS: Record<CondicionIva, string> = {
+  responsable_inscripto: 'Responsable Inscripto',
+  monotributista: 'Monotributista',
+  exento: 'Exento',
+  consumidor_final: 'Consumidor Final',
+  no_responsable: 'No Responsable',
+};
 
 export const FORMA_PAGO_LABELS: Record<FormaPago, string> = {
   transferencia: 'Transferencia',
@@ -64,6 +78,13 @@ export interface Comprobante {
   banco?: string;
   numeroOperacion?: string;
   fechaPago?: Date;
+  // Admin fields
+  condicionIva?: CondicionIva;
+  comprobantePago?: string;
+  ingresosBrutos?: number;
+  retencionGanancias?: number;
+  fechaEstimadaPago?: Date;
+  notaAdmin?: string;
   // Audit
   createdAt: Date;
   updatedAt: Date;
@@ -99,6 +120,13 @@ export interface CreateComprobanteInput {
   banco?: string;
   numeroOperacion?: string;
   fechaPago?: Date;
+  // Admin fields
+  condicionIva?: CondicionIva;
+  comprobantePago?: string;
+  ingresosBrutos?: number;
+  retencionGanancias?: number;
+  fechaEstimadaPago?: Date;
+  notaAdmin?: string;
   createdBy?: string;
 }
 
@@ -249,15 +277,18 @@ export const AREA_ORIGEN_LABELS: Record<AreaOrigen, string> = {
  * Labels para estado de pago
  */
 export const ESTADO_PAGO_LABELS: Record<EstadoPago, string> = {
-  pendiente: 'Pendiente',
+  creado: 'Creado',
+  aprobado: 'Aprobado',
+  requiere_info: 'Requiere Info',
+  rechazado: 'Rechazado',
   pagado: 'Pagado',
-  pedir_info: 'Pedir Info',
-  anulado: 'Anulado',
 };
 
 /**
  * Determina si un comprobante está bloqueado (no editable)
+ * Bloqueado: aprobado, rechazado, pagado
+ * Editable: creado, requiere_info
  */
 export function isComprobanteLocked(estadoPago: EstadoPago): boolean {
-  return estadoPago === 'pagado' || estadoPago === 'anulado';
+  return estadoPago === 'aprobado' || estadoPago === 'rechazado' || estadoPago === 'pagado';
 }
