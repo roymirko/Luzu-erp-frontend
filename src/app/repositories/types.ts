@@ -503,6 +503,16 @@ export interface ComprobanteRow {
   retencion_ganancias: number | null;
   fecha_estimada_pago: string | null;
   nota_admin: string | null;
+  // Ingreso-specific fields (migration 006)
+  retencion_iva: number | null;
+  retencion_suss: number | null;
+  fecha_vencimiento: string | null;
+  fecha_ingreso_cheque: string | null;
+  certificacion_enviada_fecha: string | null;
+  portal: string | null;
+  contacto: string | null;
+  fecha_envio: string | null;
+  orden_publicidad_id_ingreso: string | null;
   // Audit
   created_at: string;
   updated_at: string;
@@ -573,6 +583,7 @@ export interface ComprobanteFullRow extends ComprobanteRow {
   // Implementacion context
   implementacion_comprobante_id: string | null;
   orden_publicidad_id: string | null;
+  item_orden_publicidad_id: string | null;
   sector: string | null;
   rubro_gasto: string | null;
   sub_rubro: string | null;
@@ -591,4 +602,15 @@ export interface ComprobanteFullRow extends ComprobanteRow {
   experience_formulario_id: string | null;
   exp_nombre_campana: string | null;
   exp_mes_gestion: string | null;
+  // OP vinculada para ingresos
+  ingreso_op_id: string | null;
+  ingreso_op_numero: string | null;
+  ingreso_op_responsable: string | null;
+  ingreso_op_unidad_negocio: string | null;
+  ingreso_op_nombre_campana: string | null;
+  ingreso_op_marca: string | null;
+  ingreso_op_razon_social: string | null;
+  ingreso_op_importe: string | null;
+  ingreso_op_acuerdo_pago: string | null;
+  ingreso_op_mes_servicio: string | null;
 }

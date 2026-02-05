@@ -1,71 +1,68 @@
-# Server-Side Authentication Implementation
+# Form Ingresos Admin - Implementation
 
 ## Completed
 
-- [x] Create DB migration `003_auth_password.sql` - adds password_hash, user_type to usuarios
-- [x] Create Hono backend in `/server`
-  - [x] src/index.ts - main entry with CORS, logger
-  - [x] src/routes/auth.ts - POST /login, GET /me
-  - [x] src/routes/users.ts - CRUD (admin only)
-  - [x] src/middleware/auth.ts - JWT verification
-  - [x] src/services/auth.service.ts - bcrypt, JWT
-  - [x] src/services/user.service.ts - DB operations
-  - [x] src/utils/supabase.ts - server-side client
-  - [x] scripts/seed.ts - creates admin@luzutv.com.ar
-- [x] Create API client `src/app/services/api.ts`
-- [x] Update DataContext with JWT login flow
-- [x] Update Login.tsx with email/password form
-- [x] Update vite.config.ts with /api proxy
-- [x] Update package.json with server scripts
-- [x] Update User type with userType
-- [x] Update supabaseMappers for user_type
+- [x] Create DB migration `006_ingresos_admin_fields.sql`
+  - retencion_iva, retencion_suss (retenciones adicionales)
+  - fecha_vencimiento, fecha_ingreso_cheque (fechas cobro)
+  - certificacion_enviada_fecha, portal, contacto, fecha_envio (certificación)
+  - orden_publicidad_id_ingreso (vinculación OP opcional)
+  - Updated comprobantes_full view with OP join for ingresos
+- [x] Update types
+  - Added ingreso fields to Comprobante interface (comprobantes.ts)
+  - Added ingreso OP context fields to ComprobanteWithContext
+  - Updated ComprobanteRow + ComprobanteFullRow in repositories/types.ts
+- [x] Update comprobantesService
+  - mapFromDB + mapFromDBWithContext with ingreso fields
+  - update() function handles ingreso fields
+- [x] Create OrdenPublicidadSelector
+  - Combobox for searching/selecting OPs
+  - Shows OP#, campaña, cliente, marca in results
+  - Clear button to unlink
+- [x] Create DialogIngresoAdmin
+  - Specialized dialog for ingresos (cobros)
+  - OP selector + context display
+  - Retenciones: IVA, IIBB, Ganancias, SUSS
+  - Total a Cobrar calculated
+  - Fechas: vencimiento, proyección cobro (auto), cobro real, días transcurridos
+  - Certificación fields: fecha enviada, portal, contacto, fecha envío
+  - Estado buttons: Aprobar, Req Info, Rechazar, Marcar Cobrado
+- [x] Update Administracion.tsx
+  - Opens DialogIngresoAdmin for ingresos
+  - Opens DialogAdminComprobante for egresos
+- [x] Update Finanzas.tsx
+  - Same logic as Administracion
 - [x] Update references/db.md
+  - Documented ingreso fields
 
-## Verification Steps
+## Verification
 
-1. Run migration: `supabase db push` or apply `003_auth_password.sql` manually
-2. Create server `.env`:
-   ```
-   SUPABASE_URL=your_url
-   SUPABASE_SERVICE_ROLE_KEY=your_key
-   JWT_SECRET=your_32_char_secret
-   ADMIN_DEFAULT_PASSWORD=admin123
-   PORT=3001
-   ```
-3. Seed admin: `npm run seed`
-4. Start server: `npm run server`
-5. Start frontend: `npm run dev`
-6. Login with admin@luzutv.com.ar / admin123
-7. Test Google OAuth still works
+1. Run migration: apply `006_ingresos_admin_fields.sql` in Supabase
+2. Start dev: `npm run dev`
+3. Go to `/administracion` or `/finanzas`
+4. Click "Nuevo Ingreso" → create test ingreso
+5. Click on ingreso row → verify DialogIngresoAdmin opens
+6. Test:
+   - Select OP → context data shows
+   - Edit retenciones → Total a Cobrar updates
+   - Set fecha vencimiento → días transcurridos shows
+   - All fields save correctly
+   - State transitions work (aprobar/rechazar/cobrado)
+7. Click on egreso row → verify DialogAdminComprobante opens (no regression)
 
 ## Files Created
 
 ```
-server/
-  package.json
-  tsconfig.json
-  .env.example
-  scripts/seed.ts
-  src/
-    index.ts
-    routes/auth.ts
-    routes/users.ts
-    middleware/auth.ts
-    services/auth.service.ts
-    services/user.service.ts
-    utils/supabase.ts
-
-supabase/migrations/003_auth_password.sql
-src/app/services/api.ts
+supabase/migrations/006_ingresos_admin_fields.sql
+src/app/components/shared/OrdenPublicidadSelector.tsx
+src/app/components/administracion/DialogIngresoAdmin.tsx
 ```
 
 ## Files Modified
 
-- src/app/contexts/DataContext.tsx - JWT login, authToken state
-- src/app/components/Login.tsx - email/password form
-- src/app/App.tsx - handleLogin signature
-- src/app/types/business.ts - UserType, metadata.userType
-- src/app/utils/supabaseMappers.ts - map user_type
-- vite.config.ts - proxy /api
-- package.json - server scripts
-- references/db.md - documented new columns
+- src/app/types/comprobantes.ts - ingreso fields + OP context fields
+- src/app/repositories/types.ts - ingreso fields in ComprobanteRow/ComprobanteFullRow
+- src/app/services/comprobantesService.ts - mappers + update
+- src/app/components/administracion/Administracion.tsx - route to correct dialog
+- src/app/components/finanzas/Finanzas.tsx - route to correct dialog
+- references/db.md - documented ingreso fields

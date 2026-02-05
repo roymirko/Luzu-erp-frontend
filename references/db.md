@@ -232,6 +232,16 @@ CREATE TABLE comprobantes (
   retencion_ganancias DECIMAL(15,2) DEFAULT 0,
   fecha_estimada_pago DATE,
   nota_admin TEXT,
+  -- Ingreso-specific fields (migration 006)
+  retencion_iva DECIMAL(15,2) DEFAULT 0,
+  retencion_suss DECIMAL(15,2) DEFAULT 0,
+  fecha_vencimiento DATE,
+  fecha_ingreso_cheque DATE,
+  certificacion_enviada_fecha DATE,
+  portal TEXT,
+  contacto TEXT,
+  fecha_envio DATE,
+  orden_publicidad_id_ingreso UUID REFERENCES ordenes_publicidad(id),
   -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

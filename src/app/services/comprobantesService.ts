@@ -48,6 +48,16 @@ function mapFromDB(row: ComprobanteRow): Comprobante {
     retencionGanancias: row.retencion_ganancias ?? 0,
     fechaEstimadaPago: row.fecha_estimada_pago ? new Date(row.fecha_estimada_pago) : undefined,
     notaAdmin: row.nota_admin ?? undefined,
+    // Ingreso-specific fields
+    retencionIva: row.retencion_iva ?? 0,
+    retencionSuss: row.retencion_suss ?? 0,
+    fechaVencimiento: row.fecha_vencimiento ? new Date(row.fecha_vencimiento) : undefined,
+    fechaIngresoCheque: row.fecha_ingreso_cheque ? new Date(row.fecha_ingreso_cheque) : undefined,
+    certificacionEnviadaFecha: row.certificacion_enviada_fecha ? new Date(row.certificacion_enviada_fecha) : undefined,
+    portal: row.portal ?? undefined,
+    contacto: row.contacto ?? undefined,
+    fechaEnvio: row.fecha_envio ? new Date(row.fecha_envio) : undefined,
+    ordenPublicidadIdIngreso: row.orden_publicidad_id_ingreso ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,
@@ -217,6 +227,16 @@ export async function update(input: UpdateComprobanteInput): Promise<{ data: Com
   if (fields.retencionGanancias !== undefined) updateData.retencion_ganancias = fields.retencionGanancias;
   if (fields.fechaEstimadaPago !== undefined) updateData.fecha_estimada_pago = fields.fechaEstimadaPago?.toISOString().split('T')[0];
   if (fields.notaAdmin !== undefined) updateData.nota_admin = fields.notaAdmin;
+  // Ingreso-specific fields
+  if (fields.retencionIva !== undefined) updateData.retencion_iva = fields.retencionIva;
+  if (fields.retencionSuss !== undefined) updateData.retencion_suss = fields.retencionSuss;
+  if (fields.fechaVencimiento !== undefined) updateData.fecha_vencimiento = fields.fechaVencimiento?.toISOString().split('T')[0];
+  if (fields.fechaIngresoCheque !== undefined) updateData.fecha_ingreso_cheque = fields.fechaIngresoCheque?.toISOString().split('T')[0];
+  if (fields.certificacionEnviadaFecha !== undefined) updateData.certificacion_enviada_fecha = fields.certificacionEnviadaFecha?.toISOString().split('T')[0];
+  if (fields.portal !== undefined) updateData.portal = fields.portal;
+  if (fields.contacto !== undefined) updateData.contacto = fields.contacto;
+  if (fields.fechaEnvio !== undefined) updateData.fecha_envio = fields.fechaEnvio?.toISOString().split('T')[0];
+  if (fields.ordenPublicidadIdIngreso !== undefined) updateData.orden_publicidad_id_ingreso = fields.ordenPublicidadIdIngreso;
 
   const result = await comprobantesRepo.update(id, updateData);
 
@@ -296,6 +316,16 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     retencionGanancias: row.retencion_ganancias ?? 0,
     fechaEstimadaPago: row.fecha_estimada_pago ? new Date(row.fecha_estimada_pago) : undefined,
     notaAdmin: row.nota_admin ?? undefined,
+    // Ingreso-specific fields
+    retencionIva: row.retencion_iva ?? 0,
+    retencionSuss: row.retencion_suss ?? 0,
+    fechaVencimiento: row.fecha_vencimiento ? new Date(row.fecha_vencimiento) : undefined,
+    fechaIngresoCheque: row.fecha_ingreso_cheque ? new Date(row.fecha_ingreso_cheque) : undefined,
+    certificacionEnviadaFecha: row.certificacion_enviada_fecha ? new Date(row.certificacion_enviada_fecha) : undefined,
+    portal: row.portal ?? undefined,
+    contacto: row.contacto ?? undefined,
+    fechaEnvio: row.fecha_envio ? new Date(row.fecha_envio) : undefined,
+    ordenPublicidadIdIngreso: row.orden_publicidad_id_ingreso ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,
@@ -304,6 +334,7 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     // Implementacion
     implementacionComprobanteId: row.implementacion_comprobante_id ?? undefined,
     ordenPublicidadId: row.orden_publicidad_id ?? undefined,
+    itemOrdenPublicidadId: row.item_orden_publicidad_id ?? undefined,
     sector: row.sector ?? undefined,
     rubroGasto: row.rubro_gasto ?? undefined,
     subRubro: row.sub_rubro ?? undefined,
@@ -322,6 +353,17 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     experienceFormularioId: row.experience_formulario_id ?? undefined,
     expNombreCampana: row.exp_nombre_campana ?? undefined,
     expMesGestion: row.exp_mes_gestion ?? undefined,
+    // OP vinculada para ingresos
+    ingresoOpId: row.ingreso_op_id ?? undefined,
+    ingresoOpNumero: row.ingreso_op_numero ?? undefined,
+    ingresoOpResponsable: row.ingreso_op_responsable ?? undefined,
+    ingresoOpUnidadNegocio: row.ingreso_op_unidad_negocio ?? undefined,
+    ingresoOpNombreCampana: row.ingreso_op_nombre_campana ?? undefined,
+    ingresoOpMarca: row.ingreso_op_marca ?? undefined,
+    ingresoOpRazonSocial: row.ingreso_op_razon_social ?? undefined,
+    ingresoOpImporte: row.ingreso_op_importe ?? undefined,
+    ingresoOpAcuerdoPago: row.ingreso_op_acuerdo_pago ?? undefined,
+    ingresoOpMesServicio: row.ingreso_op_mes_servicio ?? undefined,
   };
 }
 

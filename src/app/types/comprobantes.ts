@@ -85,6 +85,16 @@ export interface Comprobante {
   retencionGanancias?: number;
   fechaEstimadaPago?: Date;
   notaAdmin?: string;
+  // Ingreso-specific fields (migration 006)
+  retencionIva?: number;
+  retencionSuss?: number;
+  fechaVencimiento?: Date;
+  fechaIngresoCheque?: Date;
+  certificacionEnviadaFecha?: Date;
+  portal?: string;
+  contacto?: string;
+  fechaEnvio?: Date;
+  ordenPublicidadIdIngreso?: string;
   // Audit
   createdAt: Date;
   updatedAt: Date;
@@ -127,6 +137,16 @@ export interface CreateComprobanteInput {
   retencionGanancias?: number;
   fechaEstimadaPago?: Date;
   notaAdmin?: string;
+  // Ingreso-specific fields
+  retencionIva?: number;
+  retencionSuss?: number;
+  fechaVencimiento?: Date;
+  fechaIngresoCheque?: Date;
+  certificacionEnviadaFecha?: Date;
+  portal?: string;
+  contacto?: string;
+  fechaEnvio?: Date;
+  ordenPublicidadIdIngreso?: string;
   createdBy?: string;
 }
 
@@ -243,6 +263,7 @@ export interface ComprobanteWithContext extends Comprobante {
   // Implementacion context
   implementacionComprobanteId?: string;
   ordenPublicidadId?: string;
+  itemOrdenPublicidadId?: string;
   sector?: string;
   rubroGasto?: string;
   subRubro?: string;
@@ -261,6 +282,17 @@ export interface ComprobanteWithContext extends Comprobante {
   experienceFormularioId?: string;
   expNombreCampana?: string;
   expMesGestion?: string;
+  // OP vinculada para ingresos
+  ingresoOpId?: string;
+  ingresoOpNumero?: string;
+  ingresoOpResponsable?: string;
+  ingresoOpUnidadNegocio?: string;
+  ingresoOpNombreCampana?: string;
+  ingresoOpMarca?: string;
+  ingresoOpRazonSocial?: string;
+  ingresoOpImporte?: string;
+  ingresoOpAcuerdoPago?: string;
+  ingresoOpMesServicio?: string;
 }
 
 /**

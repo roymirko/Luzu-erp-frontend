@@ -6,6 +6,7 @@ import { Button } from '@/app/components/ui/button';
 import { TablaComprobantes } from '@/app/components/shared/TablaComprobantes';
 import { DialogNuevoComprobante } from '@/app/components/shared/DialogNuevoComprobante';
 import { DialogAdminComprobante } from '@/app/components/administracion/DialogAdminComprobante';
+import { DialogIngresoAdmin } from '@/app/components/administracion/DialogIngresoAdmin';
 import * as comprobantesService from '@/app/services/comprobantesService';
 import type { ComprobanteWithContext, Comprobante } from '@/app/types/comprobantes';
 
@@ -15,6 +16,7 @@ export function Finanzas() {
   const [loading, setLoading] = useState(true);
   const [showNuevo, setShowNuevo] = useState(false);
   const [selectedComprobante, setSelectedComprobante] = useState<ComprobanteWithContext | null>(null);
+  const [selectedIngreso, setSelectedIngreso] = useState<ComprobanteWithContext | null>(null);
 
   const fetchComprobantes = useCallback(async () => {
     setLoading(true);
@@ -35,7 +37,11 @@ export function Finanzas() {
   }, [fetchComprobantes]);
 
   const handleRowClick = (comprobante: ComprobanteWithContext) => {
-    setSelectedComprobante(comprobante);
+    if (comprobante.tipoMovimiento === 'ingreso') {
+      setSelectedIngreso(comprobante);
+    } else {
+      setSelectedComprobante(comprobante);
+    }
   };
 
   const handleComprobanteCreado = (comprobante: Comprobante) => {
@@ -46,6 +52,7 @@ export function Finanzas() {
   const handleComprobanteUpdated = (comprobante: Comprobante) => {
     fetchComprobantes();
     setSelectedComprobante(null);
+    setSelectedIngreso(null);
   };
 
   return (
@@ -86,6 +93,13 @@ export function Finanzas() {
         open={!!selectedComprobante}
         onOpenChange={(open) => !open && setSelectedComprobante(null)}
         comprobante={selectedComprobante}
+        onComprobanteUpdated={handleComprobanteUpdated}
+      />
+
+      <DialogIngresoAdmin
+        open={!!selectedIngreso}
+        onOpenChange={(open) => !open && setSelectedIngreso(null)}
+        comprobante={selectedIngreso}
         onComprobanteUpdated={handleComprobanteUpdated}
       />
     </div>

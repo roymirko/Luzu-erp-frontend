@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,10 +19,11 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { FormDatePicker } from '@/app/components/ui/form-date-picker';
+import { OrdenPublicidadSelector } from '@/app/components/shared/OrdenPublicidadSelector';
 import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { CheckCircle, XCircle, HelpCircle, Ban, CreditCard, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, HelpCircle, Ban, CreditCard } from 'lucide-react';
 import * as comprobantesService from '@/app/services/comprobantesService';
 import type {
   ComprobanteWithContext,
@@ -33,17 +33,16 @@ import type {
   FormaPago,
   CondicionIva,
 } from '@/app/types/comprobantes';
+import type { OrdenPublicidad } from '@/app/types/comercial';
 import {
   TIPO_COMPROBANTE_LABELS,
-  TIPO_MOVIMIENTO_LABELS,
-  AREA_ORIGEN_LABELS,
   ESTADO_PAGO_LABELS,
   FORMA_PAGO_LABELS,
   CONDICION_IVA_LABELS,
   isComprobanteLocked,
 } from '@/app/types/comprobantes';
 
-interface DialogAdminComprobanteProps {
+interface DialogIngresoAdminProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   comprobante: ComprobanteWithContext | null;
@@ -58,14 +57,6 @@ const FORMA_PAGO_OPTIONS: FormaPago[] = ['transferencia', 'cheque', 'efectivo', 
 
 const CONDICION_IVA_OPTIONS: CondicionIva[] = [
   'responsable_inscripto', 'monotributista', 'exento', 'consumidor_final', 'no_responsable'
-];
-
-const COMPROBANTE_PAGO_OPTIONS = [
-  { value: 'recibo', label: 'Recibo' },
-  { value: 'orden_pago', label: 'Orden de Pago' },
-  { value: 'transferencia', label: 'Transferencia' },
-  { value: 'cheque', label: 'Cheque' },
-  { value: 'otro', label: 'Otro' },
 ];
 
 function formatDate(date: Date | undefined): string {
@@ -84,77 +75,65 @@ function formatCurrency(amount: number, moneda: string = 'ARS'): string {
   }).format(amount);
 }
 
-export function DialogAdminComprobante({
+function calcularDiasTranscurridos(fechaVencimiento: string | undefined): number {
+  if (!fechaVencimiento) return 0;
+  const venc = new Date(fechaVencimiento);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  venc.setHours(0, 0, 0, 0);
+  const diff = Math.floor((hoy.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(0, diff);
+}
+
+export function DialogIngresoAdmin({
   open,
   onOpenChange,
   comprobante,
   onComprobanteUpdated,
-}: DialogAdminComprobanteProps) {
+}: DialogIngresoAdminProps) {
   const { isDark } = useTheme();
-  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [selectedOp, setSelectedOp] = useState<OrdenPublicidad | null>(null);
 
-  // Get URL to source form based on area origen
-  const getFormularioUrl = (): string | null => {
-    if (!comprobante) return null;
-    switch (comprobante.areaOrigen) {
-      case 'implementacion':
-        if (!comprobante.ordenPublicidadId) return null;
-        // Include itemId if available for proper form loading
-        return comprobante.itemOrdenPublicidadId
-          ? `/implementacion/gasto/${comprobante.ordenPublicidadId}/${comprobante.itemOrdenPublicidadId}`
-          : `/implementacion/gasto/${comprobante.ordenPublicidadId}`;
-      case 'programacion':
-        return comprobante.programacionFormularioId
-          ? `/programacion/editar/${comprobante.programacionFormularioId}`
-          : null;
-      case 'experience':
-        return comprobante.experienceFormularioId
-          ? `/experience/editar/${comprobante.experienceFormularioId}`
-          : null;
-      default:
-        return null;
-    }
-  };
-
-  const handleIrAFormulario = () => {
-    const url = getFormularioUrl();
-    if (url) {
-      onOpenChange(false);
-      navigate(url);
-    }
-  };
   const [form, setForm] = useState({
-    // Base comprobante fields
+    // Entidad (factura emitida por)
     entidadNombre: '',
     entidadCuit: '',
+    empresa: '',
+    // Factura
     tipoComprobante: '' as TipoComprobante | '',
     puntoVenta: '',
     numeroComprobante: '',
     fechaComprobante: '',
-    cae: '',
-    fechaVencimientoCae: '',
-    neto: '',
-    ivaAlicuota: '',
-    ivaMonto: '',
-    percepciones: '',
+    fechaVencimiento: '',
+    // Importes
     total: '',
-    empresa: '',
-    concepto: '',
-    observaciones: '',
-    // Payment fields
+    ivaAlicuota: '21',
+    ivaMonto: '',
+    neto: '',
+    // Retenciones
+    retencionIva: '0',
+    ingresosBrutos: '0',
+    retencionGanancias: '0',
+    retencionSuss: '0',
+    // Pago/Cobro
     formaPago: '' as FormaPago | '',
-    cotizacion: '',
     banco: '',
     numeroOperacion: '',
+    fechaIngresoCheque: '',
     fechaPago: '',
-    // Admin fields
-    condicionIva: '' as CondicionIva | '',
-    comprobantePago: '',
-    ingresosBrutos: '',
-    retencionGanancias: '',
-    fechaEstimadaPago: '',
+    // Certificación
+    certificacionEnviadaFecha: '',
+    portal: '',
+    contacto: '',
+    fechaEnvio: '',
+    // Notas
+    observaciones: '',
     notaAdmin: '',
+    // Admin
+    condicionIva: '' as CondicionIva | '',
+    // OP
+    ordenPublicidadIdIngreso: '',
   });
 
   useEffect(() => {
@@ -162,42 +141,96 @@ export function DialogAdminComprobante({
       setForm({
         entidadNombre: comprobante.entidadNombre || '',
         entidadCuit: comprobante.entidadCuit || '',
+        empresa: comprobante.empresa || '',
         tipoComprobante: comprobante.tipoComprobante || '',
         puntoVenta: comprobante.puntoVenta || '',
         numeroComprobante: comprobante.numeroComprobante || '',
         fechaComprobante: formatDate(comprobante.fechaComprobante),
-        cae: comprobante.cae || '',
-        fechaVencimientoCae: formatDate(comprobante.fechaVencimientoCae),
-        neto: comprobante.neto?.toString() || '',
+        fechaVencimiento: formatDate(comprobante.fechaVencimiento),
+        total: comprobante.total?.toString() || '',
         ivaAlicuota: comprobante.ivaAlicuota?.toString() || '21',
         ivaMonto: comprobante.ivaMonto?.toString() || '',
-        percepciones: comprobante.percepciones?.toString() || '0',
-        total: comprobante.total?.toString() || '',
-        empresa: comprobante.empresa || '',
-        concepto: comprobante.concepto || '',
-        observaciones: comprobante.observaciones || '',
-        // Payment fields
-        formaPago: comprobante.formaPago || '',
-        cotizacion: comprobante.cotizacion?.toString() || '',
-        banco: comprobante.banco || '',
-        numeroOperacion: comprobante.numeroOperacion || '',
-        fechaPago: formatDate(comprobante.fechaPago),
-        // Admin fields
-        condicionIva: comprobante.condicionIva || '',
-        comprobantePago: comprobante.comprobantePago || '',
+        neto: comprobante.neto?.toString() || '',
+        retencionIva: comprobante.retencionIva?.toString() || '0',
         ingresosBrutos: comprobante.ingresosBrutos?.toString() || '0',
         retencionGanancias: comprobante.retencionGanancias?.toString() || '0',
-        fechaEstimadaPago: formatDate(comprobante.fechaEstimadaPago),
+        retencionSuss: comprobante.retencionSuss?.toString() || '0',
+        formaPago: comprobante.formaPago || '',
+        banco: comprobante.banco || '',
+        numeroOperacion: comprobante.numeroOperacion || '',
+        fechaIngresoCheque: formatDate(comprobante.fechaIngresoCheque),
+        fechaPago: formatDate(comprobante.fechaPago),
+        certificacionEnviadaFecha: formatDate(comprobante.certificacionEnviadaFecha),
+        portal: comprobante.portal || '',
+        contacto: comprobante.contacto || '',
+        fechaEnvio: formatDate(comprobante.fechaEnvio),
+        observaciones: comprobante.observaciones || '',
         notaAdmin: comprobante.notaAdmin || '',
+        condicionIva: comprobante.condicionIva || '',
+        ordenPublicidadIdIngreso: comprobante.ordenPublicidadIdIngreso || '',
       });
+      // If has linked OP, create fake selected op from context data
+      if (comprobante.ingresoOpId) {
+        setSelectedOp({
+          id: comprobante.ingresoOpId,
+          ordenPublicidad: comprobante.ingresoOpNumero || '',
+          responsable: comprobante.ingresoOpResponsable || '',
+          unidadNegocio: comprobante.ingresoOpUnidadNegocio || '',
+          nombreCampana: comprobante.ingresoOpNombreCampana || '',
+          marca: comprobante.ingresoOpMarca || '',
+          razonSocial: comprobante.ingresoOpRazonSocial || '',
+          totalVenta: comprobante.ingresoOpImporte || '',
+          acuerdoPago: comprobante.ingresoOpAcuerdoPago || '',
+          mesServicio: comprobante.ingresoOpMesServicio || '',
+        } as OrdenPublicidad);
+      } else {
+        setSelectedOp(null);
+      }
     }
   }, [comprobante]);
-
-  // Note: IVA and Neto are editable (Finnegans integration pending)
 
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
+
+  const handleOpSelect = (op: OrdenPublicidad | null) => {
+    setSelectedOp(op);
+    if (op) {
+      setForm(prev => ({
+        ...prev,
+        ordenPublicidadIdIngreso: op.id,
+      }));
+    } else {
+      setForm(prev => ({
+        ...prev,
+        ordenPublicidadIdIngreso: '',
+      }));
+    }
+  };
+
+  // Calculated values
+  const totalACobrar = useMemo(() => {
+    const total = parseFloat(form.total) || 0;
+    const retIva = parseFloat(form.retencionIva) || 0;
+    const retIIBB = parseFloat(form.ingresosBrutos) || 0;
+    const retGanancias = parseFloat(form.retencionGanancias) || 0;
+    const retSuss = parseFloat(form.retencionSuss) || 0;
+    return total - retIva - retIIBB - retGanancias - retSuss;
+  }, [form.total, form.retencionIva, form.ingresosBrutos, form.retencionGanancias, form.retencionSuss]);
+
+  const diasTranscurridos = useMemo(() => {
+    return calcularDiasTranscurridos(form.fechaVencimiento);
+  }, [form.fechaVencimiento]);
+
+  // Calculate fecha proyección cobro based on acuerdo pago
+  const fechaProyeccionCobro = useMemo(() => {
+    if (!form.fechaComprobante || !selectedOp?.acuerdoPago) return '';
+    const fechaFac = new Date(form.fechaComprobante);
+    const diasAcuerdo = parseInt(selectedOp.acuerdoPago) || 0;
+    if (diasAcuerdo <= 0) return '';
+    fechaFac.setDate(fechaFac.getDate() + diasAcuerdo);
+    return formatDate(fechaFac);
+  }, [form.fechaComprobante, selectedOp?.acuerdoPago]);
 
   const handleGuardar = async () => {
     if (!comprobante) return;
@@ -206,36 +239,35 @@ export function DialogAdminComprobante({
     try {
       const { data, error } = await comprobantesService.update({
         id: comprobante.id,
-        // Base fields
         entidadNombre: form.entidadNombre,
         entidadCuit: form.entidadCuit || undefined,
+        empresa: form.empresa || undefined,
         tipoComprobante: form.tipoComprobante as TipoComprobante || undefined,
         puntoVenta: form.puntoVenta || undefined,
         numeroComprobante: form.numeroComprobante || undefined,
         fechaComprobante: form.fechaComprobante ? new Date(form.fechaComprobante) : undefined,
-        cae: form.cae || undefined,
-        fechaVencimientoCae: form.fechaVencimientoCae ? new Date(form.fechaVencimientoCae) : undefined,
-        neto: parseFloat(form.neto) || 0,
+        fechaVencimiento: form.fechaVencimiento ? new Date(form.fechaVencimiento) : undefined,
+        total: parseFloat(form.total) || 0,
         ivaAlicuota: parseFloat(form.ivaAlicuota) || 21,
         ivaMonto: parseFloat(form.ivaMonto) || 0,
-        percepciones: parseFloat(form.percepciones) || 0,
-        total: parseFloat(form.total) || 0,
-        empresa: form.empresa || undefined,
-        concepto: form.concepto || undefined,
-        observaciones: form.observaciones || undefined,
-        // Payment fields
-        formaPago: form.formaPago as FormaPago || undefined,
-        cotizacion: form.cotizacion ? parseFloat(form.cotizacion) : undefined,
-        banco: form.banco || undefined,
-        numeroOperacion: form.numeroOperacion || undefined,
-        fechaPago: form.fechaPago ? new Date(form.fechaPago) : undefined,
-        // Admin fields
-        condicionIva: form.condicionIva as CondicionIva || undefined,
-        comprobantePago: form.comprobantePago || undefined,
+        neto: parseFloat(form.neto) || 0,
+        retencionIva: parseFloat(form.retencionIva) || 0,
         ingresosBrutos: parseFloat(form.ingresosBrutos) || 0,
         retencionGanancias: parseFloat(form.retencionGanancias) || 0,
-        fechaEstimadaPago: form.fechaEstimadaPago ? new Date(form.fechaEstimadaPago) : undefined,
+        retencionSuss: parseFloat(form.retencionSuss) || 0,
+        formaPago: form.formaPago as FormaPago || undefined,
+        banco: form.banco || undefined,
+        numeroOperacion: form.numeroOperacion || undefined,
+        fechaIngresoCheque: form.fechaIngresoCheque ? new Date(form.fechaIngresoCheque) : undefined,
+        fechaPago: form.fechaPago ? new Date(form.fechaPago) : undefined,
+        certificacionEnviadaFecha: form.certificacionEnviadaFecha ? new Date(form.certificacionEnviadaFecha) : undefined,
+        portal: form.portal || undefined,
+        contacto: form.contacto || undefined,
+        fechaEnvio: form.fechaEnvio ? new Date(form.fechaEnvio) : undefined,
+        observaciones: form.observaciones || undefined,
         notaAdmin: form.notaAdmin || undefined,
+        condicionIva: form.condicionIva as CondicionIva || undefined,
+        ordenPublicidadIdIngreso: form.ordenPublicidadIdIngreso || undefined,
       });
 
       if (error) {
@@ -244,7 +276,7 @@ export function DialogAdminComprobante({
       }
 
       if (data) {
-        toast.success('Comprobante actualizado');
+        toast.success('Ingreso actualizado');
         onComprobanteUpdated?.(data);
         onOpenChange(false);
       }
@@ -281,11 +313,9 @@ export function DialogAdminComprobante({
 
   if (!comprobante) return null;
 
-  // Financial fields locked when aprobado, rechazado, or pagado
   const isFinancialLocked = isComprobanteLocked(comprobante.estadoPago);
-  // Admin/payment fields only locked when fully closed (rechazado or pagado)
   const isAdminLocked = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
-  const canMarkPagado = comprobante.estadoPago === 'aprobado';
+  const canMarkCobrado = comprobante.estadoPago === 'aprobado';
 
   const labelClass = cn(
     "text-sm font-semibold",
@@ -302,19 +332,12 @@ export function DialogAdminComprobante({
   const financialInputClass = cn(inputClass, isFinancialLocked && "opacity-60 cursor-not-allowed");
   const adminInputClass = cn(inputClass, isAdminLocked && "opacity-60 cursor-not-allowed");
 
-  // Calculate total neto (after retentions)
-  const netoFinal = (
-    (parseFloat(form.neto) || 0) -
-    (parseFloat(form.ingresosBrutos) || 0) -
-    (parseFloat(form.retencionGanancias) || 0)
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("sm:max-w-[900px] max-h-[90vh]", isDark && "bg-[#1e1e1e] border-gray-800")}>
+      <DialogContent className={cn("sm:max-w-[950px] max-h-[90vh]", isDark && "bg-[#1e1e1e] border-gray-800")}>
         <DialogHeader>
           <DialogTitle className={isDark ? "text-white" : ""}>
-            Admin - {TIPO_MOVIMIENTO_LABELS[comprobante.tipoMovimiento]}
+            Admin - Ingreso (Cobro)
           </DialogTitle>
         </DialogHeader>
 
@@ -335,33 +358,12 @@ export function DialogAdminComprobante({
                     comprobante.estadoPago === 'rechazado' && "bg-red-100 text-red-800",
                     comprobante.estadoPago === 'pagado' && "bg-green-100 text-green-800",
                   )}>
-                    {ESTADO_PAGO_LABELS[comprobante.estadoPago]}
+                    {comprobante.estadoPago === 'pagado' ? 'Cobrado' : ESTADO_PAGO_LABELS[comprobante.estadoPago]}
                   </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={cn("text-sm", isDark ? "text-gray-400" : "text-gray-500")}>
-                    Área origen:
-                  </span>
-                  <span className={cn("text-sm font-medium", isDark ? "text-gray-300" : "text-gray-700")}>
-                    {AREA_ORIGEN_LABELS[comprobante.areaOrigen]}
-                  </span>
-                  {getFormularioUrl() && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleIrAFormulario}
-                      className="h-6 px-2 text-xs gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      Ver formulario
-                    </Button>
-                  )}
                 </div>
               </div>
 
-              {/* Action buttons based on current state */}
               <div className="flex gap-2 flex-wrap">
-                {/* From creado/requiere_info: can approve, request info, or reject */}
                 {(comprobante.estadoPago === 'creado' || comprobante.estadoPago === 'requiere_info') && (
                   <>
                     <Button
@@ -396,8 +398,7 @@ export function DialogAdminComprobante({
                     </Button>
                   </>
                 )}
-                {/* From aprobado: can mark as paid */}
-                {canMarkPagado && (
+                {canMarkCobrado && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -406,176 +407,154 @@ export function DialogAdminComprobante({
                     className="gap-1 text-green-600 border-green-300 hover:bg-green-50"
                   >
                     <CreditCard className="h-4 w-4" />
-                    Marcar Pagado
+                    Marcar Cobrado
                   </Button>
                 )}
               </div>
             </div>
 
-            {/* Contexto (solo lectura) */}
-            {comprobante.areaOrigen !== 'directo' && (
+            {/* Selector OP (opcional) */}
+            <div className="space-y-2">
+              <Label className={cn(labelClass, "text-blue-600 dark:text-blue-400")}>
+                Vincular a Orden de Publicidad (opcional)
+              </Label>
+              <OrdenPublicidadSelector
+                value={form.ordenPublicidadIdIngreso}
+                onChange={handleOpSelect}
+                disabled={isFinancialLocked}
+              />
+            </div>
+
+            {/* Contexto OP (si vinculado) */}
+            {selectedOp && (
               <div className="p-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
                 <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
-                  Contexto del Área
+                  Datos de la OP
                 </h4>
                 <div className="grid grid-cols-3 gap-2 text-sm">
-                  {comprobante.areaOrigen === 'implementacion' && (
-                    <>
-                      {comprobante.implOrdenPublicidad && (
-                        <div><span className="text-blue-600 dark:text-blue-400">OP:</span> {comprobante.implOrdenPublicidad}</div>
-                      )}
-                      {comprobante.implNombreCampana && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.implNombreCampana}</div>
-                      )}
-                      {comprobante.sector && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Sector:</span> {comprobante.sector}</div>
-                      )}
-                      {comprobante.rubroGasto && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.rubroGasto}</div>
-                      )}
-                      {comprobante.subRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.subRubro}</div>
-                      )}
-                    </>
-                  )}
-                  {comprobante.areaOrigen === 'programacion' && (
-                    <>
-                      {comprobante.progPrograma && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Programa:</span> {comprobante.progPrograma}</div>
-                      )}
-                      {comprobante.progMesGestion && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {comprobante.progMesGestion}</div>
-                      )}
-                      {comprobante.progUnidadNegocio && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.progUnidadNegocio}</div>
-                      )}
-                    </>
-                  )}
-                  {comprobante.areaOrigen === 'experience' && (
-                    <>
-                      {comprobante.expNombreCampana && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.expNombreCampana}</div>
-                      )}
-                      {comprobante.expMesGestion && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {comprobante.expMesGestion}</div>
-                      )}
-                    </>
-                  )}
+                  <div><span className="text-blue-600 dark:text-blue-400">OP:</span> {selectedOp.ordenPublicidad}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {selectedOp.mesServicio}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Responsable:</span> {selectedOp.responsable}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Unidad Negocio:</span> {selectedOp.unidadNegocio}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {selectedOp.nombreCampana}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Marca:</span> {selectedOp.marca}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Razón Social:</span> {selectedOp.razonSocial}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Importe:</span> {selectedOp.totalVenta}</div>
+                  <div><span className="text-blue-600 dark:text-blue-400">Condición Pago:</span> {selectedOp.acuerdoPago} días</div>
                 </div>
               </div>
             )}
 
-            {/* Proveedor */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className={labelClass}>Proveedor/Razón Social</Label>
-                <Input
-                  value={form.entidadNombre}
-                  onChange={(e) => handleChange('entidadNombre', e.target.value)}
-                  disabled={isFinancialLocked}
-                  className={inputClass}
-                />
+            {/* Datos Factura */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className={cn("text-sm font-semibold mb-4", isDark ? "text-gray-300" : "text-gray-700")}>
+                Datos de Factura
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className={labelClass}>Factura Emitida Por</Label>
+                  <Input
+                    value={form.entidadNombre}
+                    onChange={(e) => handleChange('entidadNombre', e.target.value)}
+                    disabled={isFinancialLocked}
+                    className={financialInputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClass}>Empresa</Label>
+                  <Input
+                    value={form.empresa}
+                    onChange={(e) => handleChange('empresa', e.target.value)}
+                    disabled={isFinancialLocked}
+                    className={financialInputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClass}>CUIT</Label>
+                  <Input
+                    value={form.entidadCuit}
+                    onChange={(e) => handleChange('entidadCuit', e.target.value.replace(/[^0-9-]/g, ''))}
+                    disabled={isFinancialLocked}
+                    maxLength={13}
+                    className={financialInputClass}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className={labelClass}>CUIT</Label>
-                <Input
-                  value={form.entidadCuit}
-                  onChange={(e) => handleChange('entidadCuit', e.target.value.replace(/[^0-9-]/g, ''))}
-                  disabled={isFinancialLocked}
-                  maxLength={13}
-                  className={inputClass}
-                />
-              </div>
-            </div>
 
-            {/* Admin: Condición IVA */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className={cn(labelClass, "text-purple-600 dark:text-purple-400")}>Condición IVA</Label>
-                <Select
-                  value={form.condicionIva}
-                  onValueChange={(v) => handleChange('condicionIva', v)}
-                  disabled={isAdminLocked}
-                >
-                  <SelectTrigger className={adminInputClass}>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONDICION_IVA_OPTIONS.map((cond) => (
-                      <SelectItem key={cond} value={cond}>
-                        {CONDICION_IVA_LABELS[cond]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className={labelClass}>Tipo Comprobante</Label>
-                <Select
-                  value={form.tipoComprobante}
-                  onValueChange={(v) => handleChange('tipoComprobante', v)}
+              <div className="grid grid-cols-4 gap-4 mt-4">
+                <div className="space-y-2">
+                  <Label className={labelClass}>Tipo Comprobante</Label>
+                  <Select
+                    value={form.tipoComprobante}
+                    onValueChange={(v) => handleChange('tipoComprobante', v)}
+                    disabled={isFinancialLocked}
+                  >
+                    <SelectTrigger className={financialInputClass}>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIPO_COMPROBANTE_OPTIONS.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {TIPO_COMPROBANTE_LABELS[tipo]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClass}>Punto Venta</Label>
+                  <Input
+                    value={form.puntoVenta}
+                    onChange={(e) => handleChange('puntoVenta', e.target.value)}
+                    disabled={isFinancialLocked}
+                    maxLength={5}
+                    className={financialInputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClass}>Nro Comprobante</Label>
+                  <Input
+                    value={form.numeroComprobante}
+                    onChange={(e) => handleChange('numeroComprobante', e.target.value)}
+                    disabled={isFinancialLocked}
+                    className={financialInputClass}
+                  />
+                </div>
+                <FormDatePicker
+                  label="Fecha Factura"
+                  value={form.fechaComprobante}
+                  onChange={(v) => handleChange('fechaComprobante', v)}
                   disabled={isFinancialLocked}
-                >
-                  <SelectTrigger className={inputClass}>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPO_COMPROBANTE_OPTIONS.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {TIPO_COMPROBANTE_LABELS[tipo]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
-              <div className="space-y-2">
-                <Label className={cn(labelClass, "text-purple-600 dark:text-purple-400")}>Comprobante Pago</Label>
-                <Select
-                  value={form.comprobantePago}
-                  onValueChange={(v) => handleChange('comprobantePago', v)}
-                  disabled={isAdminLocked}
-                >
-                  <SelectTrigger className={adminInputClass}>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COMPROBANTE_PAGO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            {/* Factura */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className={labelClass}>Punto Venta</Label>
-                <Input
-                  value={form.puntoVenta}
-                  onChange={(e) => handleChange('puntoVenta', e.target.value)}
+              <div className="grid grid-cols-4 gap-4 mt-4">
+                <FormDatePicker
+                  label="Fecha Vencimiento"
+                  value={form.fechaVencimiento}
+                  onChange={(v) => handleChange('fechaVencimiento', v)}
                   disabled={isFinancialLocked}
-                  maxLength={5}
-                  className={inputClass}
                 />
+                <div className="space-y-2">
+                  <Label className={cn(labelClass, "text-purple-600 dark:text-purple-400")}>Condición IVA</Label>
+                  <Select
+                    value={form.condicionIva}
+                    onValueChange={(v) => handleChange('condicionIva', v)}
+                    disabled={isAdminLocked}
+                  >
+                    <SelectTrigger className={adminInputClass}>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONDICION_IVA_OPTIONS.map((cond) => (
+                        <SelectItem key={cond} value={cond}>
+                          {CONDICION_IVA_LABELS[cond]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className={labelClass}>Nro Comprobante</Label>
-                <Input
-                  value={form.numeroComprobante}
-                  onChange={(e) => handleChange('numeroComprobante', e.target.value)}
-                  disabled={isFinancialLocked}
-                  className={inputClass}
-                />
-              </div>
-              <FormDatePicker
-                label="Fecha Comprobante"
-                value={form.fechaComprobante}
-                onChange={(v) => handleChange('fechaComprobante', v)}
-                disabled={isFinancialLocked}
-              />
             </div>
 
             {/* Importes */}
@@ -592,18 +571,18 @@ export function DialogAdminComprobante({
                     value={form.total}
                     onChange={(e) => handleChange('total', e.target.value)}
                     disabled={isFinancialLocked}
-                    className={cn(inputClass, "font-semibold")}
+                    className={cn(financialInputClass, "font-semibold")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className={labelClass}>IVA % </Label>
+                  <Label className={labelClass}>IVA %</Label>
                   <Input
                     type="number"
                     step="0.01"
                     value={form.ivaAlicuota}
                     onChange={(e) => handleChange('ivaAlicuota', e.target.value)}
                     disabled={isFinancialLocked}
-                    className={inputClass}
+                    className={financialInputClass}
                   />
                 </div>
                 <div className="space-y-2">
@@ -614,7 +593,7 @@ export function DialogAdminComprobante({
                     value={form.ivaMonto}
                     onChange={(e) => handleChange('ivaMonto', e.target.value)}
                     disabled={isFinancialLocked}
-                    className={inputClass}
+                    className={financialInputClass}
                   />
                 </div>
                 <div className="space-y-2">
@@ -625,22 +604,22 @@ export function DialogAdminComprobante({
                     value={form.neto}
                     onChange={(e) => handleChange('neto', e.target.value)}
                     disabled={isFinancialLocked}
-                    className={inputClass}
+                    className={financialInputClass}
                   />
                 </div>
               </div>
 
               {/* Retenciones */}
-              <div className="grid grid-cols-4 gap-4 mt-4">
+              <div className="grid grid-cols-5 gap-4 mt-4">
                 <div className="space-y-2">
-                  <Label className={labelClass}>Percepciones</Label>
+                  <Label className={cn(labelClass, "text-purple-600 dark:text-purple-400")}>Ret. IVA</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={form.percepciones}
-                    onChange={(e) => handleChange('percepciones', e.target.value)}
-                    disabled={isFinancialLocked}
-                    className={inputClass}
+                    value={form.retencionIva}
+                    onChange={(e) => handleChange('retencionIva', e.target.value)}
+                    disabled={isAdminLocked}
+                    className={adminInputClass}
                   />
                 </div>
                 <div className="space-y-2">
@@ -666,23 +645,34 @@ export function DialogAdminComprobante({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className={cn(labelClass, "font-bold")}>Neto a Pagar</Label>
+                  <Label className={cn(labelClass, "text-purple-600 dark:text-purple-400")}>Ret. SUSS</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.retencionSuss}
+                    onChange={(e) => handleChange('retencionSuss', e.target.value)}
+                    disabled={isAdminLocked}
+                    className={adminInputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={cn(labelClass, "font-bold text-green-600 dark:text-green-400")}>Total a Cobrar</Label>
                   <div className={cn(
                     "h-9 px-3 flex items-center rounded-md border font-bold",
-                    isDark ? "bg-gray-900 border-gray-700 text-white" : "bg-gray-100 border-gray-300 text-gray-900"
+                    isDark ? "bg-gray-900 border-gray-700 text-green-400" : "bg-green-50 border-green-200 text-green-700"
                   )}>
-                    {formatCurrency(netoFinal, comprobante.moneda)}
+                    {formatCurrency(totalACobrar, comprobante.moneda)}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Pago */}
+            {/* Fechas y Pago */}
             <div className="border-t pt-4 mt-4">
               <h3 className={cn("text-sm font-semibold mb-4", isDark ? "text-gray-300" : "text-gray-700")}>
-                Datos de Pago
+                Datos de Cobro
               </h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label className={labelClass}>Forma Pago</Label>
                   <Select
@@ -720,62 +710,92 @@ export function DialogAdminComprobante({
                     className={adminInputClass}
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 mt-4">
                 <FormDatePicker
-                  label="Fecha Estimada Pago"
-                  value={form.fechaEstimadaPago}
-                  onChange={(v) => handleChange('fechaEstimadaPago', v)}
+                  label="Fecha Ingreso Cheque"
+                  value={form.fechaIngresoCheque}
+                  onChange={(v) => handleChange('fechaIngresoCheque', v)}
                   disabled={isAdminLocked}
                 />
+              </div>
+
+              <div className="grid grid-cols-4 gap-4 mt-4">
+                {fechaProyeccionCobro && (
+                  <div className="space-y-2">
+                    <Label className={cn(labelClass, "text-blue-600 dark:text-blue-400")}>Fecha Proyección Cobro</Label>
+                    <div className={cn(
+                      "h-9 px-3 flex items-center rounded-md border text-sm",
+                      isDark ? "bg-gray-900 border-gray-700 text-blue-400" : "bg-blue-50 border-blue-200 text-blue-700"
+                    )}>
+                      {fechaProyeccionCobro}
+                    </div>
+                  </div>
+                )}
                 <FormDatePicker
-                  label="Fecha Real Pago"
+                  label="Fecha Cobro Real"
                   value={form.fechaPago}
                   onChange={(v) => handleChange('fechaPago', v)}
                   disabled={isAdminLocked}
                 />
-                {comprobante.moneda === 'USD' && (
-                  <div className="space-y-2">
-                    <Label className={labelClass}>Cotización</Label>
-                    <Input
-                      type="number"
-                      step="0.0001"
-                      value={form.cotizacion}
-                      onChange={(e) => handleChange('cotizacion', e.target.value)}
-                      disabled={isAdminLocked}
-                      className={adminInputClass}
-                    />
+                <div className="space-y-2">
+                  <Label className={cn(labelClass, diasTranscurridos > 0 ? "text-red-600 dark:text-red-400" : "")}>
+                    Días Transcurridos
+                  </Label>
+                  <div className={cn(
+                    "h-9 px-3 flex items-center rounded-md border text-sm font-medium",
+                    diasTranscurridos > 0
+                      ? (isDark ? "bg-red-900/20 border-red-700 text-red-400" : "bg-red-50 border-red-200 text-red-700")
+                      : (isDark ? "bg-gray-900 border-gray-700 text-gray-400" : "bg-gray-100 border-gray-200 text-gray-700")
+                  )}>
+                    {diasTranscurridos} días
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Concepto y Nota Admin */}
+            {/* Certificación */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className={cn("text-sm font-semibold mb-4", isDark ? "text-gray-300" : "text-gray-700")}>
+                Certificación
+              </h3>
+              <div className="grid grid-cols-4 gap-4">
+                <FormDatePicker
+                  label="Certificación Enviada"
+                  value={form.certificacionEnviadaFecha}
+                  onChange={(v) => handleChange('certificacionEnviadaFecha', v)}
+                  disabled={isAdminLocked}
+                />
+                <div className="space-y-2">
+                  <Label className={labelClass}>Portal</Label>
+                  <Input
+                    value={form.portal}
+                    onChange={(e) => handleChange('portal', e.target.value)}
+                    disabled={isAdminLocked}
+                    className={adminInputClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClass}>Contacto</Label>
+                  <Input
+                    value={form.contacto}
+                    onChange={(e) => handleChange('contacto', e.target.value)}
+                    disabled={isAdminLocked}
+                    className={adminInputClass}
+                  />
+                </div>
+                <FormDatePicker
+                  label="Fecha Envío"
+                  value={form.fechaEnvio}
+                  onChange={(v) => handleChange('fechaEnvio', v)}
+                  disabled={isAdminLocked}
+                />
+              </div>
+            </div>
+
+            {/* Notas */}
             <div className="border-t pt-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className={labelClass}>Empresa</Label>
-                  <Input
-                    value={form.empresa}
-                    onChange={(e) => handleChange('empresa', e.target.value)}
-                    disabled={isFinancialLocked}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className={labelClass}>Concepto</Label>
-                  <Input
-                    value={form.concepto}
-                    onChange={(e) => handleChange('concepto', e.target.value)}
-                    disabled={isFinancialLocked}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="space-y-2">
-                  <Label className={labelClass}>Observaciones (área)</Label>
+                  <Label className={labelClass}>Observaciones</Label>
                   <Textarea
                     value={form.observaciones}
                     onChange={(e) => handleChange('observaciones', e.target.value)}
