@@ -1058,10 +1058,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ============================================
 
   const login = async (email: string, password: string) => {
-    // Server-side JWT auth
-    const { data, error } = await authApi.login(email, password);
+    // Verify password via pgcrypto RPC
+    const { data: userId, error: rpcError } = await supabase.rpc('verify_password', {
+      input_email: email.toLowerCase(),
+      input_password: password,
+    });
 
-    if (error || !data) {
+    if (rpcError || !userId) {
       addLog({
         userId: 'unknown',
         userEmail: email,
@@ -1070,38 +1073,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
         entity: 'session',
         entityId: 'login-attempt',
         entityName: email,
-        details: `Intento de login fallido: ${email} - ${error || 'Unknown error'}`,
+        details: `Intento de login fallido: ${email}`,
         result: 'error'
       });
-      return { success: false, error: error || 'Login failed' };
+      return { success: false, error: 'Email o contraseña incorrectos' };
     }
 
-    // Store token
-    localStorage.setItem('erp_auth_token', data.token);
-    setAuthToken(data.token);
+    // Fetch full user row
+    const { data: dbUser, error: fetchError } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id', userId)
+      .single();
 
-    // Map API user to app User
-    const user: User = {
-      id: data.user.id,
-      email: data.user.email,
-      firstName: data.user.firstName,
-      lastName: data.user.lastName,
-      active: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: 'system',
-      lastLogin: new Date(),
-      metadata: {
-        ...data.user.metadata,
-        userType: data.user.userType
-      }
-    };
+    if (fetchError || !dbUser) {
+      return { success: false, error: 'Error al obtener datos del usuario' };
+    }
 
+    // Update last_login
+    await supabase.from('usuarios').update({ last_login: new Date().toISOString() }).eq('id', userId);
+
+    const user = mapUserFromDB(dbUser);
     setCurrentUser(user);
 
+    // Store user id as simple token
+    localStorage.setItem('erp_auth_token', userId);
+    setAuthToken(userId);
+
     // Log
-    const userRole = userAreaRoles.find(uar => uar.userId === user.id);
-    const role = userRole ? roles.find(r => r.id === userRole.roleId) : null;
+    const userRoleAssign = userAreaRoles.find(uar => uar.userId === user.id);
+    const role = userRoleAssign ? roles.find(r => r.id === userRoleAssign.roleId) : null;
 
     addLog({
       userId: user.id,

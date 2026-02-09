@@ -42,8 +42,8 @@ DROP TABLE IF EXISTS public.roles CASCADE;
 -- ============================================
 -- EXTENSIONS
 -- ============================================
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================
 -- 1. CORE TABLES
@@ -720,7 +720,24 @@ RETURNS TEXT AS $$
 BEGIN
   RETURN crypt(password, gen_salt('bf'));
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
+
+CREATE OR REPLACE FUNCTION public.verify_password(input_email TEXT, input_password TEXT)
+RETURNS UUID AS $$
+DECLARE
+  user_id UUID;
+BEGIN
+  SELECT id INTO user_id
+  FROM public.usuarios
+  WHERE email = input_email
+    AND active = true
+    AND password_hash IS NOT NULL
+    AND crypt(input_password, password_hash) = password_hash;
+  RETURN user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
 -- ============================================
 -- 10. INDEXES
@@ -881,5 +898,6 @@ GRANT SELECT ON programacion_gastos_full TO authenticated, anon;
 GRANT SELECT ON experience_comprobantes_full TO authenticated, anon;
 GRANT SELECT ON experience_gastos_full TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION public.hash_password(TEXT) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.verify_password(TEXT, TEXT) TO authenticated, anon;
 
 COMMIT;

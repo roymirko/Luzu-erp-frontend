@@ -2,9 +2,6 @@
 -- SEED DATA
 -- ============================================
 
--- Ensure pgcrypto is available for crypt()/gen_salt()
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
-
 -- 1. ROLES
 INSERT INTO public.roles (name, description, permissions)
 VALUES
@@ -34,11 +31,12 @@ VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- 2. USUARIOS
+-- Password: Admin123! (bcrypt hash)
 INSERT INTO public.usuarios (email, first_name, last_name, active, creado_por, metadata, password_hash)
 VALUES
-  ('admin@luzutv.com.ar', 'Admin', 'Luzu', true, 'system', '{"position": "Administrador"}'::jsonb, crypt('Admin123!', gen_salt('bf'))),
-  ('gaby@luzutv.com.ar', 'Gabriela', 'Riero', true, 'system', '{"position": "CEO"}'::jsonb, crypt('Admin123!', gen_salt('bf'))),
-  ('gestion@luzutv.com.ar', 'Felicitas', 'Carelli', true, 'system', '{"position": "Project Manager"}'::jsonb, crypt('Admin123!', gen_salt('bf')))
+  ('admin@luzutv.com.ar', 'Admin', 'Luzu', true, 'system', '{"position": "Administrador"}'::jsonb, '$2a$06$3IzGdBcB.fX3Fc7FPmvqJOTbZq06zc2uwaZuG4oEElgbHKfzzqeQG'),
+  ('gaby@luzutv.com.ar', 'Gabriela', 'Riero', true, 'system', '{"position": "CEO"}'::jsonb, '$2a$06$3IzGdBcB.fX3Fc7FPmvqJOTbZq06zc2uwaZuG4oEElgbHKfzzqeQG'),
+  ('gestion@luzutv.com.ar', 'Felicitas', 'Carelli', true, 'system', '{"position": "Project Manager"}'::jsonb, '$2a$06$3IzGdBcB.fX3Fc7FPmvqJOTbZq06zc2uwaZuG4oEElgbHKfzzqeQG')
 ON CONFLICT (email) DO NOTHING;
 
 -- 3. AREAS
