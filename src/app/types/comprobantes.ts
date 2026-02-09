@@ -95,6 +95,9 @@ export interface Comprobante {
   contacto?: string;
   fechaEnvio?: Date;
   ordenPublicidadIdIngreso?: string;
+  // Consolidated context fields (migration 007)
+  facturaEmitidaA?: string;
+  acuerdoPago?: string;
   // Audit
   createdAt: Date;
   updatedAt: Date;
@@ -147,6 +150,9 @@ export interface CreateComprobanteInput {
   contacto?: string;
   fechaEnvio?: Date;
   ordenPublicidadIdIngreso?: string;
+  // Consolidated context fields
+  facturaEmitidaA?: string;
+  acuerdoPago?: string;
   createdBy?: string;
 }
 
@@ -267,7 +273,6 @@ export interface ComprobanteWithContext extends Comprobante {
   sector?: string;
   rubroGasto?: string;
   subRubro?: string;
-  implFacturaEmitidaA?: string;
   implNombreCampana?: string;
   implOrdenPublicidad?: string;
   // Programacion context

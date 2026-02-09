@@ -201,13 +201,10 @@ export interface ProgramacionGastoRow {
   gasto_id: string;
   formulario_id: string;
   categoria: string | null;
-  acuerdo_pago: string | null;
   cliente: string | null;
   monto: number | null;
   valor_imponible: number | null;
   bonificacion: number | null;
-  factura_emitida_a: string | null;
-  forma_pago: string | null;
 }
 
 export type ProgramacionGastoInsert = Omit<ProgramacionGastoRow, 'id'>;
@@ -265,13 +262,10 @@ export interface ImplementacionGastoRow {
   gasto_id: string;
   orden_publicidad_id: string | null;
   item_orden_publicidad_id: string | null;
-  factura_emitida_a: string | null;
   sector: string | null;
   rubro_gasto: string | null;
   sub_rubro: string | null;
   condicion_pago: string | null;
-  forma_pago: string | null;
-  fecha_pago: string | null;
   adjuntos: unknown | null;
 }
 
@@ -384,12 +378,9 @@ export interface ExperienceGastoRow {
   id: string;
   gasto_id: string;
   formulario_id: string;
-  factura_emitida_a: string | null;
   empresa: string | null;
   empresa_programa: string | null;
   fecha_comprobante: string | null;
-  acuerdo_pago: string | null;
-  forma_pago: string | null;
   pais: string | null;
 }
 
@@ -513,6 +504,9 @@ export interface ComprobanteRow {
   contacto: string | null;
   fecha_envio: string | null;
   orden_publicidad_id_ingreso: string | null;
+  // Consolidated context fields (migration 007)
+  factura_emitida_a: string | null;
+  acuerdo_pago: string | null;
   // Audit
   created_at: string;
   updated_at: string;
@@ -528,13 +522,10 @@ export interface ImplementacionComprobanteRow {
   comprobante_id: string;
   orden_publicidad_id: string | null;
   item_orden_publicidad_id: string | null;
-  factura_emitida_a: string | null;
   sector: string | null;
   rubro_gasto: string | null;
   sub_rubro: string | null;
   condicion_pago: string | null;
-  forma_pago: string | null;
-  fecha_pago: string | null;
   adjuntos: unknown | null;
 }
 
@@ -547,13 +538,10 @@ export interface ProgramacionComprobanteRow {
   comprobante_id: string;
   formulario_id: string;
   categoria: string | null;
-  acuerdo_pago: string | null;
   cliente: string | null;
   monto: number | null;
   valor_imponible: number | null;
   bonificacion: number | null;
-  factura_emitida_a: string | null;
-  forma_pago: string | null;
 }
 
 export type ProgramacionComprobanteInsert = Omit<ProgramacionComprobanteRow, 'id'>;
@@ -564,12 +552,9 @@ export interface ExperienceComprobanteRow {
   id: string;
   comprobante_id: string;
   formulario_id: string;
-  factura_emitida_a: string | null;
   empresa: string | null;
   empresa_programa: string | null;
   fecha_comprobante: string | null;
-  acuerdo_pago: string | null;
-  forma_pago: string | null;
   pais: string | null;
 }
 
@@ -587,7 +572,6 @@ export interface ComprobanteFullRow extends ComprobanteRow {
   sector: string | null;
   rubro_gasto: string | null;
   sub_rubro: string | null;
-  impl_factura_emitida_a: string | null;
   impl_nombre_campana: string | null;
   impl_orden_publicidad: string | null;
   // Programacion context
@@ -613,4 +597,7 @@ export interface ComprobanteFullRow extends ComprobanteRow {
   ingreso_op_importe: string | null;
   ingreso_op_acuerdo_pago: string | null;
   ingreso_op_mes_servicio: string | null;
+  // Entidad resolved (from LEFT JOIN entidades)
+  entidad_cuit_efectivo: string | null;
+  entidad_condicion_iva: string | null;
 }

@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Switch } from './ui/switch';
 import { CreateAreaModal } from './CreateAreaModal';
 import { CreateUserModal } from './CreateUserModal';
+import { EditUserModal } from './EditUserModal';
 import { toast } from 'sonner';
 import {
   Users,
@@ -591,6 +592,7 @@ const UsersTab = () => {
   const { users: dataUsers, toggleUserStatus } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<typeof dataUsers[number] | null>(null);
 
   const handleNewUser = () => {
     setShowCreateModal(true);
@@ -739,7 +741,15 @@ const UsersTab = () => {
                       checked={user.status === 'active'}
                       onCheckedChange={() => toggleUser(user.id)}
                     />
-                    <Button variant="ghost" size="icon" className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}
+                      onClick={() => {
+                        const fullUser = dataUsers.find(u => u.id === user.id);
+                        if (fullUser) setEditingUser(fullUser);
+                      }}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
@@ -758,6 +768,14 @@ const UsersTab = () => {
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         onSuccess={handleModalSuccess}
+      />
+
+      {/* Modal de Editar Usuario */}
+      <EditUserModal
+        open={!!editingUser}
+        onOpenChange={(open) => { if (!open) setEditingUser(null); }}
+        user={editingUser}
+        onSuccess={() => toast.success('Usuario actualizado')}
       />
     </div>
   );

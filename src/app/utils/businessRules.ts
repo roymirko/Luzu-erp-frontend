@@ -138,6 +138,11 @@ export const validateCreateUser = (
     errors.push({ field: 'email', message: 'Este email ya está registrado' });
   }
 
+  // Validar contraseña
+  if (!form.password || form.password.length < 6) {
+    errors.push({ field: 'password', message: 'La contraseña debe tener al menos 6 caracteres' });
+  }
+
   // Validar nombres
   if (!form.firstName || !form.firstName.trim()) {
     errors.push({ field: 'firstName', message: 'El nombre es obligatorio' });
@@ -194,6 +199,11 @@ export const validateEditUser = (
 
   if (!form.lastName || !form.lastName.trim()) {
     errors.push({ field: 'lastName', message: 'El apellido es obligatorio' });
+  }
+
+  // Validar contraseña (solo si se proporcionó)
+  if (form.password && form.password.length < 6) {
+    errors.push({ field: 'password', message: 'La contraseña debe tener al menos 6 caracteres' });
   }
 
   return {

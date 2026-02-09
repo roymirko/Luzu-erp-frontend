@@ -297,10 +297,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    // Hash password via pgcrypto
+    const { data: hashResult, error: hashError } = await supabase.rpc('hash_password', { password: form.password });
+    if (hashError || !hashResult) {
+      console.error('Error hashing password:', hashError);
+      return { success: false, errors: [{ field: 'password', message: 'Error al procesar contraseña' }] };
+    }
+
     // Insert User
     const { data: insertedUser, error: userError } = await supabase
       .from('usuarios')
-      .insert(mapUserToDB(newUserBase))
+      .insert({ ...mapUserToDB(newUserBase), password_hash: hashResult })
       .select()
       .single();
 
@@ -377,9 +384,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     };
 
-      const { error: userError } = await supabase
+    // Hash password if provided
+    let passwordHash: string | undefined;
+    if (form.password && form.password.length >= 6) {
+      const { data: hashResult, error: hashError } = await supabase.rpc('hash_password', { password: form.password });
+      if (hashError || !hashResult) {
+        console.error('Error hashing password:', hashError);
+        return { success: false, errors: [{ field: 'password', message: 'Error al procesar contraseña' }] };
+      }
+      passwordHash = hashResult;
+    }
+
+    const dbUpdates = {
+      ...mapUserToDB(updates),
+      ...(passwordHash ? { password_hash: passwordHash } : {})
+    };
+
+    const { error: userError } = await supabase
       .from('usuarios')
-      .update(mapUserToDB(updates))
+      .update(dbUpdates)
       .eq('id', userId);
 
     if (userError) {

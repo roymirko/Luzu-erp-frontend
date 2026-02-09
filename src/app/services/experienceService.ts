@@ -395,13 +395,15 @@ export async function update(input: UpdateGastoExperienceInput): Promise<{ data:
   if (fields.detalleCampana !== undefined) formularioUpdate.detalle_campana = fields.detalleCampana;
   if (fields.subrubro !== undefined) formularioUpdate.subrubro = fields.subrubro;
 
+  // Consolidated fields → comprobante update (not context)
+  if (fields.facturaEmitidaA !== undefined) gastoUpdate.factura_emitida_a = fields.facturaEmitidaA;
+  if (fields.acuerdoPago !== undefined) gastoUpdate.acuerdo_pago = fields.acuerdoPago;
+  if (fields.formaPago !== undefined) gastoUpdate.forma_pago = fields.formaPago;
+
   // Context
-  if (fields.facturaEmitidaA !== undefined) contextUpdate.factura_emitida_a = fields.facturaEmitidaA;
   if (fields.empresaContext !== undefined) contextUpdate.empresa = fields.empresaContext;
   if (fields.empresaPrograma !== undefined) contextUpdate.empresa_programa = fields.empresaPrograma;
   if (fields.fechaComprobante !== undefined) contextUpdate.fecha_comprobante = fields.fechaComprobante;
-  if (fields.acuerdoPago !== undefined) contextUpdate.acuerdo_pago = fields.acuerdoPago;
-  if (fields.formaPago !== undefined) contextUpdate.forma_pago = fields.formaPago;
   if (fields.pais !== undefined) contextUpdate.pais = fields.pais;
 
   const result = await experienceRepo.update(id, {

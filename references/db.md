@@ -242,6 +242,9 @@ CREATE TABLE comprobantes (
   contacto TEXT,
   fecha_envio DATE,
   orden_publicidad_id_ingreso UUID REFERENCES ordenes_publicidad(id),
+  -- Consolidated context fields (migration 007)
+  factura_emitida_a TEXT,
+  acuerdo_pago TEXT,
   -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -261,16 +264,14 @@ CREATE TABLE implementacion_comprobantes (
   comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
   orden_publicidad_id UUID REFERENCES ordenes_publicidad(id),
   item_orden_publicidad_id UUID REFERENCES items_orden_publicidad(id),
-  factura_emitida_a TEXT,
   sector TEXT,
   rubro_gasto TEXT,
   sub_rubro TEXT,
   condicion_pago TEXT,
-  forma_pago TEXT,
-  fecha_pago DATE,
   adjuntos JSONB,
   UNIQUE(comprobante_id)
 );
+-- NOTE: factura_emitida_a, forma_pago, fecha_pago moved to comprobantes (migration 007)
 ```
 
 **Backward Compatibility**: Vista `implementacion_gastos` mapea a esta tabla.
@@ -306,15 +307,13 @@ CREATE TABLE programacion_comprobantes (
   comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
   formulario_id UUID NOT NULL REFERENCES programacion_formularios(id) ON DELETE CASCADE,
   categoria TEXT,
-  acuerdo_pago TEXT,
   cliente TEXT,
   monto DECIMAL(15,2),
   valor_imponible DECIMAL(15,2),
   bonificacion DECIMAL(15,2) DEFAULT 0,
-  factura_emitida_a TEXT,
-  forma_pago TEXT,
   UNIQUE(comprobante_id)
 );
+-- NOTE: factura_emitida_a, acuerdo_pago, forma_pago moved to comprobantes (migration 007)
 ```
 
 **Backward Compatibility**: Vista `programacion_gastos` mapea a esta tabla.
@@ -344,15 +343,13 @@ CREATE TABLE experience_comprobantes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
   formulario_id UUID NOT NULL REFERENCES experience_formularios(id) ON DELETE CASCADE,
-  factura_emitida_a TEXT,
   empresa TEXT,
   empresa_programa TEXT,
   fecha_comprobante DATE,
-  acuerdo_pago TEXT,
-  forma_pago TEXT,
   pais TEXT DEFAULT 'argentina',
   UNIQUE(comprobante_id)
 );
+-- NOTE: factura_emitida_a, acuerdo_pago, forma_pago moved to comprobantes (migration 007)
 ```
 
 **Backward Compatibility**: Vista `experience_gastos` mapea a esta tabla.

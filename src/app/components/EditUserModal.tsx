@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useData } from '../contexts/DataContext';
-import { CreateUserForm } from '../types/business';
+import type { User, EditUserForm } from '../types/business';
 import {
   Dialog,
   DialogContent,
@@ -20,89 +20,81 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
-import { Badge } from './ui/badge';
-import { toast } from 'sonner';
-import { UserPlus, X, Plus, Trash2 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
+import { toast } from 'sonner';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 
-interface CreateUserModalProps {
+interface EditUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  user: User | null;
   onSuccess?: () => void;
 }
 
-export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserModalProps) {
+export function EditUserModal({ open, onOpenChange, user, onSuccess }: EditUserModalProps) {
   const { isDark } = useTheme();
-  const { createUser, areas, roles } = useData();
+  const { editUser, areas, roles, userAreaRoles } = useData();
 
-  const [formData, setFormData] = useState<CreateUserForm>({
+  const [formData, setFormData] = useState<EditUserForm>({
     email: '',
     password: '',
     firstName: '',
     lastName: '',
     position: '',
-    areas: [{ areaId: '', roleId: '' }], // Pre-populate with one empty row
+    active: true,
+    areas: [],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (user) {
+      const assignments = userAreaRoles
+        .filter(uar => uar.userId === user.id)
+        .map(uar => ({ areaId: uar.areaId, roleId: uar.roleId }));
+
+      setFormData({
+        email: user.email,
+        password: '',
+        firstName: user.firstName,
+        lastName: user.lastName,
+        position: user.metadata?.position || '',
+        active: user.active,
+        areas: assignments.length > 0 ? assignments : [{ areaId: '', roleId: '' }],
+      });
+      setErrors({});
+    }
+  }, [user, userAreaRoles]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setIsSubmitting(true);
     setErrors({});
 
-    const result = await createUser(formData);
+    const result = await editUser(user.id, formData);
 
     if (result.success) {
-      toast.success('Usuario creado exitosamente', {
-        description: `${formData.firstName} ${formData.lastName} ha sido creado con acceso a ${formData.email}`,
-      });
-      
-      // Reset form
-      setFormData({
-        email: '',
-        password: '',
-        firstName: '',
-        lastName: '',
-        position: '',
-        areas: [{ areaId: '', roleId: '' }],
-      });
-      
+      toast.success('Usuario actualizado');
       onOpenChange(false);
       onSuccess?.();
     } else {
-      // Mostrar errores
       const errorMap: Record<string, string> = {};
-      result.errors?.forEach((error) => {
+      result.errors?.forEach((error: any) => {
         errorMap[error.field] = error.message;
       });
       setErrors(errorMap);
-      
-      toast.error('Error al crear usuario', {
-        description: 'Por favor revisa los campos marcados en rojo.',
-      });
+      toast.error('Error al actualizar usuario');
     }
 
     setIsSubmitting(false);
   };
 
   const handleAddAreaRole = () => {
-    const activeAreas = areas.filter(a => a.active);
-    if (activeAreas.length === 0) {
-      toast.error('No hay áreas disponibles');
-      return;
-    }
-
     setFormData({
       ...formData,
-      areas: [
-        ...formData.areas,
-        {
-          areaId: '',
-          roleId: '',
-        },
-      ],
+      areas: [...formData.areas, { areaId: '', roleId: '' }],
     });
   };
 
@@ -115,25 +107,24 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
 
   const handleAreaRoleChange = (index: number, field: 'areaId' | 'roleId', value: string) => {
     const newAreas = [...formData.areas];
-    newAreas[index] = {
-      ...newAreas[index],
-      [field]: value,
-    };
+    newAreas[index] = { ...newAreas[index], [field]: value };
     setFormData({ ...formData, areas: newAreas });
   };
 
   const activeAreas = areas.filter(a => a.active);
+
+  if (!user) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`max-w-3xl max-h-[90vh] ${isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white'}`}>
         <DialogHeader>
           <DialogTitle className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            <UserPlus className="h-5 w-5 text-[#fb2c36]" />
-            Nuevo Usuario
+            <Edit className="h-5 w-5 text-[#fb2c36]" />
+            Editar Usuario
           </DialogTitle>
           <DialogDescription className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-            Crea un nuevo usuario con sus credenciales de acceso.
+            Modifica los datos del usuario {user.firstName} {user.lastName}.
           </DialogDescription>
         </DialogHeader>
 
@@ -146,109 +137,94 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
                   Información Personal
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Nombre */}
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
+                    <Label htmlFor="edit-firstName" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                       Nombre <span className="text-red-500">*</span>
                     </Label>
                     <Input
-                      id="firstName"
+                      id="edit-firstName"
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      placeholder="Juan"
                       className={errors.firstName ? 'border-red-500' : ''}
                     />
-                    {errors.firstName && (
-                      <p className="text-sm text-red-500">{errors.firstName}</p>
-                    )}
+                    {errors.firstName && <p className="text-sm text-red-500">{errors.firstName}</p>}
                   </div>
 
-                  {/* Apellido */}
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
+                    <Label htmlFor="edit-lastName" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                       Apellido <span className="text-red-500">*</span>
                     </Label>
                     <Input
-                      id="lastName"
+                      id="edit-lastName"
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      placeholder="Pérez"
                       className={errors.lastName ? 'border-red-500' : ''}
                     />
-                    {errors.lastName && (
-                      <p className="text-sm text-red-500">{errors.lastName}</p>
-                    )}
+                    {errors.lastName && <p className="text-sm text-red-500">{errors.lastName}</p>}
                   </div>
 
-                  {/* Email */}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
+                    <Label htmlFor="edit-email" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                       Email <span className="text-red-500">*</span>
                     </Label>
                     <Input
-                      id="email"
+                      id="edit-email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="juan.perez@luzutv.com"
                       className={errors.email ? 'border-red-500' : ''}
                     />
-                    {errors.email && (
-                      <p className="text-sm text-red-500">{errors.email}</p>
-                    )}
+                    {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
                   </div>
 
-                  {/* Contraseña */}
                   <div className="space-y-2">
-                    <Label htmlFor="password" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
-                      Contraseña <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Mínimo 6 caracteres"
-                      className={errors.password ? 'border-red-500' : ''}
-                    />
-                    {errors.password && (
-                      <p className="text-sm text-red-500">{errors.password}</p>
-                    )}
-                  </div>
-
-                  {/* Cargo */}
-                  <div className="space-y-2">
-                    <Label htmlFor="position" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
+                    <Label htmlFor="edit-position" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                       Cargo
                     </Label>
                     <Input
-                      id="position"
+                      id="edit-position"
                       value={formData.position}
                       onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                      placeholder="Ej: Desarrollador, Editor, etc."
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Asignación de Áreas y Roles */}
+              {/* Contraseña */}
+              <div>
+                <h3 className={`font-medium mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Contraseña
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-password" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
+                      Nueva Contraseña
+                    </Label>
+                    <Input
+                      id="edit-password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Dejar vacío para no cambiar"
+                      className={errors.password ? 'border-red-500' : ''}
+                    />
+                    {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                      Mínimo 6 caracteres. Solo se actualiza si se completa.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Áreas y Roles */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      Áreas y Roles <span className="text-red-500">*</span>
+                      Áreas y Roles
                     </h3>
-                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
-                      Asigna al menos un rol en un área
-                    </p>
                   </div>
-                  <Button
-                    type="button"
-                    onClick={handleAddAreaRole}
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                  >
+                  <Button type="button" onClick={handleAddAreaRole} size="sm" variant="outline" className="gap-2">
                     <Plus className="h-4 w-4" />
                     Agregar Área
                   </Button>
@@ -259,7 +235,7 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
                     isDark ? 'border-gray-700 bg-[#141414]' : 'border-gray-300 bg-gray-50'
                   }`}>
                     <p className={isDark ? 'text-gray-500' : 'text-gray-600'}>
-                      No hay áreas asignadas. Haz clic en "Agregar Área" para comenzar.
+                      Sin áreas asignadas.
                     </p>
                   </div>
                 ) : (
@@ -273,18 +249,13 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex-1 grid grid-cols-2 gap-3">
-                            {/* Área */}
                             <div className="space-y-2">
-                              <Label className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Área
-                              </Label>
+                              <Label className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Área</Label>
                               <Select
                                 value={assignment.areaId}
                                 onValueChange={(value) => handleAreaRoleChange(index, 'areaId', value)}
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccionar área" />
-                                </SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Seleccionar área" /></SelectTrigger>
                                 <SelectContent>
                                   {activeAreas.map((area) => (
                                     <SelectItem key={area.id} value={area.id}>
@@ -294,19 +265,13 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
                                 </SelectContent>
                               </Select>
                             </div>
-
-                            {/* Rol */}
                             <div className="space-y-2">
-                              <Label className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Rol
-                              </Label>
+                              <Label className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Rol</Label>
                               <Select
                                 value={assignment.roleId}
                                 onValueChange={(value) => handleAreaRoleChange(index, 'roleId', value)}
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccionar rol" />
-                                </SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder="Seleccionar rol" /></SelectTrigger>
                                 <SelectContent>
                                   {roles.map((role) => (
                                     <SelectItem key={role.id} value={role.id}>
@@ -317,8 +282,6 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
                               </Select>
                             </div>
                           </div>
-
-                          {/* Botón eliminar */}
                           <Button
                             type="button"
                             variant="ghost"
@@ -333,28 +296,16 @@ export function CreateUserModal({ open, onOpenChange, onSuccess }: CreateUserMod
                     ))}
                   </div>
                 )}
-
-                {errors.areas && (
-                  <p className="text-sm text-red-500 mt-2">{errors.areas}</p>
-                )}
+                {errors.areas && <p className="text-sm text-red-500 mt-2">{errors.areas}</p>}
               </div>
             </div>
 
             <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-[#fb2c36] hover:bg-[#e02531] text-white"
-              >
-                {isSubmitting ? 'Creando...' : 'Crear Usuario'}
+              <Button type="submit" disabled={isSubmitting} className="bg-[#fb2c36] hover:bg-[#e02531] text-white">
+                {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </DialogFooter>
           </form>

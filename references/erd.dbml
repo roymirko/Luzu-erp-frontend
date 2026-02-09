@@ -158,7 +158,33 @@ Table comprobantes {
   concepto text
   observaciones text
   estado text [default: 'pendiente', note: 'pendiente | activo | cerrado | anulado']
-  estado_pago text [default: 'pendiente', note: 'pendiente | pagado | pedir_info | anulado']
+  estado_pago text [default: 'creado', note: 'creado | aprobado | requiere_info | rechazado | pagado']
+  // Payment fields (migration 004)
+  forma_pago text
+  cotizacion decimal
+  banco text
+  numero_operacion text
+  fecha_pago date
+  // Admin fields (migration 005)
+  condicion_iva text
+  comprobante_pago text
+  ingresos_brutos decimal
+  retencion_ganancias decimal
+  fecha_estimada_pago date
+  nota_admin text
+  // Ingreso fields (migration 006)
+  retencion_iva decimal
+  retencion_suss decimal
+  fecha_vencimiento date
+  fecha_ingreso_cheque date
+  certificacion_enviada_fecha date
+  portal text
+  contacto text
+  fecha_envio date
+  orden_publicidad_id_ingreso uuid [ref: > ordenes_publicidad.id]
+  // Consolidated context fields (migration 007)
+  factura_emitida_a text
+  acuerdo_pago text
   created_at timestamptz
   updated_at timestamptz
   created_by text
@@ -173,13 +199,10 @@ Table implementacion_comprobantes {
   comprobante_id uuid [ref: - comprobantes.id]
   orden_publicidad_id uuid [ref: > ordenes_publicidad.id]
   item_orden_publicidad_id uuid [ref: > items_orden_publicidad.id]
-  factura_emitida_a text
   sector text
   rubro_gasto text
   sub_rubro text
   condicion_pago text
-  forma_pago text
-  fecha_pago date
   adjuntos jsonb
 }
 
@@ -209,13 +232,10 @@ Table programacion_comprobantes {
   comprobante_id uuid [ref: - comprobantes.id]
   formulario_id uuid [ref: > programacion_formularios.id]
   categoria text
-  acuerdo_pago text
   cliente text
   monto decimal
   valor_imponible decimal
   bonificacion decimal
-  factura_emitida_a text
-  forma_pago text
 }
 
 // ============================================
@@ -238,12 +258,9 @@ Table experience_comprobantes {
   id uuid [pk]
   comprobante_id uuid [ref: - comprobantes.id]
   formulario_id uuid [ref: > experience_formularios.id]
-  factura_emitida_a text
   empresa text
   empresa_programa text
   fecha_comprobante date
-  acuerdo_pago text
-  forma_pago text
   pais text [default: 'argentina']
 }
 

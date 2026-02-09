@@ -58,6 +58,9 @@ function mapFromDB(row: ComprobanteRow): Comprobante {
     contacto: row.contacto ?? undefined,
     fechaEnvio: row.fecha_envio ? new Date(row.fecha_envio) : undefined,
     ordenPublicidadIdIngreso: row.orden_publicidad_id_ingreso ?? undefined,
+    // Consolidated context fields
+    facturaEmitidaA: row.factura_emitida_a ?? undefined,
+    acuerdoPago: row.acuerdo_pago ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,
@@ -99,6 +102,9 @@ function mapToDBInsert(input: CreateComprobanteInput): ComprobanteInsert {
     banco: input.banco || null,
     numero_operacion: input.numeroOperacion || null,
     fecha_pago: input.fechaPago?.toISOString().split('T')[0] || null,
+    // Consolidated context fields
+    factura_emitida_a: input.facturaEmitidaA || null,
+    acuerdo_pago: input.acuerdoPago || null,
     created_by: input.createdBy || null,
   };
 }
@@ -237,6 +243,9 @@ export async function update(input: UpdateComprobanteInput): Promise<{ data: Com
   if (fields.contacto !== undefined) updateData.contacto = fields.contacto;
   if (fields.fechaEnvio !== undefined) updateData.fecha_envio = fields.fechaEnvio?.toISOString().split('T')[0];
   if (fields.ordenPublicidadIdIngreso !== undefined) updateData.orden_publicidad_id_ingreso = fields.ordenPublicidadIdIngreso;
+  // Consolidated context fields
+  if (fields.facturaEmitidaA !== undefined) updateData.factura_emitida_a = fields.facturaEmitidaA;
+  if (fields.acuerdoPago !== undefined) updateData.acuerdo_pago = fields.acuerdoPago;
 
   const result = await comprobantesRepo.update(id, updateData);
 
@@ -285,7 +294,7 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     tipoMovimiento: row.tipo_movimiento,
     entidadId: row.entidad_id ?? undefined,
     entidadNombre: row.entidad_nombre,
-    entidadCuit: row.entidad_cuit ?? undefined,
+    entidadCuit: row.entidad_cuit_efectivo ?? row.entidad_cuit ?? undefined,
     tipoComprobante: row.tipo_comprobante as any,
     puntoVenta: row.punto_venta ?? undefined,
     numeroComprobante: row.numero_comprobante ?? undefined,
@@ -309,8 +318,8 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     banco: row.banco ?? undefined,
     numeroOperacion: row.numero_operacion ?? undefined,
     fechaPago: row.fecha_pago ? new Date(row.fecha_pago) : undefined,
-    // Admin fields
-    condicionIva: row.condicion_iva as any,
+    // Admin fields (fallback to entidad data for condicionIva)
+    condicionIva: (row.condicion_iva ?? row.entidad_condicion_iva ?? undefined) as any,
     comprobantePago: row.comprobante_pago ?? undefined,
     ingresosBrutos: row.ingresos_brutos ?? 0,
     retencionGanancias: row.retencion_ganancias ?? 0,
@@ -326,6 +335,9 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     contacto: row.contacto ?? undefined,
     fechaEnvio: row.fecha_envio ? new Date(row.fecha_envio) : undefined,
     ordenPublicidadIdIngreso: row.orden_publicidad_id_ingreso ?? undefined,
+    // Consolidated context fields
+    facturaEmitidaA: row.factura_emitida_a ?? undefined,
+    acuerdoPago: row.acuerdo_pago ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     createdBy: row.created_by ?? undefined,
@@ -338,7 +350,6 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     sector: row.sector ?? undefined,
     rubroGasto: row.rubro_gasto ?? undefined,
     subRubro: row.sub_rubro ?? undefined,
-    implFacturaEmitidaA: row.impl_factura_emitida_a ?? undefined,
     implNombreCampana: row.impl_nombre_campana ?? undefined,
     implOrdenPublicidad: row.impl_orden_publicidad ?? undefined,
     // Programacion

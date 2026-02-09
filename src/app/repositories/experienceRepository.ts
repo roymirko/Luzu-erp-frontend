@@ -31,7 +31,7 @@ function mapSupabaseError(error: { code?: string; message: string; details?: str
 /**
  * Maps old GastoInsert to new ComprobanteInsert
  */
-function mapGastoToComprobante(gasto: GastoInsert): ComprobanteInsert {
+function mapGastoToComprobante(gasto: GastoInsert, context?: Partial<{ factura_emitida_a: string | null; acuerdo_pago: string | null; forma_pago: string | null }>): ComprobanteInsert {
   return {
     tipo_movimiento: 'egreso',
     entidad_id: null,
@@ -55,6 +55,10 @@ function mapGastoToComprobante(gasto: GastoInsert): ComprobanteInsert {
     estado: gasto.estado || 'activo',
     estado_pago: (gasto.estado_pago === 'pendiente-pago' ? 'creado' : gasto.estado_pago) as 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado',
     created_by: gasto.created_by || null,
+    // Consolidated from context
+    factura_emitida_a: context?.factura_emitida_a || null,
+    acuerdo_pago: context?.acuerdo_pago || null,
+    forma_pago: context?.forma_pago || null,
   };
 }
 
@@ -93,12 +97,9 @@ function mapContextInsert(context: Omit<ExperienceGastoInsert, 'gasto_id' | 'for
   return {
     comprobante_id: comprobanteId,
     formulario_id: formularioId,
-    factura_emitida_a: context.factura_emitida_a || null,
     empresa: context.empresa || null,
     empresa_programa: context.empresa_programa || null,
     fecha_comprobante: context.fecha_comprobante || null,
-    acuerdo_pago: context.acuerdo_pago || null,
-    forma_pago: context.forma_pago || null,
     pais: context.pais || 'argentina',
   };
 }
@@ -144,8 +145,12 @@ export async function create(input: {
   formulario: ExperienceFormularioInsert;
   context: Omit<ExperienceGastoInsert, 'gasto_id' | 'formulario_id'>;
 }): Promise<RepositoryResult<ExperienceGastoFullRow>> {
-  // 1. Map and insert into comprobantes (core)
-  const comprobanteData = mapGastoToComprobante(input.gasto);
+  // 1. Map and insert into comprobantes (core) - include consolidated fields
+  const comprobanteData = mapGastoToComprobante(input.gasto, {
+    factura_emitida_a: (input.context as any).factura_emitida_a || null,
+    acuerdo_pago: (input.context as any).acuerdo_pago || null,
+    forma_pago: (input.context as any).forma_pago || null,
+  });
   const { data: comprobante, error: comprobanteError } = await supabase
     .from(COMPROBANTES_TABLE)
     .insert(comprobanteData)
@@ -220,8 +225,12 @@ export async function createWithMultipleGastos(input: {
     const item = input.gastos[i];
     console.log(`[Experience:createWithMultipleGastos] Creating gasto ${i + 1}/${input.gastos.length}:`, item.gasto.neto);
 
-    // Map and insert into comprobantes
-    const comprobanteData = mapGastoToComprobante(item.gasto);
+    // Map and insert into comprobantes - include consolidated fields from context
+    const comprobanteData = mapGastoToComprobante(item.gasto, {
+      factura_emitida_a: (item.context as any).factura_emitida_a || null,
+      acuerdo_pago: (item.context as any).acuerdo_pago || null,
+      forma_pago: (item.context as any).forma_pago || null,
+    });
     const { data: comprobante, error: comprobanteError } = await supabase
       .from(COMPROBANTES_TABLE)
       .insert(comprobanteData)
@@ -288,8 +297,12 @@ export async function addGastoToFormulario(
     context: Omit<ExperienceGastoInsert, 'gasto_id' | 'formulario_id'>;
   }
 ): Promise<RepositoryResult<ExperienceGastoFullRow>> {
-  // 1. Map and insert into comprobantes
-  const comprobanteData = mapGastoToComprobante(input.gasto);
+  // 1. Map and insert into comprobantes - include consolidated fields
+  const comprobanteData = mapGastoToComprobante(input.gasto, {
+    factura_emitida_a: (input.context as any).factura_emitida_a || null,
+    acuerdo_pago: (input.context as any).acuerdo_pago || null,
+    forma_pago: (input.context as any).forma_pago || null,
+  });
   const { data: comprobante, error: comprobanteError } = await supabase
     .from(COMPROBANTES_TABLE)
     .insert(comprobanteData)

@@ -1,9 +1,43 @@
 -- ============================================
 -- LUZU ERP - Schema Consolidado
--- Migración única que reemplaza todas las anteriores
+-- Migración única (folds 001-007)
 -- ============================================
 
 BEGIN;
+
+-- ============================================
+-- DROP EVERYTHING (dev only, not in production)
+-- ============================================
+DROP VIEW IF EXISTS public.gastos_full CASCADE;
+DROP VIEW IF EXISTS public.comprobantes_full CASCADE;
+DROP VIEW IF EXISTS public.implementacion_gastos_full CASCADE;
+DROP VIEW IF EXISTS public.implementacion_comprobantes_full CASCADE;
+DROP VIEW IF EXISTS public.programacion_gastos_full CASCADE;
+DROP VIEW IF EXISTS public.programacion_comprobantes_full CASCADE;
+DROP VIEW IF EXISTS public.experience_gastos_full CASCADE;
+DROP VIEW IF EXISTS public.experience_comprobantes_full CASCADE;
+DROP VIEW IF EXISTS public.implementacion_gastos CASCADE;
+DROP VIEW IF EXISTS public.programacion_gastos CASCADE;
+DROP VIEW IF EXISTS public.experience_gastos CASCADE;
+DROP VIEW IF EXISTS public.gastos CASCADE;
+DROP VIEW IF EXISTS public.proveedores CASCADE;
+
+DROP TABLE IF EXISTS public.items_gasto_implementacion CASCADE;
+DROP TABLE IF EXISTS public.gastos_implementacion CASCADE;
+DROP TABLE IF EXISTS public.experience_comprobantes CASCADE;
+DROP TABLE IF EXISTS public.experience_formularios CASCADE;
+DROP TABLE IF EXISTS public.programacion_comprobantes CASCADE;
+DROP TABLE IF EXISTS public.programacion_formularios CASCADE;
+DROP TABLE IF EXISTS public.implementacion_comprobantes CASCADE;
+DROP TABLE IF EXISTS public.comprobantes CASCADE;
+DROP TABLE IF EXISTS public.entidades CASCADE;
+DROP TABLE IF EXISTS public.items_orden_publicidad CASCADE;
+DROP TABLE IF EXISTS public.ordenes_publicidad CASCADE;
+DROP TABLE IF EXISTS public.usuario_area_roles CASCADE;
+DROP TABLE IF EXISTS public.registros_auditoria CASCADE;
+DROP TABLE IF EXISTS public.usuarios CASCADE;
+DROP TABLE IF EXISTS public.areas CASCADE;
+DROP TABLE IF EXISTS public.roles CASCADE;
 
 -- ============================================
 -- EXTENSIONS
@@ -12,11 +46,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================
--- 1. CORE TABLES (sin cambios)
+-- 1. CORE TABLES
 -- ============================================
 
 -- ROLES
-CREATE TABLE IF NOT EXISTS public.roles (
+CREATE TABLE public.roles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
@@ -25,7 +59,7 @@ CREATE TABLE IF NOT EXISTS public.roles (
 );
 
 -- AREAS
-CREATE TABLE IF NOT EXISTS public.areas (
+CREATE TABLE public.areas (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   code TEXT NOT NULL UNIQUE,
@@ -39,7 +73,7 @@ CREATE TABLE IF NOT EXISTS public.areas (
 );
 
 -- USUARIOS
-CREATE TABLE IF NOT EXISTS public.usuarios (
+CREATE TABLE public.usuarios (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   first_name TEXT NOT NULL,
@@ -50,11 +84,14 @@ CREATE TABLE IF NOT EXISTS public.usuarios (
   fecha_actualizacion TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   last_login TIMESTAMPTZ,
   creado_por TEXT,
-  metadata JSONB DEFAULT '{}'::jsonb
+  metadata JSONB DEFAULT '{}'::jsonb,
+  -- Auth fields
+  password_hash TEXT,
+  user_type TEXT DEFAULT 'administrador' CHECK (user_type IN ('administrador', 'implementacion', 'programacion', 'administracion', 'finanzas'))
 );
 
 -- USUARIO_AREA_ROLES
-CREATE TABLE IF NOT EXISTS public.usuario_area_roles (
+CREATE TABLE public.usuario_area_roles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   usuario_id UUID NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
   area_id UUID NOT NULL REFERENCES public.areas(id) ON DELETE CASCADE,
@@ -65,7 +102,7 @@ CREATE TABLE IF NOT EXISTS public.usuario_area_roles (
 );
 
 -- REGISTROS_AUDITORIA
-CREATE TABLE IF NOT EXISTS public.registros_auditoria (
+CREATE TABLE public.registros_auditoria (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   fecha TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   user_id TEXT NOT NULL,
@@ -83,11 +120,11 @@ CREATE TABLE IF NOT EXISTS public.registros_auditoria (
 );
 
 -- ============================================
--- 2. COMERCIAL TABLES (sin cambios)
+-- 2. COMERCIAL TABLES
 -- ============================================
 
 -- ORDENES_PUBLICIDAD
-CREATE TABLE IF NOT EXISTS public.ordenes_publicidad (
+CREATE TABLE public.ordenes_publicidad (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   fecha TEXT,
   mes_servicio TEXT,
@@ -111,7 +148,7 @@ CREATE TABLE IF NOT EXISTS public.ordenes_publicidad (
 );
 
 -- ITEMS_ORDEN_PUBLICIDAD
-CREATE TABLE IF NOT EXISTS public.items_orden_publicidad (
+CREATE TABLE public.items_orden_publicidad (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   orden_publicidad_id UUID NOT NULL REFERENCES public.ordenes_publicidad(id) ON DELETE CASCADE,
   programa TEXT,
@@ -128,11 +165,10 @@ CREATE TABLE IF NOT EXISTS public.items_orden_publicidad (
 );
 
 -- ============================================
--- 3. ENTIDADES (reemplaza proveedores)
--- Soporta proveedores, clientes, o ambos
+-- 3. ENTIDADES (Proveedores + Clientes)
 -- ============================================
 
-CREATE TABLE IF NOT EXISTS public.entidades (
+CREATE TABLE public.entidades (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   razon_social TEXT NOT NULL,
   nombre_fantasia TEXT,
@@ -154,11 +190,11 @@ CREATE TABLE IF NOT EXISTS public.entidades (
 );
 
 -- ============================================
--- 4. COMPROBANTES (reemplaza gastos)
--- Tabla central para ingresos y egresos
+-- 4. COMPROBANTES (Ingresos + Egresos)
+-- Central table for all financial documents
 -- ============================================
 
-CREATE TABLE IF NOT EXISTS public.comprobantes (
+CREATE TABLE public.comprobantes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
 
   -- Dirección del movimiento
@@ -171,10 +207,10 @@ CREATE TABLE IF NOT EXISTS public.comprobantes (
 
   -- Datos factura argentina
   tipo_comprobante TEXT CHECK (tipo_comprobante IN (
-    'FA', 'FB', 'FC', 'FE',           -- Facturas A, B, C, E
-    'NCA', 'NCB', 'NCC',              -- Notas de crédito
-    'NDA', 'NDB', 'NDC',              -- Notas de débito
-    'REC', 'TKT', 'OTR'               -- Recibo, Ticket, Otro
+    'FA', 'FB', 'FC', 'FE',
+    'NCA', 'NCB', 'NCC',
+    'NDA', 'NDB', 'NDC',
+    'REC', 'TKT', 'OTR'
   )),
   punto_venta TEXT,
   numero_comprobante TEXT,
@@ -199,7 +235,37 @@ CREATE TABLE IF NOT EXISTS public.comprobantes (
 
   -- Estado
   estado TEXT DEFAULT 'pendiente',
-  estado_pago TEXT DEFAULT 'pendiente' CHECK (estado_pago IN ('pendiente', 'pagado', 'anulado')),
+  estado_pago TEXT DEFAULT 'creado' CHECK (estado_pago IN ('creado', 'aprobado', 'requiere_info', 'rechazado', 'pagado')),
+
+  -- Payment/collection fields
+  forma_pago TEXT,
+  cotizacion DECIMAL(15,4),
+  banco TEXT,
+  numero_operacion TEXT,
+  fecha_pago DATE,
+
+  -- Admin fields
+  condicion_iva TEXT,
+  comprobante_pago TEXT,
+  ingresos_brutos DECIMAL(15,2) DEFAULT 0,
+  retencion_ganancias DECIMAL(15,2) DEFAULT 0,
+  fecha_estimada_pago DATE,
+  nota_admin TEXT,
+
+  -- Ingreso-specific fields
+  retencion_iva DECIMAL(15,2) DEFAULT 0,
+  retencion_suss DECIMAL(15,2) DEFAULT 0,
+  fecha_vencimiento DATE,
+  fecha_ingreso_cheque DATE,
+  certificacion_enviada_fecha DATE,
+  portal TEXT,
+  contacto TEXT,
+  fecha_envio DATE,
+  orden_publicidad_id_ingreso UUID REFERENCES public.ordenes_publicidad(id),
+
+  -- Consolidated context fields
+  factura_emitida_a TEXT,
+  acuerdo_pago TEXT,
 
   -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -211,25 +277,22 @@ CREATE TABLE IF NOT EXISTS public.comprobantes (
 -- 5. CONTEXT TABLES (vinculan comprobantes a módulos)
 -- ============================================
 
--- IMPLEMENTACION_COMPROBANTES (era implementacion_gastos)
-CREATE TABLE IF NOT EXISTS public.implementacion_comprobantes (
+-- IMPLEMENTACION_COMPROBANTES
+CREATE TABLE public.implementacion_comprobantes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   comprobante_id UUID NOT NULL REFERENCES public.comprobantes(id) ON DELETE CASCADE,
   orden_publicidad_id UUID REFERENCES public.ordenes_publicidad(id),
   item_orden_publicidad_id UUID REFERENCES public.items_orden_publicidad(id),
-  factura_emitida_a TEXT,
   sector TEXT,
   rubro_gasto TEXT,
   sub_rubro TEXT,
   condicion_pago TEXT,
-  forma_pago TEXT,
-  fecha_pago DATE,
   adjuntos JSONB,
   UNIQUE(comprobante_id)
 );
 
--- PROGRAMACION_FORMULARIOS (sin cambios, header)
-CREATE TABLE IF NOT EXISTS public.programacion_formularios (
+-- PROGRAMACION_FORMULARIOS
+CREATE TABLE public.programacion_formularios (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   mes_gestion VARCHAR(7),
   mes_venta VARCHAR(7),
@@ -246,24 +309,21 @@ CREATE TABLE IF NOT EXISTS public.programacion_formularios (
   created_by TEXT
 );
 
--- PROGRAMACION_COMPROBANTES (era programacion_gastos)
-CREATE TABLE IF NOT EXISTS public.programacion_comprobantes (
+-- PROGRAMACION_COMPROBANTES
+CREATE TABLE public.programacion_comprobantes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   comprobante_id UUID NOT NULL REFERENCES public.comprobantes(id) ON DELETE CASCADE,
   formulario_id UUID NOT NULL REFERENCES public.programacion_formularios(id) ON DELETE CASCADE,
   categoria TEXT,
-  acuerdo_pago TEXT,
   cliente TEXT,
   monto DECIMAL(15,2),
   valor_imponible DECIMAL(15,2),
   bonificacion DECIMAL(15,2) DEFAULT 0,
-  factura_emitida_a TEXT,
-  forma_pago TEXT,
   UNIQUE(comprobante_id)
 );
 
--- EXPERIENCE_FORMULARIOS (sin cambios, header)
-CREATE TABLE IF NOT EXISTS public.experience_formularios (
+-- EXPERIENCE_FORMULARIOS
+CREATE TABLE public.experience_formularios (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   mes_gestion VARCHAR(7),
   nombre_campana TEXT,
@@ -275,28 +335,23 @@ CREATE TABLE IF NOT EXISTS public.experience_formularios (
   created_by TEXT
 );
 
--- EXPERIENCE_COMPROBANTES (era experience_gastos)
-CREATE TABLE IF NOT EXISTS public.experience_comprobantes (
+-- EXPERIENCE_COMPROBANTES
+CREATE TABLE public.experience_comprobantes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   comprobante_id UUID NOT NULL REFERENCES public.comprobantes(id) ON DELETE CASCADE,
   formulario_id UUID NOT NULL REFERENCES public.experience_formularios(id) ON DELETE CASCADE,
-  factura_emitida_a TEXT,
   empresa TEXT,
   empresa_programa TEXT,
   fecha_comprobante DATE,
-  acuerdo_pago TEXT,
-  forma_pago TEXT,
   pais TEXT DEFAULT 'argentina',
   UNIQUE(comprobante_id)
 );
 
 -- ============================================
 -- 6. LEGACY TABLES (mantener para compatibilidad)
--- Estas se borrarán en migración futura
 -- ============================================
 
--- gastos_implementacion (legacy header)
-CREATE TABLE IF NOT EXISTS public.gastos_implementacion (
+CREATE TABLE public.gastos_implementacion (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   fecha_creacion TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   fecha_actualizacion TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -326,8 +381,7 @@ CREATE TABLE IF NOT EXISTS public.gastos_implementacion (
   actualizado_por TEXT
 );
 
--- items_gasto_implementacion (legacy items)
-CREATE TABLE IF NOT EXISTS public.items_gasto_implementacion (
+CREATE TABLE public.items_gasto_implementacion (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   gasto_id UUID REFERENCES public.gastos_implementacion(id) ON DELETE CASCADE,
   fecha_creacion TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -353,7 +407,6 @@ CREATE TABLE IF NOT EXISTS public.items_gasto_implementacion (
 
 -- ============================================
 -- 7. BACKWARD COMPATIBILITY VIEWS
--- Permiten que código legacy siga funcionando
 -- ============================================
 
 -- Vista proveedores (legacy) -> entidades tipo proveedor
@@ -398,51 +451,42 @@ SELECT
 FROM public.comprobantes
 WHERE tipo_movimiento = 'egreso';
 
--- Vista implementacion_gastos (alias a implementacion_comprobantes)
+-- Vista implementacion_gastos (alias)
 CREATE OR REPLACE VIEW public.implementacion_gastos AS
 SELECT
   id,
   comprobante_id AS gasto_id,
   orden_publicidad_id,
   item_orden_publicidad_id,
-  factura_emitida_a,
   sector,
   rubro_gasto,
   sub_rubro,
   condicion_pago,
-  forma_pago,
-  fecha_pago,
   adjuntos
 FROM public.implementacion_comprobantes;
 
--- Vista programacion_gastos (alias a programacion_comprobantes)
+-- Vista programacion_gastos (alias)
 CREATE OR REPLACE VIEW public.programacion_gastos AS
 SELECT
   id,
   comprobante_id AS gasto_id,
   formulario_id,
   categoria,
-  acuerdo_pago,
   cliente,
   monto,
   valor_imponible,
-  bonificacion,
-  factura_emitida_a,
-  forma_pago
+  bonificacion
 FROM public.programacion_comprobantes;
 
--- Vista experience_gastos (alias a experience_comprobantes)
+-- Vista experience_gastos (alias)
 CREATE OR REPLACE VIEW public.experience_gastos AS
 SELECT
   id,
   comprobante_id AS gasto_id,
   formulario_id,
-  factura_emitida_a,
   empresa,
   empresa_programa,
   fecha_comprobante,
-  acuerdo_pago,
-  forma_pago,
   pais
 FROM public.experience_comprobantes;
 
@@ -479,13 +523,13 @@ SELECT
   ic.id AS implementacion_gasto_id,
   ic.orden_publicidad_id,
   ic.item_orden_publicidad_id,
-  ic.factura_emitida_a,
+  c.factura_emitida_a,
   ic.sector,
   ic.rubro_gasto,
   ic.sub_rubro,
   ic.condicion_pago,
-  ic.forma_pago,
-  ic.fecha_pago,
+  c.forma_pago,
+  c.fecha_pago,
   ic.adjuntos,
   -- Datos de orden publicidad (joined)
   op.orden_publicidad,
@@ -501,7 +545,6 @@ FROM public.comprobantes c
 JOIN public.implementacion_comprobantes ic ON c.id = ic.comprobante_id
 LEFT JOIN public.ordenes_publicidad op ON ic.orden_publicidad_id = op.id;
 
--- Alias para código legacy
 CREATE OR REPLACE VIEW public.implementacion_gastos_full AS
 SELECT * FROM public.implementacion_comprobantes_full;
 
@@ -546,25 +589,23 @@ SELECT
   -- Context fields
   pc.id AS programacion_gasto_id,
   pc.categoria,
-  pc.acuerdo_pago,
+  c.acuerdo_pago,
   pc.cliente,
   pc.monto,
   pc.valor_imponible,
   pc.bonificacion,
-  pc.factura_emitida_a,
-  pc.forma_pago
+  c.factura_emitida_a,
+  c.forma_pago
 FROM public.comprobantes c
 JOIN public.programacion_comprobantes pc ON c.id = pc.comprobante_id
 JOIN public.programacion_formularios pf ON pc.formulario_id = pf.id;
 
--- Alias para código legacy
 CREATE OR REPLACE VIEW public.programacion_gastos_full AS
 SELECT * FROM public.programacion_comprobantes_full;
 
 -- Vista completa experience
 CREATE OR REPLACE VIEW public.experience_comprobantes_full AS
 SELECT
-  -- Comprobante fields
   c.id,
   c.entidad_nombre AS proveedor,
   c.entidad_nombre AS razon_social,
@@ -598,125 +639,141 @@ SELECT
   ef.created_by AS formulario_created_by,
   -- Context fields
   ec.id AS experience_gasto_id,
-  ec.factura_emitida_a,
+  c.factura_emitida_a,
   ec.empresa,
   ec.empresa_programa,
   ec.fecha_comprobante,
-  ec.acuerdo_pago,
-  ec.forma_pago,
+  c.acuerdo_pago,
+  c.forma_pago,
   ec.pais
 FROM public.comprobantes c
 JOIN public.experience_comprobantes ec ON c.id = ec.comprobante_id
 JOIN public.experience_formularios ef ON ec.formulario_id = ef.id;
 
--- Alias para código legacy
 CREATE OR REPLACE VIEW public.experience_gastos_full AS
 SELECT * FROM public.experience_comprobantes_full;
 
--- Vista unificada de todos los gastos
+-- Vista unificada comprobantes_full
 CREATE OR REPLACE VIEW public.comprobantes_full AS
 SELECT
   c.*,
-  'implementacion' AS tipo_gasto,
+  CASE
+    WHEN ic.id IS NOT NULL THEN 'implementacion'
+    WHEN pc.id IS NOT NULL THEN 'programacion'
+    WHEN ec.id IS NOT NULL THEN 'experience'
+    ELSE 'directo'
+  END as area_origen,
+  -- Implementacion context
+  ic.id as implementacion_comprobante_id,
   ic.orden_publicidad_id,
-  ic.factura_emitida_a,
+  ic.item_orden_publicidad_id,
   ic.sector,
   ic.rubro_gasto,
   ic.sub_rubro,
-  op.nombre_campana,
-  op.unidad_negocio AS unidad_negocio_efectiva,
-  op.categoria_negocio AS categoria_negocio_efectiva,
-  NULL::VARCHAR(7) AS mes_gestion,
-  NULL::TEXT AS programa,
-  NULL::UUID AS formulario_programacion_id
-FROM public.comprobantes c
-JOIN public.implementacion_comprobantes ic ON c.id = ic.comprobante_id
-LEFT JOIN public.ordenes_publicidad op ON ic.orden_publicidad_id = op.id
-UNION ALL
-SELECT
-  c.*,
-  'programacion' AS tipo_gasto,
-  NULL::UUID AS orden_publicidad_id,
-  pc.factura_emitida_a,
-  NULL::TEXT AS sector,
-  NULL::TEXT AS rubro_gasto,
-  NULL::TEXT AS sub_rubro,
-  pf.detalle_campana AS nombre_campana,
-  pf.unidad_negocio AS unidad_negocio_efectiva,
-  pf.categoria_negocio AS categoria_negocio_efectiva,
-  pf.mes_gestion,
-  pf.programa,
-  pf.id AS formulario_programacion_id
-FROM public.comprobantes c
-JOIN public.programacion_comprobantes pc ON c.id = pc.comprobante_id
-JOIN public.programacion_formularios pf ON pc.formulario_id = pf.id
-UNION ALL
-SELECT
-  c.*,
-  'experience' AS tipo_gasto,
-  NULL::UUID AS orden_publicidad_id,
-  ec.factura_emitida_a,
-  NULL::TEXT AS sector,
-  NULL::TEXT AS rubro_gasto,
-  NULL::TEXT AS sub_rubro,
-  ef.nombre_campana,
-  NULL::TEXT AS unidad_negocio_efectiva,
-  NULL::TEXT AS categoria_negocio_efectiva,
-  ef.mes_gestion,
-  NULL::TEXT AS programa,
-  ef.id AS formulario_programacion_id
-FROM public.comprobantes c
-JOIN public.experience_comprobantes ec ON c.id = ec.comprobante_id
-JOIN public.experience_formularios ef ON ec.formulario_id = ef.id;
+  op.nombre_campana as impl_nombre_campana,
+  op.orden_publicidad as impl_orden_publicidad,
+  -- Programacion context
+  pc.id as programacion_comprobante_id,
+  pc.formulario_id as programacion_formulario_id,
+  pf.programa as prog_programa,
+  pf.mes_gestion as prog_mes_gestion,
+  pf.unidad_negocio as prog_unidad_negocio,
+  pf.categoria_negocio as prog_categoria_negocio,
+  -- Experience context
+  ec.id as experience_comprobante_id,
+  ec.formulario_id as experience_formulario_id,
+  ef.nombre_campana as exp_nombre_campana,
+  ef.mes_gestion as exp_mes_gestion,
+  -- OP vinculada para ingresos
+  opi.id as ingreso_op_id,
+  opi.orden_publicidad as ingreso_op_numero,
+  opi.responsable as ingreso_op_responsable,
+  opi.unidad_negocio as ingreso_op_unidad_negocio,
+  opi.nombre_campana as ingreso_op_nombre_campana,
+  opi.marca as ingreso_op_marca,
+  opi.razon_social as ingreso_op_razon_social,
+  opi.total_venta as ingreso_op_importe,
+  opi.acuerdo_pago as ingreso_op_acuerdo_pago,
+  opi.mes_servicio as ingreso_op_mes_servicio,
+  -- Entidad resolved (fallback to entidades table)
+  COALESCE(c.entidad_cuit, e.cuit) as entidad_cuit_efectivo,
+  e.condicion_iva as entidad_condicion_iva
+FROM comprobantes c
+LEFT JOIN entidades e ON c.entidad_id = e.id
+LEFT JOIN implementacion_comprobantes ic ON c.id = ic.comprobante_id
+LEFT JOIN ordenes_publicidad op ON ic.orden_publicidad_id = op.id
+LEFT JOIN programacion_comprobantes pc ON c.id = pc.comprobante_id
+LEFT JOIN programacion_formularios pf ON pc.formulario_id = pf.id
+LEFT JOIN experience_comprobantes ec ON c.id = ec.comprobante_id
+LEFT JOIN experience_formularios ef ON ec.formulario_id = ef.id
+LEFT JOIN ordenes_publicidad opi ON c.orden_publicidad_id_ingreso = opi.id;
 
--- Alias legacy
 CREATE OR REPLACE VIEW public.gastos_full AS
 SELECT * FROM public.comprobantes_full WHERE tipo_movimiento = 'egreso';
 
 -- ============================================
--- 9. INDEXES
+-- 9. FUNCTIONS
 -- ============================================
 
+CREATE OR REPLACE FUNCTION public.hash_password(password TEXT)
+RETURNS TEXT AS $$
+BEGIN
+  RETURN crypt(password, gen_salt('bf'));
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- 10. INDEXES
+-- ============================================
+
+-- Usuarios
+CREATE INDEX idx_usuarios_email ON public.usuarios(email);
+
 -- Entidades
-CREATE INDEX IF NOT EXISTS idx_entidades_tipo ON public.entidades(tipo_entidad);
-CREATE INDEX IF NOT EXISTS idx_entidades_activo ON public.entidades(activo);
-CREATE INDEX IF NOT EXISTS idx_entidades_cuit ON public.entidades(cuit);
+CREATE INDEX idx_entidades_tipo ON public.entidades(tipo_entidad);
+CREATE INDEX idx_entidades_activo ON public.entidades(activo);
+CREATE INDEX idx_entidades_cuit ON public.entidades(cuit);
 
 -- Comprobantes
-CREATE INDEX IF NOT EXISTS idx_comprobantes_tipo_movimiento ON public.comprobantes(tipo_movimiento);
-CREATE INDEX IF NOT EXISTS idx_comprobantes_estado ON public.comprobantes(estado);
-CREATE INDEX IF NOT EXISTS idx_comprobantes_estado_pago ON public.comprobantes(estado_pago);
-CREATE INDEX IF NOT EXISTS idx_comprobantes_created ON public.comprobantes(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_comprobantes_entidad ON public.comprobantes(entidad_id);
-CREATE INDEX IF NOT EXISTS idx_comprobantes_fecha ON public.comprobantes(fecha_comprobante);
+CREATE INDEX idx_comprobantes_tipo_movimiento ON public.comprobantes(tipo_movimiento);
+CREATE INDEX idx_comprobantes_estado ON public.comprobantes(estado);
+CREATE INDEX idx_comprobantes_estado_pago ON public.comprobantes(estado_pago);
+CREATE INDEX idx_comprobantes_created ON public.comprobantes(created_at DESC);
+CREATE INDEX idx_comprobantes_entidad ON public.comprobantes(entidad_id);
+CREATE INDEX idx_comprobantes_fecha ON public.comprobantes(fecha_comprobante);
+CREATE INDEX idx_comprobantes_forma_pago ON public.comprobantes(forma_pago);
+CREATE INDEX idx_comprobantes_fecha_pago ON public.comprobantes(fecha_pago);
+CREATE INDEX idx_comprobantes_fecha_estimada ON public.comprobantes(fecha_estimada_pago);
+CREATE INDEX idx_comprobantes_condicion_iva ON public.comprobantes(condicion_iva);
+CREATE INDEX idx_comprobantes_op_ingreso ON public.comprobantes(orden_publicidad_id_ingreso);
+CREATE INDEX idx_comprobantes_fecha_vencimiento ON public.comprobantes(fecha_vencimiento);
 
 -- Implementacion comprobantes
-CREATE INDEX IF NOT EXISTS idx_impl_comprobantes_comprobante ON public.implementacion_comprobantes(comprobante_id);
-CREATE INDEX IF NOT EXISTS idx_impl_comprobantes_orden ON public.implementacion_comprobantes(orden_publicidad_id);
-CREATE INDEX IF NOT EXISTS idx_impl_comprobantes_item ON public.implementacion_comprobantes(item_orden_publicidad_id);
+CREATE INDEX idx_impl_comprobantes_comprobante ON public.implementacion_comprobantes(comprobante_id);
+CREATE INDEX idx_impl_comprobantes_orden ON public.implementacion_comprobantes(orden_publicidad_id);
+CREATE INDEX idx_impl_comprobantes_item ON public.implementacion_comprobantes(item_orden_publicidad_id);
 
 -- Programacion
-CREATE INDEX IF NOT EXISTS idx_prog_formularios_mes ON public.programacion_formularios(mes_gestion);
-CREATE INDEX IF NOT EXISTS idx_prog_formularios_programa ON public.programacion_formularios(programa);
-CREATE INDEX IF NOT EXISTS idx_prog_formularios_estado ON public.programacion_formularios(estado);
-CREATE INDEX IF NOT EXISTS idx_prog_comprobantes_comprobante ON public.programacion_comprobantes(comprobante_id);
-CREATE INDEX IF NOT EXISTS idx_prog_comprobantes_formulario ON public.programacion_comprobantes(formulario_id);
+CREATE INDEX idx_prog_formularios_mes ON public.programacion_formularios(mes_gestion);
+CREATE INDEX idx_prog_formularios_programa ON public.programacion_formularios(programa);
+CREATE INDEX idx_prog_formularios_estado ON public.programacion_formularios(estado);
+CREATE INDEX idx_prog_comprobantes_comprobante ON public.programacion_comprobantes(comprobante_id);
+CREATE INDEX idx_prog_comprobantes_formulario ON public.programacion_comprobantes(formulario_id);
 
 -- Experience
-CREATE INDEX IF NOT EXISTS idx_exp_formularios_estado ON public.experience_formularios(estado);
-CREATE INDEX IF NOT EXISTS idx_exp_formularios_created ON public.experience_formularios(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_exp_comprobantes_comprobante ON public.experience_comprobantes(comprobante_id);
-CREATE INDEX IF NOT EXISTS idx_exp_comprobantes_formulario ON public.experience_comprobantes(formulario_id);
+CREATE INDEX idx_exp_formularios_estado ON public.experience_formularios(estado);
+CREATE INDEX idx_exp_formularios_created ON public.experience_formularios(created_at DESC);
+CREATE INDEX idx_exp_comprobantes_comprobante ON public.experience_comprobantes(comprobante_id);
+CREATE INDEX idx_exp_comprobantes_formulario ON public.experience_comprobantes(formulario_id);
 
 -- Legacy
-CREATE INDEX IF NOT EXISTS idx_gastos_impl_item ON public.gastos_implementacion(item_orden_publicidad_id);
-CREATE INDEX IF NOT EXISTS idx_items_gasto_gasto ON public.items_gasto_implementacion(gasto_id);
+CREATE INDEX idx_gastos_impl_item ON public.gastos_implementacion(item_orden_publicidad_id);
+CREATE INDEX idx_items_gasto_gasto ON public.items_gasto_implementacion(gasto_id);
 
 -- ============================================
 -- 10. TRIGGERS
 -- ============================================
 
--- Updated_at trigger function
 CREATE OR REPLACE FUNCTION public.update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -725,28 +782,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply to comprobantes
 DROP TRIGGER IF EXISTS trigger_comprobantes_updated_at ON public.comprobantes;
 CREATE TRIGGER trigger_comprobantes_updated_at
   BEFORE UPDATE ON public.comprobantes
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at();
 
--- Apply to entidades
 DROP TRIGGER IF EXISTS trigger_entidades_updated_at ON public.entidades;
 CREATE TRIGGER trigger_entidades_updated_at
   BEFORE UPDATE ON public.entidades
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at();
 
--- Apply to programacion_formularios
 DROP TRIGGER IF EXISTS trigger_programacion_formularios_updated_at ON public.programacion_formularios;
 CREATE TRIGGER trigger_programacion_formularios_updated_at
   BEFORE UPDATE ON public.programacion_formularios
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at();
 
--- Apply to experience_formularios
 DROP TRIGGER IF EXISTS trigger_experience_formularios_updated_at ON public.experience_formularios;
 CREATE TRIGGER trigger_experience_formularios_updated_at
   BEFORE UPDATE ON public.experience_formularios
@@ -757,7 +810,6 @@ CREATE TRIGGER trigger_experience_formularios_updated_at
 -- 11. ROW LEVEL SECURITY
 -- ============================================
 
--- Enable RLS on all tables
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.areas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.usuarios ENABLE ROW LEVEL SECURITY;
@@ -775,7 +827,6 @@ ALTER TABLE public.experience_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gastos_implementacion ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.items_gasto_implementacion ENABLE ROW LEVEL SECURITY;
 
--- Create permissive policies for dev (allow all)
 DROP POLICY IF EXISTS "allow_all" ON public.roles;
 DROP POLICY IF EXISTS "allow_all" ON public.areas;
 DROP POLICY IF EXISTS "allow_all" ON public.usuarios;
@@ -819,5 +870,16 @@ GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+
+-- View grants
+GRANT SELECT ON comprobantes_full TO authenticated, anon;
+GRANT SELECT ON gastos_full TO authenticated, anon;
+GRANT SELECT ON implementacion_comprobantes_full TO authenticated, anon;
+GRANT SELECT ON implementacion_gastos_full TO authenticated, anon;
+GRANT SELECT ON programacion_comprobantes_full TO authenticated, anon;
+GRANT SELECT ON programacion_gastos_full TO authenticated, anon;
+GRANT SELECT ON experience_comprobantes_full TO authenticated, anon;
+GRANT SELECT ON experience_gastos_full TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.hash_password(TEXT) TO authenticated, anon;
 
 COMMIT;

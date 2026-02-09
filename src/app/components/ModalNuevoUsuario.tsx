@@ -20,6 +20,7 @@ export function ModalNuevoUsuario({ isOpen, onClose, onSuccess }: ModalNuevoUsua
   
   const [form, setForm] = useState<CreateUserForm>({
     email: '',
+    password: '',
     firstName: '',
     lastName: '',
     position: '',

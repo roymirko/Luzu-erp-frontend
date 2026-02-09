@@ -179,6 +179,7 @@ export interface AreaWithUsers extends Area {
  */
 export interface CreateUserForm {
   email: string;
+  password: string;
   firstName: string;
   lastName: string;
   position?: string;
@@ -195,6 +196,7 @@ export interface EditUserForm {
   firstName: string;
   lastName: string;
   email: string;
+  password?: string;
   position?: string;
   active: boolean;
   areas: {

@@ -267,15 +267,17 @@ export async function update(input: UpdateGastoImplementacionInput): Promise<{ d
   if (fields.estado !== undefined) gastoUpdate.estado = fields.estado;
   if (fields.estadoPago !== undefined) gastoUpdate.estado_pago = fields.estadoPago;
 
+  // Consolidated fields → comprobante update (not context)
+  if (fields.facturaEmitidaA !== undefined) gastoUpdate.factura_emitida_a = fields.facturaEmitidaA;
+  if (fields.formaPago !== undefined) gastoUpdate.forma_pago = fields.formaPago;
+  if (fields.fechaPago !== undefined) gastoUpdate.fecha_pago = fields.fechaPago;
+
   // Build context update
   const contextUpdate: ImplementacionGastoUpdate = {};
-  if (fields.facturaEmitidaA !== undefined) contextUpdate.factura_emitida_a = fields.facturaEmitidaA;
   if (fields.sector !== undefined) contextUpdate.sector = fields.sector;
   if (fields.rubroGasto !== undefined) contextUpdate.rubro_gasto = fields.rubroGasto;
   if (fields.subRubro !== undefined) contextUpdate.sub_rubro = fields.subRubro;
   if (fields.condicionPago !== undefined) contextUpdate.condicion_pago = fields.condicionPago;
-  if (fields.formaPago !== undefined) contextUpdate.forma_pago = fields.formaPago;
-  if (fields.fechaPago !== undefined) contextUpdate.fecha_pago = fields.fechaPago;
   if (fields.adjuntos !== undefined) contextUpdate.adjuntos = fields.adjuntos;
   if (fields.itemOrdenPublicidadId !== undefined) contextUpdate.item_orden_publicidad_id = fields.itemOrdenPublicidadId;
 

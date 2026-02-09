@@ -94,6 +94,10 @@ erDiagram
         decimal total
         text estado "pendiente|activo|cerrado|anulado"
         text estado_pago "pendiente|pagado|pedir_info|anulado"
+        text forma_pago
+        date fecha_pago
+        text factura_emitida_a
+        text acuerdo_pago
     }
 
     entidades ||--o{ comprobantes : "emits"
@@ -173,7 +177,8 @@ erDiagram
 │                         COMPROBANTES                            │
 │                    (Central financial table)                    │
 │         tipo_movimiento: ingreso | egreso                       │
-│         estado_pago: pendiente | pagado | pedir_info | anulado  │
+│   estado_pago: pendiente | pagado | pedir_info | anulado       │
+│   Consolidated: factura_emitida_a, acuerdo_pago, forma_pago   │
 └─────────────────────────────────────────────────────────────────┘
                               │
           ┌───────────────────┼───────────────────┐

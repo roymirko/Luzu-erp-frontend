@@ -30,7 +30,7 @@ function mapSupabaseError(error: { code?: string; message: string; details?: str
 /**
  * Maps old GastoInsert to new ComprobanteInsert
  */
-function mapGastoToComprobante(gasto: GastoInsert): ComprobanteInsert {
+function mapGastoToComprobante(gasto: GastoInsert, context?: Partial<{ factura_emitida_a: string | null; forma_pago: string | null; fecha_pago: string | null }>): ComprobanteInsert {
   return {
     tipo_movimiento: 'egreso',
     entidad_id: null,
@@ -54,6 +54,10 @@ function mapGastoToComprobante(gasto: GastoInsert): ComprobanteInsert {
     estado: gasto.estado || 'activo',
     estado_pago: (gasto.estado_pago === 'pendiente-pago' ? 'creado' : gasto.estado_pago) as 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado',
     created_by: gasto.created_by || null,
+    // Consolidated from context
+    factura_emitida_a: context?.factura_emitida_a || null,
+    forma_pago: context?.forma_pago || null,
+    fecha_pago: context?.fecha_pago || null,
   };
 }
 
@@ -93,13 +97,10 @@ function mapContextInsert(context: Omit<ImplementacionGastoInsert, 'gasto_id'>, 
     comprobante_id: comprobanteId,
     orden_publicidad_id: context.orden_publicidad_id || null,
     item_orden_publicidad_id: context.item_orden_publicidad_id || null,
-    factura_emitida_a: context.factura_emitida_a || null,
     sector: context.sector || null,
     rubro_gasto: context.rubro_gasto || null,
     sub_rubro: context.sub_rubro || null,
     condicion_pago: context.condicion_pago || null,
-    forma_pago: context.forma_pago || null,
-    fecha_pago: context.fecha_pago || null,
     adjuntos: context.adjuntos || null,
   };
 }
@@ -179,8 +180,12 @@ export async function create(
   gasto: GastoInsert,
   context: Omit<ImplementacionGastoInsert, 'gasto_id'>
 ): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
-  // 1. Map and insert into comprobantes (core)
-  const comprobanteData = mapGastoToComprobante(gasto);
+  // 1. Map and insert into comprobantes (core) - include consolidated fields
+  const comprobanteData = mapGastoToComprobante(gasto, {
+    factura_emitida_a: context.factura_emitida_a || null,
+    forma_pago: context.forma_pago || null,
+    fecha_pago: context.fecha_pago || null,
+  });
   console.log('[ImplementacionRepo] Insertando comprobante:', comprobanteData);
 
   const { data: comprobante, error: comprobanteError } = await supabase

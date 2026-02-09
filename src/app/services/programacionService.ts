@@ -436,15 +436,17 @@ export async function update(input: UpdateGastoProgramacionInput): Promise<{ dat
   if (fields.subRubroEmpresa !== undefined) formularioUpdate.sub_rubro_empresa = fields.subRubroEmpresa;
   if (fields.detalleCampana !== undefined) formularioUpdate.detalle_campana = fields.detalleCampana;
 
+  // Consolidated fields → comprobante update (not context)
+  if (fields.facturaEmitidaA !== undefined) gastoUpdate.factura_emitida_a = fields.facturaEmitidaA;
+  if (fields.acuerdoPago !== undefined) gastoUpdate.acuerdo_pago = fields.acuerdoPago;
+  if (fields.formaPago !== undefined) gastoUpdate.forma_pago = fields.formaPago;
+
   // Context
   if (fields.categoria !== undefined) contextUpdate.categoria = fields.categoria;
-  if (fields.acuerdoPago !== undefined) contextUpdate.acuerdo_pago = fields.acuerdoPago;
   if (fields.cliente !== undefined) contextUpdate.cliente = fields.cliente;
   if (fields.monto !== undefined) contextUpdate.monto = fields.monto;
   if (fields.valorImponible !== undefined) contextUpdate.valor_imponible = fields.valorImponible;
   if (fields.bonificacion !== undefined) contextUpdate.bonificacion = fields.bonificacion;
-  if (fields.facturaEmitidaA !== undefined) contextUpdate.factura_emitida_a = fields.facturaEmitidaA;
-  if (fields.formaPago !== undefined) contextUpdate.forma_pago = fields.formaPago;
 
   const result = await programacionRepo.update(id, {
     gasto: Object.keys(gastoUpdate).length > 0 ? gastoUpdate : undefined,
