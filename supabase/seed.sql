@@ -2,6 +2,9 @@
 -- SEED DATA
 -- ============================================
 
+-- Ensure pgcrypto is available for crypt()/gen_salt()
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
+
 -- 1. ROLES
 INSERT INTO public.roles (name, description, permissions)
 VALUES
