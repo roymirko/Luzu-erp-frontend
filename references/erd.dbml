@@ -17,6 +17,8 @@ Table usuarios {
   last_login timestamptz
   creado_por text
   metadata jsonb
+  password_hash text
+  user_type text [note: 'administrador | implementacion | programacion | administracion | finanzas']
 }
 
 Table roles {
@@ -157,22 +159,19 @@ Table comprobantes {
   empresa text
   concepto text
   observaciones text
-  estado text [default: 'pendiente', note: 'pendiente | activo | cerrado | anulado']
+  estado text [default: 'pendiente']
   estado_pago text [default: 'creado', note: 'creado | aprobado | requiere_info | rechazado | pagado']
-  // Payment fields (migration 004)
   forma_pago text
   cotizacion decimal
   banco text
   numero_operacion text
   fecha_pago date
-  // Admin fields (migration 005)
   condicion_iva text
   comprobante_pago text
   ingresos_brutos decimal
   retencion_ganancias decimal
   fecha_estimada_pago date
   nota_admin text
-  // Ingreso fields (migration 006)
   retencion_iva decimal
   retencion_suss decimal
   fecha_vencimiento date
@@ -182,7 +181,6 @@ Table comprobantes {
   contacto text
   fecha_envio date
   orden_publicidad_id_ingreso uuid [ref: > ordenes_publicidad.id]
-  // Consolidated context fields (migration 007)
   factura_emitida_a text
   acuerdo_pago text
   created_at timestamptz
@@ -200,10 +198,29 @@ Table implementacion_comprobantes {
   orden_publicidad_id uuid [ref: > ordenes_publicidad.id]
   item_orden_publicidad_id uuid [ref: > items_orden_publicidad.id]
   sector text
-  rubro_gasto text
+  rubro text
   sub_rubro text
   condicion_pago text
   adjuntos jsonb
+}
+
+// ============================================
+// TECNICA MODULE
+// ============================================
+
+Table tecnica_comprobantes {
+  id uuid [pk]
+  comprobante_id uuid [ref: - comprobantes.id]
+  orden_publicidad_id uuid [ref: > ordenes_publicidad.id]
+  item_orden_publicidad_id uuid [ref: > items_orden_publicidad.id]
+  sector text
+  rubro text
+  sub_rubro text
+  condicion_pago text
+  adjuntos jsonb
+  unidad_negocio text
+  categoria_negocio text
+  nombre_campana text
 }
 
 // ============================================
@@ -219,7 +236,6 @@ Table programacion_formularios {
   categoria_negocio text
   programa text
   ejecutivo text
-  sub_rubro_empresa text
   detalle_campana text
   estado text [default: 'pendiente']
   created_at timestamptz
@@ -236,6 +252,8 @@ Table programacion_comprobantes {
   monto decimal
   valor_imponible decimal
   bonificacion decimal
+  rubro text
+  sub_rubro text
 }
 
 // ============================================
@@ -247,7 +265,6 @@ Table experience_formularios {
   mes_gestion varchar(7)
   nombre_campana text
   detalle_campana text
-  subrubro text
   estado text [default: 'activo']
   created_at timestamptz
   updated_at timestamptz
@@ -262,6 +279,66 @@ Table experience_comprobantes {
   empresa_programa text
   fecha_comprobante date
   pais text [default: 'argentina']
+  rubro text
+  sub_rubro text
+}
+
+// ============================================
+// LEGACY TABLES
+// ============================================
+
+Table gastos_implementacion {
+  id uuid [pk]
+  fecha_creacion timestamptz
+  fecha_actualizacion timestamptz
+  fecha_registro date [not null]
+  orden_publicidad text [not null]
+  responsable text [not null]
+  unidad_negocio text [not null]
+  categoria_negocio text
+  nombre_campana text [not null]
+  anio integer [not null]
+  mes integer [not null]
+  id_formulario_comercial uuid
+  estado text [default: 'pendiente']
+  item_orden_publicidad_id uuid
+  acuerdo_pago text
+  presupuesto decimal
+  cantidad_programas integer
+  programas_disponibles jsonb
+  sector text
+  rubro text
+  sub_rubro text
+  factura_emitida_a text
+  empresa text
+  concepto_gasto text
+  observaciones text
+  creado_por text
+  actualizado_por text
+}
+
+Table items_gasto_implementacion {
+  id uuid [pk]
+  gasto_id uuid [ref: > gastos_implementacion.id]
+  fecha_creacion timestamptz
+  tipo_proveedor text [not null]
+  proveedor text [not null]
+  razon_social text
+  descripcion text
+  rubro text [not null]
+  sub_rubro text
+  sector text [not null]
+  moneda text [default: 'ARS']
+  neto decimal [not null]
+  iva decimal [default: 21]
+  importe_total decimal [not null]
+  tipo_factura text
+  numero_factura text
+  fecha_factura date
+  condicion_pago text
+  fecha_pago date
+  estado_pago text [default: 'pendiente']
+  adjuntos jsonb
 }
 
 // ============================================
@@ -288,6 +365,7 @@ TableGroup comercial {
 TableGroup comprobantes_group {
   comprobantes
   implementacion_comprobantes
+  tecnica_comprobantes
   programacion_comprobantes
   experience_comprobantes
 }
@@ -295,4 +373,9 @@ TableGroup comprobantes_group {
 TableGroup formularios {
   programacion_formularios
   experience_formularios
+}
+
+TableGroup legacy {
+  gastos_implementacion
+  items_gasto_implementacion
 }

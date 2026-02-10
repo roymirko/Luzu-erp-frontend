@@ -92,7 +92,7 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
     responsable: string;
     unidadNegocio: string;
     sector: string;
-    rubroGasto: string;
+    rubro: string;
     subRubro: string;
     nombreCampana: string;
     acuerdoPago: string;
@@ -120,7 +120,7 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
       responsable: g.responsable,
       unidadNegocio: g.unidadNegocio,
       sector: g.sector,
-      rubroGasto: g.rubroGasto,
+      rubro: g.rubro,
       subRubro: g.subRubro,
       nombreCampana: g.nombreCampana,
       acuerdoPago: g.acuerdoPago,
@@ -226,7 +226,7 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
                       {/* Sector */}
                       <DataTableCell muted>{item.sector}</DataTableCell>
                       {/* Rubro de gasto */}
-                      <DataTableCell muted>{item.rubroGasto}</DataTableCell>
+                      <DataTableCell muted>{item.rubro}</DataTableCell>
                       {/* Sub rubro */}
                       <DataTableCell muted>{item.subRubro}</DataTableCell>
                       {/* Nombre de campaña */}
@@ -247,7 +247,7 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
                       {/* Sector */}
                       <DataTableCell muted>{item.sector}</DataTableCell>
                       {/* Rubro de gasto */}
-                      <DataTableCell muted>{item.rubroGasto}</DataTableCell>
+                      <DataTableCell muted>{item.rubro}</DataTableCell>
                       {/* Sub rubro */}
                       <DataTableCell muted>{item.subRubro}</DataTableCell>
                       {/* Nombre de campaña */}

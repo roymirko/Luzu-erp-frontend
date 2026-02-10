@@ -50,7 +50,8 @@ function mapFromDB(row: ProgramacionGastoFullRow): GastoProgramacion {
     categoriaNegocio: row.categoria_negocio || '',
     programa: row.programa || '',
     ejecutivo: row.ejecutivo || '',
-    subRubroEmpresa: row.sub_rubro_empresa || '',
+    rubro: row.rubro || '',
+    subRubro: row.sub_rubro || '',
     detalleCampana: row.detalle_campana || undefined,
     formularioEstado: row.formulario_estado || undefined,
     formularioCreatedAt: row.formulario_created_at ? new Date(row.formulario_created_at) : undefined,
@@ -105,7 +106,6 @@ function mapToDBInserts(input: CreateGastoProgramacionInput): {
       categoria_negocio: input.categoriaNegocio || null,
       programa: input.programa || null,
       ejecutivo: input.ejecutivo || null,
-      sub_rubro_empresa: input.subRubroEmpresa || null,
       detalle_campana: input.detalleCampana || null,
       estado: 'activo',
       created_by: input.createdBy || null,
@@ -119,6 +119,8 @@ function mapToDBInserts(input: CreateGastoProgramacionInput): {
       bonificacion: input.bonificacion || 0,
       factura_emitida_a: input.facturaEmitidaA || null,
       forma_pago: input.formaPago || null,
+      rubro: 'Gasto de programación',
+      sub_rubro: input.subRubroEmpresa || null,
     },
   };
 }
@@ -277,7 +279,6 @@ export async function createMultiple(input: CreateMultipleGastosInput): Promise<
     categoria_negocio: input.categoriaNegocio || null,
     programa: input.programa || null,
     ejecutivo: input.ejecutivo || null,
-    sub_rubro_empresa: input.subRubroEmpresa || null,
     detalle_campana: input.detalleCampana || null,
     estado: 'activo',
     created_by: input.createdBy || null,
@@ -316,6 +317,8 @@ export async function createMultiple(input: CreateMultipleGastosInput): Promise<
         bonificacion: 0,
         factura_emitida_a: g.facturaEmitidaA || null,
         forma_pago: g.formaPago || null,
+        rubro: 'Gasto de programación',
+        sub_rubro: input.subRubroEmpresa || null,
       },
     };
   });
@@ -433,7 +436,6 @@ export async function update(input: UpdateGastoProgramacionInput): Promise<{ dat
   if (fields.categoriaNegocio !== undefined) formularioUpdate.categoria_negocio = fields.categoriaNegocio;
   if (fields.programa !== undefined) formularioUpdate.programa = fields.programa;
   if (fields.ejecutivo !== undefined) formularioUpdate.ejecutivo = fields.ejecutivo;
-  if (fields.subRubroEmpresa !== undefined) formularioUpdate.sub_rubro_empresa = fields.subRubroEmpresa;
   if (fields.detalleCampana !== undefined) formularioUpdate.detalle_campana = fields.detalleCampana;
 
   // Consolidated fields → comprobante update (not context)
@@ -442,6 +444,7 @@ export async function update(input: UpdateGastoProgramacionInput): Promise<{ dat
   if (fields.formaPago !== undefined) gastoUpdate.forma_pago = fields.formaPago;
 
   // Context
+  if (fields.subRubroEmpresa !== undefined) contextUpdate.sub_rubro = fields.subRubroEmpresa;
   if (fields.categoria !== undefined) contextUpdate.categoria = fields.categoria;
   if (fields.cliente !== undefined) contextUpdate.cliente = fields.cliente;
   if (fields.monto !== undefined) contextUpdate.monto = fields.monto;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useImplementacion } from '../contexts/ImplementacionContext';
+import { useTecnica } from '../contexts/TecnicaContext';
 import { useFormularios } from '../contexts/FormulariosContext';
 import { useData } from '../contexts/DataContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -15,10 +15,17 @@ import {
   type BloqueImporte,
   type EstadoOP,
 } from './implementacion';
-import type { CreateGastoImplementacionInput, GastoImplementacion } from '../types/implementacion';
-import { IMPLEMENTACION_DEFAULTS } from '@/app/utils/implementacionConstants';
+import { FormSelect } from './ui/form-select';
+import { FormInput } from './ui/form-input';
+import type { CreateGastoTecnicaInput, GastoTecnica } from '../types/tecnica';
+import {
+  TECNICA_DEFAULTS,
+  UNIDADES_NEGOCIO_OPTIONS,
+  CATEGORIAS_NEGOCIO_OPTIONS,
+  SUBRUBROS_TECNICA_OPTIONS,
+} from '@/app/utils/implementacionConstants';
 
-interface FormularioImplementacionProps {
+interface FormularioTecnicaProps {
   gastoId?: string;
   formId?: string;
   itemId?: string;
@@ -26,7 +33,7 @@ interface FormularioImplementacionProps {
 }
 
 interface FormErrors {
-  cargaDatos: Record<string, never>;
+  cargaDatos: Record<string, string>;
   importes: ImportesErrors;
 }
 
@@ -35,8 +42,7 @@ const EMPTY_ERRORS: FormErrors = {
   importes: {},
 };
 
-// Convert GastoImplementacion (from service) to BloqueImporte (UI)
-function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
+function gastoToBloqueImporte(gasto: GastoTecnica): BloqueImporte {
   return {
     id: gasto.id,
     programa: '',
@@ -56,7 +62,6 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
   };
 }
 
-// Convert BloqueImporte (UI) to CreateGastoImplementacionInput (service)
 function bloqueToCreateInput(
   bloque: BloqueImporte,
   shared: {
@@ -64,18 +69,20 @@ function bloqueToCreateInput(
     defaultItemOrdenPublicidadId?: string;
     rubro?: string;
     subRubro?: string;
+    unidadNegocio?: string;
+    categoriaNegocio?: string;
+    nombreCampana?: string;
   }
-): CreateGastoImplementacionInput {
+): CreateGastoTecnicaInput {
   return {
     proveedor: bloque.proveedor,
     razonSocial: bloque.razonSocial,
     fechaFactura: bloque.fechaComprobante,
     neto: parseFloat(bloque.neto) || 0,
     empresa: bloque.empresa,
-    conceptoGasto: bloque.observaciones || '', // Use observaciones as conceptoGasto
+    conceptoGasto: bloque.observaciones || '',
     observaciones: bloque.observaciones,
     ordenPublicidadId: shared.ordenPublicidadId,
-    // Use the bloque's itemId if set (from program selection), otherwise use the default
     itemOrdenPublicidadId: bloque.itemOrdenPublicidadId || shared.defaultItemOrdenPublicidadId,
     facturaEmitidaA: bloque.facturaEmitidaA,
     sector: bloque.empresaPgm,
@@ -83,10 +90,13 @@ function bloqueToCreateInput(
     subRubro: shared.subRubro,
     condicionPago: bloque.condicionPago,
     formaPago: bloque.formaPago,
+    unidadNegocio: shared.unidadNegocio,
+    categoriaNegocio: shared.categoriaNegocio,
+    nombreCampana: shared.nombreCampana,
   };
 }
 
-export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: FormularioImplementacionProps) {
+export function FormularioTecnica({ gastoId, formId, itemId, onClose }: FormularioTecnicaProps) {
   const { isDark } = useTheme();
   const {
     addGasto,
@@ -95,12 +105,11 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     getGastoById,
     getGastosByItemOrdenId,
     getGastosByOrdenId,
-  } = useImplementacion();
+  } = useTecnica();
   const { formularios } = useFormularios();
   const { currentUser } = useData();
 
   const ordenPublicidadData = useMemo(() => {
-    // Helper to format currency
     const formatCurrency = (val: number) =>
       new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
     if (!formId) return null;
@@ -108,24 +117,19 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     if (!formulario) return null;
 
     const item = itemId ? formulario.importeRows?.find((row) => row.id === itemId) : null;
-    const presupuestoImpl = item
-      ? parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''))
+    const presupuestoTecnica = item
+      ? parseFloat(String(item.tecnica || '0').replace(/[^0-9.-]/g, ''))
       : 0;
 
-    // Calculate remaining budget per program
-    // Solo mostrar programas que tengan presupuesto asignado (implementacion no es null/undefined/vacío)
     const programasConPresupuesto = formulario.importeRows
       ?.filter((row) => {
-        // Debe tener nombre de programa
         if (!row.programa) return false;
-        // Debe tener presupuesto asignado (puede ser 0 o negativo, pero debe estar definido)
-        const impl = row.implementacion;
-        if (impl === null || impl === undefined || impl === '') return false;
+        const tec = row.tecnica;
+        if (tec === null || tec === undefined || tec === '') return false;
         return true;
       })
       .map((row) => {
-        const presupuesto = parseFloat(String(row.implementacion || '0').replace(/[^0-9.-]/g, '')) || 0;
-        // Get all existing gastos for this program item
+        const presupuesto = parseFloat(String(row.tecnica || '0').replace(/[^0-9.-]/g, '')) || 0;
         const gastosDelPrograma = getGastosByItemOrdenId(row.id);
         const totalGastado = gastosDelPrograma.reduce((sum, g) => sum + (g.neto || 0), 0);
         const limiteRestante = presupuesto - totalGastado;
@@ -144,7 +148,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       categoriaNegocio: formulario.categoriaNegocio || '',
       nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
-      presupuesto: presupuestoImpl,
+      presupuesto: presupuestoTecnica,
       programasConPresupuesto: programasConPresupuesto.length > 0
         ? programasConPresupuesto
         : [{ value: 'Sin programas', label: 'Sin programas', limite: 0, itemId: '' }],
@@ -154,7 +158,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
-  // Form state
+  const isStandalone = !formId;
+
   const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [importes, setImportes] = useState<BloqueImporte[]>([]);
@@ -163,34 +168,26 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
-  // Track if data has been loaded to prevent resetting
+  // Standalone mode fields
+  const [unidadNegocio, setUnidadNegocio] = useState('');
+  const [categoriaNegocio, setCategoriaNegocio] = useState('');
+  const [subRubro, setSubRubro] = useState('');
+  const [nombreCampana, setNombreCampana] = useState('');
+
   const dataLoadedRef = useRef(false);
   const lastLoadedItemIdRef = useRef<string | undefined>(undefined);
-  // Track the IDs of gastos that were originally loaded (for update vs create logic)
   const loadedGastoIdsRef = useRef<Set<string>>(new Set());
 
-  // Load existing gastos if editing
   useEffect(() => {
-    console.log('[FormImplementacion] useEffect ejecutado - gastoId:', gastoId, 'formId:', formId, 'itemId:', itemId);
-    console.log('[FormImplementacion] dataLoadedRef.current:', dataLoadedRef.current, 'lastLoadedItemIdRef.current:', lastLoadedItemIdRef.current);
-
-    // Reset tracking when itemId changes (user navigated to different item)
     if (itemId !== lastLoadedItemIdRef.current) {
-      console.log('[FormImplementacion] itemId cambió, reseteando refs');
       dataLoadedRef.current = false;
       lastLoadedItemIdRef.current = itemId;
       loadedGastoIdsRef.current = new Set();
     }
 
-    // Skip if already loaded data for this item
-    if (dataLoadedRef.current) {
-      console.log('[FormImplementacion] Ya se cargaron datos, saltando');
-      return;
-    }
+    if (dataLoadedRef.current) return;
 
-    // Helper to initialize empty form
     const initEmptyForm = () => {
-      console.log('[FormImplementacion] Inicializando formulario vacío');
       setImportes([{
         id: crypto.randomUUID(),
         programa: '',
@@ -210,9 +207,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       dataLoadedRef.current = true;
     };
 
-    // Helper to load gastos from array
-    const loadGastos = (gastos: GastoImplementacion[]) => {
-      console.log('[FormImplementacion] Cargando gastos existentes:', gastos.length);
+    const loadGastos = (gastos: GastoTecnica[]) => {
       const sortedGastos = [...gastos].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
@@ -225,11 +220,13 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       dataLoadedRef.current = true;
     };
 
+    if (isStandalone && !gastoId) {
+      initEmptyForm();
+      return;
+    }
+
     if (gastoId) {
-      // Editing a specific gasto
-      console.log('[FormImplementacion] Buscando gasto por ID:', gastoId);
       const existingGasto = getGastoById(gastoId);
-      console.log('[FormImplementacion] Gasto encontrado:', existingGasto);
       if (existingGasto) {
         setFacturaEmitidaA(existingGasto.facturaEmitidaA);
         setEmpresa(existingGasto.empresa);
@@ -239,32 +236,23 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         dataLoadedRef.current = true;
       }
     } else if (formId && itemId) {
-      // Load gastos for specific item
-      console.log('[FormImplementacion] Buscando gastos por itemId:', itemId);
       const existingGastos = getGastosByItemOrdenId(itemId);
-      console.log('[FormImplementacion] Gastos encontrados por item:', existingGastos.length, existingGastos);
       if (existingGastos.length > 0) {
         loadGastos(existingGastos);
       } else {
         initEmptyForm();
       }
     } else if (formId) {
-      // Load all gastos for the orden (no specific item)
-      console.log('[FormImplementacion] Buscando gastos por ordenId:', formId);
       const existingGastos = getGastosByOrdenId(formId);
-      console.log('[FormImplementacion] Gastos encontrados por orden:', existingGastos.length, existingGastos);
       if (existingGastos.length > 0) {
         loadGastos(existingGastos);
       } else {
         initEmptyForm();
       }
-    } else {
-      console.log('[FormImplementacion] No hay formId ni gastoId, no se hace nada');
     }
-  }, [gastoId, formId, itemId, getGastoById, getGastosByItemOrdenId, getGastosByOrdenId]);
+  }, [gastoId, formId, itemId, isStandalone, getGastoById, getGastosByItemOrdenId, getGastosByOrdenId]);
 
   const isCerrado = estadoOP === 'cerrado' || estadoOP === 'anulado';
-  // Use loaded gasto IDs from ref for determining existing vs new (not re-queried by itemId)
   const existingGastoIds = loadedGastoIdsRef.current;
   const isExistingGasto = existingGastoIds.size > 0 || !!gastoId;
   const isNewGasto = !isExistingGasto;
@@ -275,10 +263,14 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       importes: {},
     };
 
+    if (isStandalone) {
+      if (!subRubro) newErrors.cargaDatos.subRubro = 'Requerido';
+      if (!nombreCampana) newErrors.cargaDatos.nombreCampana = 'Requerido';
+    }
+
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
 
-      // Per-gasto validation for facturaEmitidaA and empresa
       if (!imp.facturaEmitidaA) {
         importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
       }
@@ -297,7 +289,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       if (!imp.formaPago) {
         importeErrors.formaPago = 'Requerido';
       }
-      // Acuerdo de pago solo requerido si forma de pago es cheque
       if (imp.formaPago === 'cheque' && !imp.condicionPago) {
         importeErrors.condicionPago = 'Requerido';
       }
@@ -311,16 +302,15 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     }
 
     return newErrors;
-  }, [importes]);
+  }, [importes, isStandalone, subRubro, nombreCampana]);
 
   useEffect(() => {
     if (hasAttemptedSubmit) {
       setErrors(validateForm());
     }
-  }, [importes, hasAttemptedSubmit, validateForm]);
+  }, [importes, subRubro, nombreCampana, hasAttemptedSubmit, validateForm]);
 
   const addImporte = () => {
-    // For new gastos, inherit facturaEmitidaA and empresa from global state (or last importe)
     const lastImporte = importes[importes.length - 1];
     const newImporte: BloqueImporte = {
       id: crypto.randomUUID(),
@@ -354,7 +344,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       prev.map((imp) => {
         if (imp.id !== id) return imp;
 
-        // When empresaPgm (program) is updated, also update the associated itemOrdenPublicidadId
         if (field === 'empresaPgm' && ordenPublicidadData?.programasConPresupuesto) {
           const selectedProgram = ordenPublicidadData.programasConPresupuesto.find(
             (p) => p.value === value
@@ -371,14 +360,11 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     );
   };
 
-  // Save a single gasto to the database
   const handleSaveGasto = async (importe: BloqueImporte, index: number): Promise<boolean> => {
     const isExisting = loadedGastoIdsRef.current.has(importe.id);
-    console.log('[FormImplementacion] Guardando gasto individual:', importe.id, 'isExisting:', isExisting);
 
     try {
       if (isExisting) {
-        // Update existing gasto
         const success = await updateGasto({
           id: importe.id,
           proveedor: importe.proveedor,
@@ -403,17 +389,16 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           return false;
         }
       } else {
-        // Create new gasto
-        const input: CreateGastoImplementacionInput = bloqueToCreateInput(importe, {
+        const input: CreateGastoTecnicaInput = bloqueToCreateInput(importe, {
           ordenPublicidadId: formId,
           defaultItemOrdenPublicidadId: itemId,
-          rubro: IMPLEMENTACION_DEFAULTS.rubro,
-          subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+          rubro: TECNICA_DEFAULTS.rubro,
+          subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
+          ...(isStandalone ? { unidadNegocio, categoriaNegocio, nombreCampana } : {}),
         });
 
         const created = await addGasto(input);
         if (created) {
-          // Update the importe ID in state with the real DB ID
           loadedGastoIdsRef.current.add(created.id);
           setImportes(prev => prev.map(imp =>
             imp.id === importe.id ? { ...imp, id: created.id } : imp
@@ -426,7 +411,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         }
       }
     } catch (err) {
-      console.error('[FormImplementacion] Error guardando gasto:', err);
+      console.error('[FormTecnica] Error guardando gasto:', err);
       toast.error(`Error inesperado al guardar gasto #${index + 1}`);
       return false;
     }
@@ -453,28 +438,24 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       const sharedFields = {
         ordenPublicidadId: formId,
         defaultItemOrdenPublicidadId: itemId,
-        rubro: IMPLEMENTACION_DEFAULTS.rubro,
-        subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+        rubro: TECNICA_DEFAULTS.rubro,
+        subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
+        ...(isStandalone ? {
+          unidadNegocio,
+          categoriaNegocio,
+          nombreCampana,
+        } : {}),
       };
 
-      console.log('[Implementacion] Guardando con sharedFields:', sharedFields);
-      console.log('[Implementacion] Importes actuales:', importes);
-
-      // Use the loaded gasto IDs to distinguish between updates and creates
-      // This ensures gastos are updated even if their itemOrdenPublicidadId changed
       const loadedIds = loadedGastoIdsRef.current;
-      console.log('[Implementacion] IDs cargados previamente:', Array.from(loadedIds));
 
-      // Separate importes into existing (to update) and new (to create)
       const importesToUpdate = importes.filter(imp => loadedIds.has(imp.id));
       const importesToCreate = importes.filter(imp => !loadedIds.has(imp.id));
-      console.log('[Implementacion] Para actualizar:', importesToUpdate.length, 'Para crear:', importesToCreate.length);
 
       let updateCount = 0;
       let createCount = 0;
       let hasError = false;
 
-      // Update existing gastos
       for (const importe of importesToUpdate) {
         const success = await updateGasto({
           id: importe.id,
@@ -498,9 +479,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         }
       }
 
-      // Create new gastos
       if (importesToCreate.length > 0) {
-        const inputs: CreateGastoImplementacionInput[] = importesToCreate.map((imp) =>
+        const inputs: CreateGastoTecnicaInput[] = importesToCreate.map((imp) =>
           bloqueToCreateInput(imp, sharedFields)
         );
         const created = await addMultipleGastos(inputs);
@@ -509,21 +489,16 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           hasError = true;
         }
 
-        // Update state with real DB IDs for successfully created gastos
-        // This prevents re-creating them if form stays open due to partial failure
         if (created.length > 0) {
-          // Map temp UUIDs to real DB IDs (by order, since inputs/created have same order)
           const tempIdToDbId = new Map<string, string>();
           for (let i = 0; i < Math.min(importesToCreate.length, created.length); i++) {
             tempIdToDbId.set(importesToCreate[i].id, created[i].id);
           }
 
-          // Update loadedGastoIdsRef with new DB IDs
           for (const gasto of created) {
             loadedGastoIdsRef.current.add(gasto.id);
           }
 
-          // Update importes state with real DB IDs
           setImportes(prev => prev.map(imp => {
             const dbId = tempIdToDbId.get(imp.id);
             return dbId ? { ...imp, id: dbId } : imp;
@@ -531,7 +506,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         }
       }
 
-      // Show result message
       if (hasError) {
         toast.error('Algunos gastos no pudieron ser guardados. Revise la consola para más detalles.');
       } else if (updateCount === 0 && createCount === 0) {
@@ -544,14 +518,13 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         onClose();
       }
     } catch (err) {
-      console.error('Error saving gasto:', err);
+      console.error('Error saving gasto tecnica:', err);
       toast.error('Error inesperado al guardar');
     } finally {
       setSaving(false);
     }
   };
 
-  // Calculate total from all importes in the form (both existing and new)
   const totalEjecutado = importes.reduce((sum, imp) => sum + (parseFloat(imp.neto) || 0), 0);
   const asignado = ordenPublicidadData?.presupuesto || 0;
   const disponible = asignado - totalEjecutado;
@@ -564,7 +537,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
       <div className="max-w-[620px] mx-auto px-6 sm:px-8 lg:px-0">
         <div className="space-y-6 sm:space-y-8">
-          {/* Header */}
           <div className="mb-6">
             <div className="flex justify-between items-start">
               <div>
@@ -572,7 +544,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
                   Información de campaña
                 </h1>
                 <p className={cn('text-sm', isDark ? 'text-gray-500' : 'text-[#4a5565]')}>
-                  Detalle de la orden y registro de importes operativos
+                  Detalle de la orden y registro de importes de técnica
                 </p>
               </div>
               {isCerrado && (
@@ -589,22 +561,72 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             )}
           </div>
 
-          {/* Campaign Info Card */}
-          <CampaignInfoCard
-            isDark={isDark}
-            ordenPublicidad={ordenPublicidadData?.ordenPublicidad || ''}
-            presupuesto={String(ordenPublicidadData?.presupuesto || 0)}
-            mesServicio={ordenPublicidadData?.mesServicio}
-            unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
-            categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
-            marca={ordenPublicidadData?.marca}
-            nombreCampana={ordenPublicidadData?.nombreCampana || ''}
-            rubro={IMPLEMENTACION_DEFAULTS.rubro}
-            subRubro={IMPLEMENTACION_DEFAULTS.subRubro}
-            formatCurrency={formatCurrency}
-          />
+          {isStandalone ? (
+            <div className={cn(
+              'rounded-lg border p-6 space-y-4',
+              isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
+            )}>
+              <h2 className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-gray-900')}>
+                Datos de la campaña
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormSelect
+                  label="Unidad de negocio"
+                  value={unidadNegocio}
+                  onChange={setUnidadNegocio}
+                  options={UNIDADES_NEGOCIO_OPTIONS}
+                  isDark={isDark}
+                />
+                <FormSelect
+                  label="Categoría de negocio"
+                  value={categoriaNegocio}
+                  onChange={setCategoriaNegocio}
+                  options={CATEGORIAS_NEGOCIO_OPTIONS}
+                  isDark={isDark}
+                />
+                <FormInput
+                  label="Rubro de gasto"
+                  value={TECNICA_DEFAULTS.rubro}
+                  disabled
+                  isDark={isDark}
+                />
+                <FormSelect
+                  label="Sub rubro"
+                  value={subRubro}
+                  onChange={setSubRubro}
+                  options={SUBRUBROS_TECNICA_OPTIONS}
+                  required
+                  isDark={isDark}
+                  error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
+                />
+                <div className="sm:col-span-2">
+                  <FormInput
+                    label="Nombre de campaña"
+                    value={nombreCampana}
+                    onChange={setNombreCampana}
+                    required
+                    isDark={isDark}
+                    error={hasAttemptedSubmit ? errors.cargaDatos.nombreCampana : undefined}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <CampaignInfoCard
+              isDark={isDark}
+              ordenPublicidad={ordenPublicidadData?.ordenPublicidad || ''}
+              presupuesto={String(ordenPublicidadData?.presupuesto || 0)}
+              mesServicio={ordenPublicidadData?.mesServicio}
+              unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
+              categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
+              marca={ordenPublicidadData?.marca}
+              nombreCampana={ordenPublicidadData?.nombreCampana || ''}
+              rubro={TECNICA_DEFAULTS.rubro}
+              subRubro={TECNICA_DEFAULTS.subRubro}
+              formatCurrency={formatCurrency}
+            />
+          )}
 
-          {/* Carga de Importes Section */}
           <CargaImportesSection
             isDark={isDark}
             isCerrado={isCerrado}
@@ -615,23 +637,22 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             onRemoveImporte={removeImporte}
             onSaveGasto={handleSaveGasto}
             errors={errors.importes}
-            // Status props
             isNewGasto={isNewGasto}
             existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
           />
 
-          {/* Resumen */}
-          <ResumenPresupuestario
-            isDark={isDark}
-            asignado={asignado}
-            ejecutado={totalEjecutado}
-            disponible={disponible}
-            excedido={excedido}
-            formatCurrency={formatCurrency}
-          />
+          {!isStandalone && (
+            <ResumenPresupuestario
+              isDark={isDark}
+              asignado={asignado}
+              ejecutado={totalEjecutado}
+              disponible={disponible}
+              excedido={excedido}
+              formatCurrency={formatCurrency}
+            />
+          )}
 
-          {/* Footer Buttons */}
           <div className="flex justify-end gap-3 pt-8 pb-8">
             <Button
               variant="ghost"

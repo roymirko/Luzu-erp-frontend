@@ -13,6 +13,7 @@ import { FormFieldsProvider } from "./contexts/FormFieldsContext";
 import { LogProvider } from "./contexts/LogContext";
 import { DataProvider, useData } from "./contexts/DataContext";
 import { ImplementacionProvider } from "./contexts/ImplementacionContext";
+import { TecnicaProvider } from "./contexts/TecnicaContext";
 import {
   Menu,
   Briefcase,
@@ -23,6 +24,7 @@ import {
   Sparkles,
   DollarSign,
   Building,
+  Wrench,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 // Lazy-loaded heavy components
@@ -36,6 +38,8 @@ import { ProfilePanel } from "./components/ProfilePanel";
 import { TablaFormularios } from "./components/TablaFormularios";
 import { Implementaciones } from "./components/Implementaciones";
 import { FormularioImplementacion } from "./components/FormularioImplementacion";
+import { Tecnica } from "./components/Tecnica";
+import { FormularioTecnica } from "./components/FormularioTecnica";
 import { Programacion } from "./components/Programacion";
 import { FormularioProgramacion } from "./components/programacion/FormularioProgramacion";
 import { ProgramacionProvider } from "./contexts/ProgramacionContext";
@@ -73,6 +77,12 @@ const menuItems = [
     path: "/implementacion",
     label: "Implementación",
     icon: <Key className="h-5 w-5" />,
+  },
+  {
+    id: "tecnica",
+    path: "/tecnica",
+    label: "Técnica",
+    icon: <Wrench className="h-5 w-5" />,
   },
   {
     id: "programacion",
@@ -175,6 +185,26 @@ function AppContent() {
       return [
         { label: "Inicio", path: null },
         { label: "Implementación", path: "/implementacion" },
+        { label: "Gasto", path: null },
+      ];
+    }
+    if (path === "/tecnica") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Técnica", path: null },
+      ];
+    }
+    if (path === "/tecnica/nuevo") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Técnica", path: "/tecnica" },
+        { label: "Nuevo Formulario", path: null },
+      ];
+    }
+    if (path.startsWith("/tecnica/gasto/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Técnica", path: "/tecnica" },
         { label: "Gasto", path: null },
       ];
     }
@@ -429,6 +459,10 @@ function AppContent() {
               <Route path="/implementacion" element={<ImplementacionPage />} />
               <Route path="/implementacion/gasto/:formId" element={<GastoImplementacionPage />} />
               <Route path="/implementacion/gasto/:formId/:itemId" element={<GastoImplementacionPage />} />
+              <Route path="/tecnica" element={<TecnicaPage />} />
+              <Route path="/tecnica/nuevo" element={<NuevoGastoTecnicaPage />} />
+              <Route path="/tecnica/gasto/:formId" element={<GastoTecnicaPage />} />
+              <Route path="/tecnica/gasto/:formId/:itemId" element={<GastoTecnicaPage />} />
               <Route path="/programacion" element={<ProgramacionPage />} />
               <Route path="/programacion/nuevo" element={<NuevoGastoProgramacionPage />} />
               <Route path="/programacion/editar/:id" element={<EditarGastoProgramacionPage />} />
@@ -519,6 +553,41 @@ function GastoImplementacionPage() {
       formId={formId}
       itemId={itemId}
       onClose={() => navigate("/implementacion")}
+    />
+  );
+}
+
+function TecnicaPage() {
+  const navigate = useNavigate();
+  return (
+    <Tecnica
+      onOpen={(formId, itemId) => {
+        if (itemId) {
+          navigate(`/tecnica/gasto/${formId}/${itemId}`);
+        } else {
+          navigate(`/tecnica/gasto/${formId}`);
+        }
+      }}
+      onNew={() => navigate("/tecnica/nuevo")}
+    />
+  );
+}
+
+function NuevoGastoTecnicaPage() {
+  const navigate = useNavigate();
+  return (
+    <FormularioTecnica onClose={() => navigate("/tecnica")} />
+  );
+}
+
+function GastoTecnicaPage() {
+  const navigate = useNavigate();
+  const { formId, itemId } = useParams();
+  return (
+    <FormularioTecnica
+      formId={formId}
+      itemId={itemId}
+      onClose={() => navigate("/tecnica")}
     />
   );
 }
@@ -621,12 +690,14 @@ export default function App() {
             <FormulariosProvider>
               <FormFieldsProvider>
                 <ImplementacionProvider>
-                  <ProgramacionProvider>
-                    <ExperienceProvider>
-                      <AppContent />
-                      <Toaster richColors position="top-right" />
-                    </ExperienceProvider>
-                  </ProgramacionProvider>
+                  <TecnicaProvider>
+                    <ProgramacionProvider>
+                      <ExperienceProvider>
+                        <AppContent />
+                        <Toaster richColors position="top-right" />
+                      </ExperienceProvider>
+                    </ProgramacionProvider>
+                  </TecnicaProvider>
                 </ImplementacionProvider>
               </FormFieldsProvider>
             </FormulariosProvider>

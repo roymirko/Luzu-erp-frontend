@@ -191,6 +191,7 @@ export function TablaComprobantes({
           c.concepto?.toLowerCase().includes(term) ||
           c.numeroComprobante?.toLowerCase().includes(term) ||
           c.implNombreCampana?.toLowerCase().includes(term) ||
+          c.tecNombreCampana?.toLowerCase().includes(term) ||
           c.progPrograma?.toLowerCase().includes(term) ||
           c.expNombreCampana?.toLowerCase().includes(term)
         );

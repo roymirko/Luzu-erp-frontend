@@ -174,12 +174,17 @@ export interface ComprobanteFull extends Comprobante {
   ordenPublicidadId?: string;
   facturaEmitidaA?: string;
   sector?: string;
-  rubroGasto?: string;
+  rubro?: string;
   subRubro?: string;
   // Programación fields
   mesGestion?: string;
   programa?: string;
   formularioProgramacionId?: string;
+  progRubro?: string;
+  progSubRubro?: string;
+  // Experience fields
+  expRubro?: string;
+  expSubRubro?: string;
   // Common derived
   nombreCampana?: string;
   unidadNegocioEfectiva?: string;
@@ -259,7 +264,7 @@ export const TIPO_MOVIMIENTO_LABELS: Record<TipoMovimiento, string> = {
   egreso: 'Egreso',
 };
 
-export type AreaOrigen = 'implementacion' | 'programacion' | 'experience' | 'directo';
+export type AreaOrigen = 'implementacion' | 'programacion' | 'experience' | 'tecnica' | 'directo';
 
 /**
  * Comprobante con contexto de origen (vista comprobantes_full)
@@ -271,7 +276,7 @@ export interface ComprobanteWithContext extends Comprobante {
   ordenPublicidadId?: string;
   itemOrdenPublicidadId?: string;
   sector?: string;
-  rubroGasto?: string;
+  rubro?: string;
   subRubro?: string;
   implNombreCampana?: string;
   implOrdenPublicidad?: string;
@@ -282,11 +287,25 @@ export interface ComprobanteWithContext extends Comprobante {
   progMesGestion?: string;
   progUnidadNegocio?: string;
   progCategoriaNegocio?: string;
+  progRubro?: string;
+  progSubRubro?: string;
+  // Tecnica context
+  tecnicaComprobanteId?: string;
+  tecSector?: string;
+  tecRubro?: string;
+  tecSubRubro?: string;
+  tecNombreCampana?: string;
+  tecUnidadNegocio?: string;
+  tecCategoriaNegocio?: string;
+  tecOrdenPublicidad?: string;
+  tecOrdenPublicidadId?: string;
   // Experience context
   experienceComprobanteId?: string;
   experienceFormularioId?: string;
   expNombreCampana?: string;
   expMesGestion?: string;
+  expRubro?: string;
+  expSubRubro?: string;
   // OP vinculada para ingresos
   ingresoOpId?: string;
   ingresoOpNumero?: string;
@@ -305,6 +324,7 @@ export interface ComprobanteWithContext extends Comprobante {
  */
 export const AREA_ORIGEN_LABELS: Record<AreaOrigen, string> = {
   implementacion: 'Implementación',
+  tecnica: 'Técnica',
   programacion: 'Programación',
   experience: 'Experience',
   directo: 'Directo',

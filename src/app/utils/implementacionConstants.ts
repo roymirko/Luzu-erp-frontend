@@ -88,8 +88,23 @@ export const PROGRAMAS_EXPERIENCE_OPTIONS: FormSelectOption[] = [
 
 export const IMPLEMENTACION_DEFAULTS = {
   sector: 'Implementación',
-  rubroGasto: 'Gasto de venta',
+  rubro: 'Gasto de venta',
   subRubro: 'Producción',
+  moneda: 'ARS',
+  ivaDefault: 21,
+} as const;
+
+export const SUBRUBROS_TECNICA_OPTIONS: FormSelectOption[] = [
+  { value: 'Implementacion', label: 'Implementación' },
+  { value: 'Produccion', label: 'Producción' },
+  { value: 'Diseno y Edicion', label: 'Diseño y Edición' },
+  { value: 'Mejora Inmueble/Equipamiento', label: 'Mejora Inmueble/Equipamiento' },
+];
+
+export const TECNICA_DEFAULTS = {
+  sector: 'Tecnica',
+  rubro: 'Gasto de venta',
+  subRubro: 'Tecnica',
   moneda: 'ARS',
   ivaDefault: 21,
 } as const;

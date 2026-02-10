@@ -184,7 +184,6 @@ export interface ProgramacionFormularioRow {
   categoria_negocio: string | null;
   programa: string | null;
   ejecutivo: string | null;
-  sub_rubro_empresa: string | null;
   detalle_campana: string | null;
   estado: string;
   created_at: string;
@@ -240,7 +239,6 @@ export interface ProgramacionGastoFullRow {
   categoria_negocio: string | null;
   programa: string | null;
   ejecutivo: string | null;
-  sub_rubro_empresa: string | null;
   detalle_campana: string | null;
   formulario_estado: string | null;
   formulario_created_at: string | null;
@@ -252,6 +250,8 @@ export interface ProgramacionGastoFullRow {
   monto: number | null;
   valor_imponible: number | null;
   bonificacion: number | null;
+  rubro: string | null;
+  sub_rubro: string | null;
   factura_emitida_a: string | null;
   forma_pago: string | null;
 }
@@ -333,7 +333,6 @@ export interface GastoProgramacionRow {
   razon_social: string | null;
   categoria: string | null;
   monto: number | null;
-  sub_rubro_empresa: string | null;
   acuerdo_pago: string | null;
   cliente: string | null;
   empresa: string | null;
@@ -363,7 +362,6 @@ export interface ExperienceFormularioRow {
   mes_gestion: string | null;
   nombre_campana: string | null;
   detalle_campana: string | null;
-  subrubro: string | null;
   estado: string;
   created_at: string;
   updated_at: string;
@@ -413,7 +411,6 @@ export interface ExperienceGastoFullRow {
   mes_gestion: string | null;
   nombre_campana: string | null;
   detalle_campana: string | null;
-  subrubro: string | null;
   formulario_estado: string | null;
   formulario_created_at: string | null;
   formulario_created_by: string | null;
@@ -426,6 +423,8 @@ export interface ExperienceGastoFullRow {
   acuerdo_pago: string | null;
   forma_pago: string | null;
   pais: string | null;
+  rubro: string | null;
+  sub_rubro: string | null;
 }
 
 // ============================================
@@ -523,7 +522,7 @@ export interface ImplementacionComprobanteRow {
   orden_publicidad_id: string | null;
   item_orden_publicidad_id: string | null;
   sector: string | null;
-  rubro_gasto: string | null;
+  rubro: string | null;
   sub_rubro: string | null;
   condicion_pago: string | null;
   adjuntos: unknown | null;
@@ -542,10 +541,76 @@ export interface ProgramacionComprobanteRow {
   monto: number | null;
   valor_imponible: number | null;
   bonificacion: number | null;
+  rubro: string | null;
+  sub_rubro: string | null;
 }
 
 export type ProgramacionComprobanteInsert = Omit<ProgramacionComprobanteRow, 'id'>;
 export type ProgramacionComprobanteUpdate = Partial<Omit<ProgramacionComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>;
+
+// Tabla tecnica_comprobantes (contexto)
+export interface TecnicaComprobanteRow {
+  id: string;
+  comprobante_id: string;
+  orden_publicidad_id: string | null;
+  item_orden_publicidad_id: string | null;
+  sector: string | null;
+  rubro: string | null;
+  sub_rubro: string | null;
+  condicion_pago: string | null;
+  adjuntos: unknown | null;
+  unidad_negocio: string | null;
+  categoria_negocio: string | null;
+  nombre_campana: string | null;
+}
+
+export type TecnicaComprobanteInsert = Omit<TecnicaComprobanteRow, 'id'>;
+export type TecnicaComprobanteUpdate = Partial<Omit<TecnicaComprobanteRow, 'id' | 'comprobante_id'>>;
+
+// Vista tecnica_gastos_full (para queries)
+export interface TecnicaGastoFullRow {
+  // Gasto fields (from comprobantes table)
+  id: string;
+  proveedor: string;
+  razon_social: string | null;
+  tipo_factura: string | null;
+  numero_factura: string | null;
+  fecha_factura: string | null;
+  moneda: string;
+  neto: number;
+  iva: number;
+  importe_total: number;
+  empresa: string | null;
+  concepto_gasto: string | null;
+  observaciones: string | null;
+  estado: string;
+  estado_pago: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  // Contexto tecnica (from tecnica_comprobantes table)
+  tecnica_gasto_id: string;
+  orden_publicidad_id: string | null;
+  item_orden_publicidad_id: string | null;
+  factura_emitida_a: string | null;
+  sector: string | null;
+  rubro: string | null;
+  sub_rubro: string | null;
+  condicion_pago: string | null;
+  forma_pago: string | null;
+  fecha_pago: string | null;
+  adjuntos: unknown | null;
+  // Joined from ordenes_publicidad
+  orden_publicidad: string | null;
+  responsable: string | null;
+  unidad_negocio: string | null;
+  categoria_negocio: string | null;
+  nombre_campana: string | null;
+  orden_razon_social: string | null;
+  marca: string | null;
+  mes_servicio: string | null;
+  orden_acuerdo_pago: string | null;
+}
 
 // Tabla experience_comprobantes (contexto)
 export interface ExperienceComprobanteRow {
@@ -556,6 +621,8 @@ export interface ExperienceComprobanteRow {
   empresa_programa: string | null;
   fecha_comprobante: string | null;
   pais: string | null;
+  rubro: string | null;
+  sub_rubro: string | null;
 }
 
 export type ExperienceComprobanteInsert = Omit<ExperienceComprobanteRow, 'id'>;
@@ -564,13 +631,13 @@ export type ExperienceComprobanteUpdate = Partial<Omit<ExperienceComprobanteRow,
 // Vista comprobantes_full (para queries con contexto)
 // Note: ComprobanteFullRow inherits admin fields from ComprobanteRow
 export interface ComprobanteFullRow extends ComprobanteRow {
-  area_origen: 'implementacion' | 'programacion' | 'experience' | 'directo';
+  area_origen: 'implementacion' | 'programacion' | 'experience' | 'tecnica' | 'directo';
   // Implementacion context
   implementacion_comprobante_id: string | null;
   orden_publicidad_id: string | null;
   item_orden_publicidad_id: string | null;
   sector: string | null;
-  rubro_gasto: string | null;
+  rubro: string | null;
   sub_rubro: string | null;
   impl_nombre_campana: string | null;
   impl_orden_publicidad: string | null;
@@ -581,11 +648,25 @@ export interface ComprobanteFullRow extends ComprobanteRow {
   prog_mes_gestion: string | null;
   prog_unidad_negocio: string | null;
   prog_categoria_negocio: string | null;
+  prog_rubro: string | null;
+  prog_sub_rubro: string | null;
+  // Tecnica context
+  tecnica_comprobante_id: string | null;
+  tec_sector: string | null;
+  tec_rubro: string | null;
+  tec_sub_rubro: string | null;
+  tec_nombre_campana: string | null;
+  tec_unidad_negocio: string | null;
+  tec_categoria_negocio: string | null;
+  tec_orden_publicidad: string | null;
+  tec_orden_publicidad_id: string | null;
   // Experience context
   experience_comprobante_id: string | null;
   experience_formulario_id: string | null;
   exp_nombre_campana: string | null;
   exp_mes_gestion: string | null;
+  exp_rubro: string | null;
+  exp_sub_rubro: string | null;
   // OP vinculada para ingresos
   ingreso_op_id: string | null;
   ingreso_op_numero: string | null;

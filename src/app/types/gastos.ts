@@ -91,7 +91,7 @@ export interface GastoFull extends Gasto {
   ordenPublicidadId?: string;
   facturaEmitidaA?: string;
   sector?: string;
-  rubroGasto?: string;
+  rubro?: string;
   subRubro?: string;
   // Programación fields
   mesGestion?: string;

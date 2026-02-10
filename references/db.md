@@ -17,19 +17,18 @@ User accounts table.
 ```sql
 CREATE TABLE usuarios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  correo TEXT NOT NULL UNIQUE,
-  nombre TEXT NOT NULL,
-  apellido TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
   avatar TEXT,
-  activo BOOLEAN DEFAULT TRUE NOT NULL,
-  creado_el TIMESTAMPTZ DEFAULT NOW(),
-  actualizado_el TIMESTAMPTZ DEFAULT NOW(),
-  ultimo_acceso TIMESTAMPTZ,
+  active BOOLEAN DEFAULT TRUE NOT NULL,
+  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+  fecha_actualizacion TIMESTAMPTZ DEFAULT NOW(),
+  last_login TIMESTAMPTZ,
   creado_por TEXT,
-  metadatos JSONB DEFAULT '{}'::jsonb,
-  -- Auth fields (migration 003)
+  metadata JSONB DEFAULT '{}'::jsonb,
   password_hash TEXT,
-  user_type TEXT DEFAULT 'editor' CHECK (user_type IN ('administrador', 'implementacion', 'programacion', 'administracion', 'finanzas'))
+  user_type TEXT DEFAULT 'administrador' CHECK (user_type IN ('administrador', 'implementacion', 'programacion', 'administracion', 'finanzas'))
 );
 ```
 
@@ -189,9 +188,9 @@ Central table for all financial documents (invoices, receipts, etc.).
 ```sql
 CREATE TABLE comprobantes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  -- Dirección del movimiento
+  -- Direccion del movimiento
   tipo_movimiento TEXT DEFAULT 'egreso' CHECK (tipo_movimiento IN ('ingreso', 'egreso')),
-  -- Entidad (denormalizado para histórico)
+  -- Entidad (denormalizado para historico)
   entidad_id UUID REFERENCES entidades(id),
   entidad_nombre TEXT NOT NULL,
   entidad_cuit TEXT,
@@ -218,21 +217,21 @@ CREATE TABLE comprobantes (
   observaciones TEXT,
   -- Estado
   estado TEXT DEFAULT 'pendiente',
-  estado_pago TEXT DEFAULT 'pendiente' CHECK (estado_pago IN ('pendiente', 'pagado', 'pedir_info', 'anulado')),
-  -- Payment/Collection fields (migration 004)
+  estado_pago TEXT DEFAULT 'creado' CHECK (estado_pago IN ('creado', 'aprobado', 'requiere_info', 'rechazado', 'pagado')),
+  -- Payment/Collection fields
   forma_pago TEXT,
   cotizacion DECIMAL(15,4),
   banco TEXT,
   numero_operacion TEXT,
   fecha_pago DATE,
-  -- Admin fields (migration 005)
+  -- Admin fields
   condicion_iva TEXT,
   comprobante_pago TEXT,
   ingresos_brutos DECIMAL(15,2) DEFAULT 0,
   retencion_ganancias DECIMAL(15,2) DEFAULT 0,
   fecha_estimada_pago DATE,
   nota_admin TEXT,
-  -- Ingreso-specific fields (migration 006)
+  -- Ingreso-specific fields
   retencion_iva DECIMAL(15,2) DEFAULT 0,
   retencion_suss DECIMAL(15,2) DEFAULT 0,
   fecha_vencimiento DATE,
@@ -242,7 +241,7 @@ CREATE TABLE comprobantes (
   contacto TEXT,
   fecha_envio DATE,
   orden_publicidad_id_ingreso UUID REFERENCES ordenes_publicidad(id),
-  -- Consolidated context fields (migration 007)
+  -- Consolidated context fields
   factura_emitida_a TEXT,
   acuerdo_pago TEXT,
   -- Audit
@@ -254,7 +253,7 @@ CREATE TABLE comprobantes (
 
 **Backward Compatibility**: Vista `gastos` filtra comprobantes tipo 'egreso'.
 
-## Implementation Module (Implementación)
+## Implementation Module (Implementacion)
 
 ### implementacion_comprobantes
 Context table linking comprobantes to advertising orders.
@@ -265,18 +264,41 @@ CREATE TABLE implementacion_comprobantes (
   orden_publicidad_id UUID REFERENCES ordenes_publicidad(id),
   item_orden_publicidad_id UUID REFERENCES items_orden_publicidad(id),
   sector TEXT,
-  rubro_gasto TEXT,
+  rubro TEXT,
   sub_rubro TEXT,
   condicion_pago TEXT,
   adjuntos JSONB,
   UNIQUE(comprobante_id)
 );
--- NOTE: factura_emitida_a, forma_pago, fecha_pago moved to comprobantes (migration 007)
 ```
 
 **Backward Compatibility**: Vista `implementacion_gastos` mapea a esta tabla.
 
-## Programming Module (Programación)
+## Tecnica Module
+
+### tecnica_comprobantes
+Context table linking comprobantes to advertising orders (standalone or OP-linked).
+```sql
+CREATE TABLE tecnica_comprobantes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
+  orden_publicidad_id UUID REFERENCES ordenes_publicidad(id),
+  item_orden_publicidad_id UUID REFERENCES items_orden_publicidad(id),
+  sector TEXT,
+  rubro TEXT,
+  sub_rubro TEXT,
+  condicion_pago TEXT,
+  adjuntos JSONB,
+  unidad_negocio TEXT,
+  categoria_negocio TEXT,
+  nombre_campana TEXT,
+  UNIQUE(comprobante_id)
+);
+```
+
+**Backward Compatibility**: Vista `tecnica_gastos` mapea a esta tabla.
+
+## Programming Module (Programacion)
 
 ### programacion_formularios
 Header table grouping programming expenses.
@@ -290,7 +312,6 @@ CREATE TABLE programacion_formularios (
   categoria_negocio TEXT,
   programa TEXT,
   ejecutivo TEXT,
-  sub_rubro_empresa TEXT,
   detalle_campana TEXT,
   estado TEXT DEFAULT 'pendiente',
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -311,9 +332,10 @@ CREATE TABLE programacion_comprobantes (
   monto DECIMAL(15,2),
   valor_imponible DECIMAL(15,2),
   bonificacion DECIMAL(15,2) DEFAULT 0,
+  rubro TEXT,
+  sub_rubro TEXT,
   UNIQUE(comprobante_id)
 );
--- NOTE: factura_emitida_a, acuerdo_pago, forma_pago moved to comprobantes (migration 007)
 ```
 
 **Backward Compatibility**: Vista `programacion_gastos` mapea a esta tabla.
@@ -328,7 +350,6 @@ CREATE TABLE experience_formularios (
   mes_gestion VARCHAR(7),
   nombre_campana TEXT,
   detalle_campana TEXT,
-  subrubro TEXT,
   estado TEXT DEFAULT 'activo',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -347,12 +368,77 @@ CREATE TABLE experience_comprobantes (
   empresa_programa TEXT,
   fecha_comprobante DATE,
   pais TEXT DEFAULT 'argentina',
+  rubro TEXT,
+  sub_rubro TEXT,
   UNIQUE(comprobante_id)
 );
--- NOTE: factura_emitida_a, acuerdo_pago, forma_pago moved to comprobantes (migration 007)
 ```
 
 **Backward Compatibility**: Vista `experience_gastos` mapea a esta tabla.
+
+## Legacy Tables
+
+### gastos_implementacion
+Legacy expense header (kept for backward compatibility).
+```sql
+CREATE TABLE gastos_implementacion (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+  fecha_actualizacion TIMESTAMPTZ DEFAULT NOW(),
+  fecha_registro DATE NOT NULL,
+  orden_publicidad TEXT NOT NULL,
+  responsable TEXT NOT NULL,
+  unidad_negocio TEXT NOT NULL,
+  categoria_negocio TEXT,
+  nombre_campana TEXT NOT NULL,
+  anio INTEGER NOT NULL,
+  mes INTEGER NOT NULL,
+  id_formulario_comercial UUID,
+  estado TEXT DEFAULT 'pendiente',
+  item_orden_publicidad_id UUID,
+  acuerdo_pago TEXT,
+  presupuesto DECIMAL(15,2),
+  cantidad_programas INTEGER,
+  programas_disponibles JSONB DEFAULT '[]'::jsonb,
+  sector TEXT,
+  rubro TEXT,
+  sub_rubro TEXT,
+  factura_emitida_a TEXT,
+  empresa TEXT,
+  concepto_gasto TEXT,
+  observaciones TEXT,
+  creado_por TEXT,
+  actualizado_por TEXT
+);
+```
+
+### items_gasto_implementacion
+Legacy expense line items.
+```sql
+CREATE TABLE items_gasto_implementacion (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  gasto_id UUID REFERENCES gastos_implementacion(id) ON DELETE CASCADE,
+  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+  tipo_proveedor TEXT NOT NULL,
+  proveedor TEXT NOT NULL,
+  razon_social TEXT,
+  descripcion TEXT,
+  rubro TEXT NOT NULL,
+  sub_rubro TEXT,
+  sector TEXT NOT NULL,
+  moneda TEXT DEFAULT 'ARS',
+  neto DECIMAL(15,2) NOT NULL DEFAULT 0,
+  iva DECIMAL(5,2) DEFAULT 21,
+  importe_total DECIMAL(15,2) NOT NULL DEFAULT 0,
+  tipo_factura TEXT,
+  numero_factura TEXT,
+  fecha_factura DATE,
+  condicion_pago TEXT,
+  fecha_pago DATE,
+  estado_pago TEXT DEFAULT 'pendiente',
+  adjuntos JSONB
+);
+```
 
 ## Backward Compatibility Views
 
@@ -363,11 +449,13 @@ Legacy code can continue using old table names via these views:
 | `proveedores` | `entidades` | `tipo_entidad IN ('proveedor', 'ambos')` |
 | `gastos` | `comprobantes` | `tipo_movimiento = 'egreso'` |
 | `implementacion_gastos` | `implementacion_comprobantes` | - |
+| `tecnica_gastos` | `tecnica_comprobantes` | - |
 | `programacion_gastos` | `programacion_comprobantes` | - |
 | `experience_gastos` | `experience_comprobantes` | - |
 
 Full views for UI:
 - `implementacion_comprobantes_full` / `implementacion_gastos_full`
+- `tecnica_comprobantes_full` / `tecnica_gastos_full`
 - `programacion_comprobantes_full` / `programacion_gastos_full`
 - `experience_comprobantes_full` / `experience_gastos_full`
 - `comprobantes_full` / `gastos_full`
@@ -399,13 +487,13 @@ Full views for UI:
 | FA | Factura A |
 | FB | Factura B |
 | FC | Factura C |
-| FE | Factura E (Exportación) |
-| NCA | Nota de Crédito A |
-| NCB | Nota de Crédito B |
-| NCC | Nota de Crédito C |
-| NDA | Nota de Débito A |
-| NDB | Nota de Débito B |
-| NDC | Nota de Débito C |
+| FE | Factura E (Exportacion) |
+| NCA | Nota de Credito A |
+| NCB | Nota de Credito B |
+| NCC | Nota de Credito C |
+| NDA | Nota de Debito A |
+| NDB | Nota de Debito B |
+| NDC | Nota de Debito C |
 | REC | Recibo |
 | TKT | Ticket |
 | OTR | Otro |

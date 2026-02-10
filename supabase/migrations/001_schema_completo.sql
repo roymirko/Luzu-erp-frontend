@@ -284,10 +284,27 @@ CREATE TABLE public.implementacion_comprobantes (
   orden_publicidad_id UUID REFERENCES public.ordenes_publicidad(id),
   item_orden_publicidad_id UUID REFERENCES public.items_orden_publicidad(id),
   sector TEXT,
-  rubro_gasto TEXT,
+  rubro TEXT,
   sub_rubro TEXT,
   condicion_pago TEXT,
   adjuntos JSONB,
+  UNIQUE(comprobante_id)
+);
+
+-- TECNICA_COMPROBANTES
+CREATE TABLE public.tecnica_comprobantes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  comprobante_id UUID NOT NULL REFERENCES public.comprobantes(id) ON DELETE CASCADE,
+  orden_publicidad_id UUID REFERENCES public.ordenes_publicidad(id),
+  item_orden_publicidad_id UUID REFERENCES public.items_orden_publicidad(id),
+  sector TEXT,
+  rubro TEXT,
+  sub_rubro TEXT,
+  condicion_pago TEXT,
+  adjuntos JSONB,
+  unidad_negocio TEXT,
+  categoria_negocio TEXT,
+  nombre_campana TEXT,
   UNIQUE(comprobante_id)
 );
 
@@ -301,7 +318,6 @@ CREATE TABLE public.programacion_formularios (
   categoria_negocio TEXT,
   programa TEXT,
   ejecutivo TEXT,
-  sub_rubro_empresa TEXT,
   detalle_campana TEXT,
   estado TEXT DEFAULT 'pendiente',
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -319,6 +335,8 @@ CREATE TABLE public.programacion_comprobantes (
   monto DECIMAL(15,2),
   valor_imponible DECIMAL(15,2),
   bonificacion DECIMAL(15,2) DEFAULT 0,
+  rubro TEXT,
+  sub_rubro TEXT,
   UNIQUE(comprobante_id)
 );
 
@@ -328,7 +346,6 @@ CREATE TABLE public.experience_formularios (
   mes_gestion VARCHAR(7),
   nombre_campana TEXT,
   detalle_campana TEXT,
-  subrubro TEXT,
   estado TEXT DEFAULT 'activo',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -344,6 +361,8 @@ CREATE TABLE public.experience_comprobantes (
   empresa_programa TEXT,
   fecha_comprobante DATE,
   pais TEXT DEFAULT 'argentina',
+  rubro TEXT,
+  sub_rubro TEXT,
   UNIQUE(comprobante_id)
 );
 
@@ -459,7 +478,7 @@ SELECT
   orden_publicidad_id,
   item_orden_publicidad_id,
   sector,
-  rubro_gasto,
+  rubro,
   sub_rubro,
   condicion_pago,
   adjuntos
@@ -525,7 +544,7 @@ SELECT
   ic.item_orden_publicidad_id,
   c.factura_emitida_a,
   ic.sector,
-  ic.rubro_gasto,
+  ic.rubro,
   ic.sub_rubro,
   ic.condicion_pago,
   c.forma_pago,
@@ -547,6 +566,74 @@ LEFT JOIN public.ordenes_publicidad op ON ic.orden_publicidad_id = op.id;
 
 CREATE OR REPLACE VIEW public.implementacion_gastos_full AS
 SELECT * FROM public.implementacion_comprobantes_full;
+
+-- Vista legacy tecnica_gastos
+CREATE OR REPLACE VIEW public.tecnica_gastos AS
+SELECT
+  id,
+  comprobante_id AS gasto_id,
+  orden_publicidad_id,
+  item_orden_publicidad_id,
+  sector,
+  rubro,
+  sub_rubro,
+  condicion_pago,
+  adjuntos
+FROM public.tecnica_comprobantes;
+
+-- Vista completa técnica
+CREATE OR REPLACE VIEW public.tecnica_comprobantes_full AS
+SELECT
+  c.id,
+  c.entidad_nombre AS proveedor,
+  c.entidad_nombre AS razon_social,
+  c.tipo_comprobante AS tipo_factura,
+  CASE
+    WHEN c.punto_venta IS NOT NULL AND c.numero_comprobante IS NOT NULL
+    THEN CONCAT(c.punto_venta, '-', c.numero_comprobante)
+    ELSE c.numero_comprobante
+  END AS numero_factura,
+  c.fecha_comprobante AS fecha_factura,
+  c.moneda,
+  c.neto,
+  c.iva_alicuota AS iva,
+  c.total AS importe_total,
+  c.empresa,
+  c.concepto AS concepto_gasto,
+  c.observaciones,
+  c.estado,
+  c.estado_pago,
+  c.created_at,
+  c.updated_at,
+  c.created_by,
+  -- Contexto tecnica
+  tc.id AS tecnica_gasto_id,
+  tc.orden_publicidad_id,
+  tc.item_orden_publicidad_id,
+  c.factura_emitida_a,
+  tc.sector,
+  tc.rubro,
+  tc.sub_rubro,
+  tc.condicion_pago,
+  c.forma_pago,
+  c.fecha_pago,
+  tc.adjuntos,
+  -- Datos de orden publicidad (joined, with COALESCE for standalone)
+  op.orden_publicidad,
+  op.responsable,
+  COALESCE(tc.unidad_negocio, op.unidad_negocio) AS unidad_negocio,
+  COALESCE(tc.categoria_negocio, op.categoria_negocio) AS categoria_negocio,
+  COALESCE(tc.nombre_campana, op.nombre_campana) AS nombre_campana,
+  op.razon_social AS orden_razon_social,
+  op.marca,
+  op.mes_servicio,
+  op.acuerdo_pago AS orden_acuerdo_pago
+FROM public.comprobantes c
+JOIN public.tecnica_comprobantes tc ON c.id = tc.comprobante_id
+LEFT JOIN public.ordenes_publicidad op ON tc.orden_publicidad_id = op.id;
+
+CREATE OR REPLACE VIEW public.tecnica_gastos_full AS
+SELECT * FROM public.tecnica_comprobantes_full;
 
 -- Vista completa programación
 CREATE OR REPLACE VIEW public.programacion_comprobantes_full AS
@@ -582,7 +669,6 @@ SELECT
   pf.categoria_negocio,
   pf.programa,
   pf.ejecutivo,
-  pf.sub_rubro_empresa,
   pf.detalle_campana,
   pf.estado AS formulario_estado,
   pf.created_at AS formulario_created_at,
@@ -594,6 +680,8 @@ SELECT
   pc.monto,
   pc.valor_imponible,
   pc.bonificacion,
+  pc.rubro,
+  pc.sub_rubro,
   c.factura_emitida_a,
   c.forma_pago
 FROM public.comprobantes c
@@ -633,7 +721,6 @@ SELECT
   ef.mes_gestion,
   ef.nombre_campana,
   ef.detalle_campana,
-  ef.subrubro,
   ef.estado AS formulario_estado,
   ef.created_at AS formulario_created_at,
   ef.created_by AS formulario_created_by,
@@ -645,7 +732,9 @@ SELECT
   ec.fecha_comprobante,
   c.acuerdo_pago,
   c.forma_pago,
-  ec.pais
+  ec.pais,
+  ec.rubro,
+  ec.sub_rubro
 FROM public.comprobantes c
 JOIN public.experience_comprobantes ec ON c.id = ec.comprobante_id
 JOIN public.experience_formularios ef ON ec.formulario_id = ef.id;
@@ -659,16 +748,27 @@ SELECT
   c.*,
   CASE
     WHEN ic.id IS NOT NULL THEN 'implementacion'
+    WHEN tc.id IS NOT NULL THEN 'tecnica'
     WHEN pc.id IS NOT NULL THEN 'programacion'
     WHEN ec.id IS NOT NULL THEN 'experience'
     ELSE 'directo'
   END as area_origen,
+  -- Tecnica context
+  tc.id as tecnica_comprobante_id,
+  tc.sector as tec_sector,
+  tc.rubro as tec_rubro,
+  tc.sub_rubro as tec_sub_rubro,
+  COALESCE(tc.nombre_campana, opt.nombre_campana) as tec_nombre_campana,
+  COALESCE(tc.unidad_negocio, opt.unidad_negocio) as tec_unidad_negocio,
+  COALESCE(tc.categoria_negocio, opt.categoria_negocio) as tec_categoria_negocio,
+  opt.orden_publicidad as tec_orden_publicidad,
+  tc.orden_publicidad_id as tec_orden_publicidad_id,
   -- Implementacion context
   ic.id as implementacion_comprobante_id,
   ic.orden_publicidad_id,
   ic.item_orden_publicidad_id,
   ic.sector,
-  ic.rubro_gasto,
+  ic.rubro,
   ic.sub_rubro,
   op.nombre_campana as impl_nombre_campana,
   op.orden_publicidad as impl_orden_publicidad,
@@ -679,11 +779,15 @@ SELECT
   pf.mes_gestion as prog_mes_gestion,
   pf.unidad_negocio as prog_unidad_negocio,
   pf.categoria_negocio as prog_categoria_negocio,
+  pc.rubro as prog_rubro,
+  pc.sub_rubro as prog_sub_rubro,
   -- Experience context
   ec.id as experience_comprobante_id,
   ec.formulario_id as experience_formulario_id,
   ef.nombre_campana as exp_nombre_campana,
   ef.mes_gestion as exp_mes_gestion,
+  ec.rubro as exp_rubro,
+  ec.sub_rubro as exp_sub_rubro,
   -- OP vinculada para ingresos
   opi.id as ingreso_op_id,
   opi.orden_publicidad as ingreso_op_numero,
@@ -702,6 +806,8 @@ FROM comprobantes c
 LEFT JOIN entidades e ON c.entidad_id = e.id
 LEFT JOIN implementacion_comprobantes ic ON c.id = ic.comprobante_id
 LEFT JOIN ordenes_publicidad op ON ic.orden_publicidad_id = op.id
+LEFT JOIN tecnica_comprobantes tc ON c.id = tc.comprobante_id
+LEFT JOIN ordenes_publicidad opt ON tc.orden_publicidad_id = opt.id
 LEFT JOIN programacion_comprobantes pc ON c.id = pc.comprobante_id
 LEFT JOIN programacion_formularios pf ON pc.formulario_id = pf.id
 LEFT JOIN experience_comprobantes ec ON c.id = ec.comprobante_id
@@ -769,6 +875,11 @@ CREATE INDEX idx_comprobantes_fecha_vencimiento ON public.comprobantes(fecha_ven
 CREATE INDEX idx_impl_comprobantes_comprobante ON public.implementacion_comprobantes(comprobante_id);
 CREATE INDEX idx_impl_comprobantes_orden ON public.implementacion_comprobantes(orden_publicidad_id);
 CREATE INDEX idx_impl_comprobantes_item ON public.implementacion_comprobantes(item_orden_publicidad_id);
+
+-- Tecnica comprobantes
+CREATE INDEX idx_tec_comprobantes_comprobante ON public.tecnica_comprobantes(comprobante_id);
+CREATE INDEX idx_tec_comprobantes_orden ON public.tecnica_comprobantes(orden_publicidad_id);
+CREATE INDEX idx_tec_comprobantes_item ON public.tecnica_comprobantes(item_orden_publicidad_id);
 
 -- Programacion
 CREATE INDEX idx_prog_formularios_mes ON public.programacion_formularios(mes_gestion);
@@ -840,6 +951,7 @@ ALTER TABLE public.implementacion_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.programacion_formularios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.programacion_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.experience_formularios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tecnica_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.experience_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gastos_implementacion ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.items_gasto_implementacion ENABLE ROW LEVEL SECURITY;
@@ -854,6 +966,7 @@ DROP POLICY IF EXISTS "allow_all" ON public.items_orden_publicidad;
 DROP POLICY IF EXISTS "allow_all" ON public.entidades;
 DROP POLICY IF EXISTS "allow_all" ON public.comprobantes;
 DROP POLICY IF EXISTS "allow_all" ON public.implementacion_comprobantes;
+DROP POLICY IF EXISTS "allow_all" ON public.tecnica_comprobantes;
 DROP POLICY IF EXISTS "allow_all" ON public.programacion_formularios;
 DROP POLICY IF EXISTS "allow_all" ON public.programacion_comprobantes;
 DROP POLICY IF EXISTS "allow_all" ON public.experience_formularios;
@@ -871,6 +984,7 @@ CREATE POLICY "allow_all" ON public.items_orden_publicidad FOR ALL USING (true) 
 CREATE POLICY "allow_all" ON public.entidades FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.comprobantes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.implementacion_comprobantes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON public.tecnica_comprobantes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.programacion_formularios FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.programacion_comprobantes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.experience_formularios FOR ALL USING (true) WITH CHECK (true);
@@ -893,6 +1007,8 @@ GRANT SELECT ON comprobantes_full TO authenticated, anon;
 GRANT SELECT ON gastos_full TO authenticated, anon;
 GRANT SELECT ON implementacion_comprobantes_full TO authenticated, anon;
 GRANT SELECT ON implementacion_gastos_full TO authenticated, anon;
+GRANT SELECT ON tecnica_comprobantes_full TO authenticated, anon;
+GRANT SELECT ON tecnica_gastos_full TO authenticated, anon;
 GRANT SELECT ON programacion_comprobantes_full TO authenticated, anon;
 GRANT SELECT ON programacion_gastos_full TO authenticated, anon;
 GRANT SELECT ON experience_comprobantes_full TO authenticated, anon;

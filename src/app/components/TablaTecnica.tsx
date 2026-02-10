@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useFormularios } from '../contexts/FormulariosContext';
-import { useImplementacion } from '../contexts/ImplementacionContext';
+import { useTecnica } from '../contexts/TecnicaContext';
 import { Button } from './ui/button';
-import { Pencil } from 'lucide-react';
+import { ActionCard } from './ui/action-card';
+import { Pencil, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,14 +21,12 @@ import { formatDateDDMMYYYY, formatMesServicio } from '../utils/dateFormatters';
 
 const ITEMS_PER_PAGE = 10;
 
-// Vista por Orden de Publicidad (agrupado)
 const COLUMNS_ORDEN = [
   'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
   'Categoría de negocio', 'Marca', 'Orden de Publicidad', 'Presupuesto', 'Dinero Disponible', 'Cant. de programas',
   'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Neto Total', 'Acciones'
 ];
 
-// Vista por Programa (individual)
 const COLUMNS_PROGRAMA = [
   'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
   'Categoría de negocio', 'Marca', 'Empresa/Programa', 'Detalle de Publicidad', 'Presupuesto', 'Dinero Disponible',
@@ -71,20 +70,20 @@ const InfoRow = ({ label, value }: { label: string; value?: string | number }) =
   </div>
 );
 
-interface TablaImplementacionesProps {
+interface TablaTecnicaProps {
   onOpen?: (formId: string, itemId?: string) => void;
+  onNew?: () => void;
 }
 
-export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {}) {
+export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
   const { isDark } = useTheme();
   const { formularios } = useFormularios();
-  const { gastos, getGastoById } = useImplementacion();
+  const { gastos, getGastoById } = useTecnica();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('orden');
   const [selectedRow, setSelectedRow] = useState<ProgramaRow | null>(null);
 
-  // Get linked gasto details when a row is selected
   const selectedGasto = useMemo(() => {
     if (!selectedRow?.linkedGastoId) return null;
     return getGastoById(selectedRow.linkedGastoId);
@@ -134,25 +133,23 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
     const fromFormularios = formularios.flatMap((form) => {
       if (!Array.isArray(form.importeRows)) return [] as any[];
 
-      // Group by orden de publicidad
-      const itemsWithImpl = form.importeRows.filter((item) => {
-        const v = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
+      const itemsWithTecnica = form.importeRows.filter((item) => {
+        const v = parseFloat(String(item.tecnica || '0').replace(/[^0-9.-]/g, ''));
         return !isNaN(v) && v > 0;
       });
 
-      if (itemsWithImpl.length === 0) return [];
+      if (itemsWithTecnica.length === 0) return [];
 
       const linkedGastos = gastos.filter(g =>
         g.ordenPublicidadId === form.id
       );
 
-      const totalPresupuesto = itemsWithImpl.reduce((sum, item) => {
-        return sum + parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
+      const totalPresupuesto = itemsWithTecnica.reduce((sum, item) => {
+        return sum + parseFloat(String(item.tecnica || '0').replace(/[^0-9.-]/g, ''));
       }, 0);
 
       const totalNeto = linkedGastos.reduce((sum, g) => sum + (g.neto || 0), 0);
 
-      // Get fecha de registro from first saved gasto (earliest createdAt)
       const fechaRegistro = linkedGastos.length > 0
         ? formatDateDDMMYYYY(linkedGastos.reduce((earliest, g) =>
             new Date(g.createdAt) < new Date(earliest.createdAt) ? g : earliest
@@ -162,7 +159,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
       return [{
         id: form.id,
         formId: form.id,
-        itemId: itemsWithImpl[0]?.id,
+        itemId: itemsWithTecnica[0]?.id,
         estado: linkedGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
         mesServicio: formatMesServicio(form.mesServicio),
         fechaRegistro,
@@ -173,8 +170,8 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
         ordenPublicidad: form.ordenPublicidad,
         presupuesto: totalPresupuesto,
         dineroDisponible: totalPresupuesto - totalNeto,
-        cantidadProgramas: itemsWithImpl.length,
-        sector: 'Implementación',
+        cantidadProgramas: itemsWithTecnica.length,
+        sector: 'Técnica',
         rubro: 'Gasto de venta',
         subRubro: '-',
         nombreCampana: form.nombreCampana || '-',
@@ -182,12 +179,11 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
       }];
     });
 
-    // Add standalone gastos not linked to formularios
     const formIds = new Set(formularios.map(f => f.id));
     const standaloneGastos = gastos
       .filter(g => !g.ordenPublicidadId || !formIds.has(g.ordenPublicidadId))
       .map((gasto) => {
-        const netoTotal = gasto.importes?.reduce((sum: number, imp: any) => sum + (parseFloat(imp.neto) || 0), 0) || gasto.neto || 0;
+        const netoTotal = gasto.neto || 0;
         const presupuesto = gasto.neto || 0;
         return {
           id: gasto.id,
@@ -203,7 +199,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
           ordenPublicidad: gasto.ordenPublicidad || '-',
           presupuesto,
           dineroDisponible: presupuesto - netoTotal,
-          cantidadProgramas: gasto.importes?.length || 1,
+          cantidadProgramas: 1,
           sector: gasto.sector || '-',
           rubro: gasto.rubro || '-',
           subRubro: gasto.subRubro || '-',
@@ -224,13 +220,13 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
     });
   }, [formularios, gastos, searchTerm]);
 
-  // Rows for "Programa" view (individual gastos)
+  // Rows for "Programa" view (individual)
   const rowsPrograma = useMemo(() => {
     const fromFormularios = formularios.flatMap((form) => {
       if (!Array.isArray(form.importeRows)) return [] as any[];
       return form.importeRows
         .filter((item) => {
-          const v = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
+          const v = parseFloat(String(item.tecnica || '0').replace(/[^0-9.-]/g, ''));
           return !isNaN(v) && v > 0;
         })
         .map((item) => {
@@ -239,7 +235,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
             g.itemOrdenPublicidadId === item.id
           );
 
-          const presupuestoImpl = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
+          const presupuestoTecnica = parseFloat(String(item.tecnica || '0').replace(/[^0-9.-]/g, ''));
           const netoGastado = linkedGasto?.neto || 0;
 
           return {
@@ -256,9 +252,9 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
             marca: linkedGasto?.marca || form.marca || '-',
             empresaPrograma: item.programa || '-',
             ordenPublicidad: form.ordenPublicidad,
-            presupuesto: presupuestoImpl,
-            dineroDisponible: presupuestoImpl - netoGastado,
-            sector: 'Implementación',
+            presupuesto: presupuestoTecnica,
+            dineroDisponible: presupuestoTecnica - netoGastado,
+            sector: 'Técnica',
             rubro: linkedGasto?.rubro || 'Gasto de venta',
             subRubro: linkedGasto?.subRubro || '-',
             nombreCampana: form.nombreCampana || '-',
@@ -268,42 +264,13 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
         });
     });
 
-    // Add standalone gastos importes
     const formItemIds = new Set(fromFormularios.map(r => r.linkedGastoId).filter(Boolean));
 
     const standaloneImportes = gastos
       .filter(g => !formItemIds.has(g.id))
-      .flatMap((gasto) => {
-        if (gasto.importes && gasto.importes.length > 0) {
-          return gasto.importes.map((imp: any) => {
-            const netoImp = parseFloat(imp.neto) || 0;
-            return {
-              id: imp.id,
-              formId: gasto.id,
-              itemId: imp.id,
-              linkedGastoId: gasto.id,
-              estado: imp.estadoPgm === 'pagado' ? 'Pagado' : 'Pendiente de pago',
-              mesServicio: formatMesServicio(gasto.mesServicio),
-              fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
-              responsable: gasto.responsable || '-',
-              unidadNegocio: gasto.unidadNegocio || '-',
-              categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-              marca: gasto.marca || '-',
-              empresaPrograma: imp.empresaPgm || imp.programa || '-',
-              ordenPublicidad: gasto.ordenPublicidad || '-',
-              presupuesto: netoImp,
-              dineroDisponible: 0, // Standalone gastos: presupuesto = neto, so disponible = 0
-              sector: gasto.sector || '-',
-              rubro: gasto.rubro || '-',
-              subRubro: gasto.subRubro || '-',
-              nombreCampana: gasto.nombreCampana || '-',
-              acuerdoPago: imp.condicionPago || gasto.acuerdoPago || '-',
-              neto: netoImp,
-            };
-          });
-        }
+      .map((gasto) => {
         const netoGasto = gasto.neto || 0;
-        return [{
+        return {
           id: gasto.id,
           formId: gasto.id,
           itemId: undefined,
@@ -318,14 +285,14 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
           empresaPrograma: '-',
           ordenPublicidad: gasto.ordenPublicidad || '-',
           presupuesto: netoGasto,
-          dineroDisponible: 0, // Standalone gastos: presupuesto = neto, so disponible = 0
+          dineroDisponible: 0,
           sector: gasto.sector || '-',
           rubro: gasto.rubro || '-',
           subRubro: gasto.subRubro || '-',
           nombreCampana: gasto.nombreCampana || '-',
           acuerdoPago: gasto.acuerdoPago || '-',
           neto: netoGasto,
-        }];
+        };
       });
 
     return [...fromFormularios, ...standaloneImportes].filter((row) => {
@@ -359,8 +326,17 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
 
   return (
     <div className="space-y-6">
+      {onNew && (
+        <ActionCard
+          title="Nuevo Formulario"
+          description="Crear gasto de técnica"
+          icon={Plus}
+          onClick={onNew}
+        />
+      )}
+
       <TableHeader
-        title="Detalle de gastos"
+        title="Detalle de gastos - Técnica"
         searchValue={searchTerm}
         onSearchChange={handleSearchChange}
       >
@@ -465,7 +441,6 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
           </DialogHeader>
 
           <div className="grid grid-cols-2 gap-4 py-4">
-            {/* Datos de la orden */}
             <InfoRow label="Estado" value={selectedRow?.estado} />
             <InfoRow label="Programa" value={selectedRow?.empresaPrograma} />
             <InfoRow label="Orden Publicidad" value={selectedRow?.ordenPublicidad} />
@@ -475,7 +450,6 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
             <InfoRow label="Mes Servicio" value={selectedRow?.mesServicio} />
             <InfoRow label="Acuerdo Pago" value={selectedRow?.acuerdoPago} />
 
-            {/* Datos del gasto cargado */}
             {selectedGasto && (
               <>
                 <div className="col-span-2 border-t pt-3 mt-2">

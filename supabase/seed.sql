@@ -229,9 +229,9 @@ DECLARE
 BEGIN
   -- Formulario 1: Nadie Dice Nada - Enero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-01', 'Media', 'Nadie Dice Nada', 'Gabriela Riero', 'Entretenimiento', 'Campaña NDD Enero', 'activo', 'system'
+    '2024-01', 'Media', 'Nadie Dice Nada', 'Gabriela Riero', 'Campaña NDD Enero', 'activo', 'system'
   ) RETURNING id INTO v_form1;
 
   -- Comprobante 1.1: Producción general
@@ -243,8 +243,8 @@ BEGIN
     25000, 21, 5250, 30250, 'ARS', 'Luzu TV', 'activo', 'creado', 'system',
     'Luzu TV', '30', 'transferencia'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form1, 'FM Luzu', 30250);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form1, 'FM Luzu', 30250, 'Gasto de programación', 'Entretenimiento');
 
   -- Comprobante 1.2: Equipamiento técnico
   INSERT INTO public.comprobantes (
@@ -255,14 +255,14 @@ BEGIN
     18000, 21, 3780, 21780, 'ARS', 'Luzu TV SA', 'activo', 'pagado', 'system',
     'Luzu TV SA', '45', 'cheque'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form1, 'Antes Que Nadie', 21780);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form1, 'Antes Que Nadie', 21780, 'Gasto de programación', 'Entretenimiento');
 
   -- Formulario 2: Antes Que Nadie - Enero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-01', 'Media', 'Antes Que Nadie', 'Gabriela Riero', 'Noticias', 'Campaña AQN Enero', 'activo', 'system'
+    '2024-01', 'Media', 'Antes Que Nadie', 'Gabriela Riero', 'Campaña AQN Enero', 'activo', 'system'
   ) RETURNING id INTO v_form2;
 
   -- Comprobante 2.1: Talentos
@@ -274,8 +274,8 @@ BEGIN
     35000, 21, 7350, 42350, 'ARS', 'Luzu TV', 'activo', 'creado', 'system',
     'Luzu TV', '30', 'transferencia'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form2, 'Nadie Dice Nada', 42350);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form2, 'Nadie Dice Nada', 42350, 'Gasto de programación', 'Noticias');
 
   -- Comprobante 2.2: Post producción
   INSERT INTO public.comprobantes (
@@ -286,14 +286,14 @@ BEGIN
     22000, 21, 4620, 26620, 'ARS', 'Luzu TV SA', 'activo', 'pagado', 'system',
     'Luzu TV SA', '60', 'efectivo'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form2, 'Patria y Familia', 26620);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form2, 'Patria y Familia', 26620, 'Gasto de programación', 'Noticias');
 
   -- Formulario 3: Se Fue Larga - Febrero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-02', 'Media', 'Se Fue Larga', 'Gabriela Riero', 'Deportes', 'Campaña SFL Febrero', 'activo', 'system'
+    '2024-02', 'Media', 'Se Fue Larga', 'Gabriela Riero', 'Campaña SFL Febrero', 'activo', 'system'
   ) RETURNING id INTO v_form3;
 
   -- Comprobante 3.1: Sonido
@@ -305,8 +305,8 @@ BEGIN
     28000, 21, 5880, 33880, 'ARS', 'Luzu TV', 'activo', 'creado', 'system',
     'Luzu TV', '45', 'transferencia'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form3, 'Se Fue Larga', 33880);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form3, 'Se Fue Larga', 33880, 'Gasto de programación', 'Deportes');
 
   -- Comprobante 3.2: Iluminación
   INSERT INTO public.comprobantes (
@@ -317,14 +317,14 @@ BEGIN
     32000, 21, 6720, 38720, 'ARS', 'Luzu TV SA', 'activo', 'creado', 'system',
     'Luzu TV SA', '30', 'cheque'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form3, 'La Novela', 38720);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form3, 'La Novela', 38720, 'Gasto de programación', 'Deportes');
 
   -- Formulario 4: Patria y Familia - Febrero 2024
   INSERT INTO public.programacion_formularios (
-    mes_gestion, unidad_negocio, programa, ejecutivo, sub_rubro_empresa, detalle_campana, estado, created_by
+    mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-02', 'Media', 'Patria y Familia', 'Gabriela Riero', 'Entretenimiento', 'Campaña PyF Febrero', 'activo', 'system'
+    '2024-02', 'Media', 'Patria y Familia', 'Gabriela Riero', 'Campaña PyF Febrero', 'activo', 'system'
   ) RETURNING id INTO v_form4;
 
   -- Comprobante 4.1: Contenido digital
@@ -336,8 +336,8 @@ BEGIN
     45000, 21, 9450, 54450, 'ARS', 'Luzu TV', 'activo', 'creado', 'system',
     'Luzu TV', '30', 'transferencia'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form4, 'Algo Va A Picar', 54450);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form4, 'Algo Va A Picar', 54450, 'Gasto de programación', 'Entretenimiento');
 
   -- Comprobante 4.2: Logística
   INSERT INTO public.comprobantes (
@@ -348,8 +348,8 @@ BEGIN
     15000, 21, 3150, 18150, 'ARS', 'Luzu TV SA', 'activo', 'pagado', 'system',
     'Luzu TV SA', '5', 'efectivo'
   ) RETURNING id INTO v_comprobante;
-  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto)
-  VALUES (v_comprobante, v_form4, 'Los No Talentos', 18150);
+  INSERT INTO public.programacion_comprobantes (comprobante_id, formulario_id, categoria, monto, rubro, sub_rubro)
+  VALUES (v_comprobante, v_form4, 'Los No Talentos', 18150, 'Gasto de programación', 'Entretenimiento');
 END $$;
 
 -- ============================================
@@ -391,7 +391,7 @@ BEGIN
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
-      sector, rubro_gasto, sub_rubro, condicion_pago
+      sector, rubro, sub_rubro, condicion_pago
     ) VALUES (
       v_comprobante, v_orden1, v_item1,
       v_programa1, 'Gasto de venta', 'Producción', '30'
@@ -411,7 +411,7 @@ BEGIN
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
-      sector, rubro_gasto, sub_rubro, condicion_pago
+      sector, rubro, sub_rubro, condicion_pago
     ) VALUES (
       v_comprobante, v_orden1, v_item1,
       v_programa1, 'Gasto de venta', 'Técnico', '30'
@@ -433,7 +433,7 @@ BEGIN
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
-      sector, rubro_gasto, sub_rubro, condicion_pago
+      sector, rubro, sub_rubro, condicion_pago
     ) VALUES (
       v_comprobante, v_orden3, v_item3,
       v_programa3, 'Gasto de venta', 'Talentos', '45'
@@ -453,7 +453,7 @@ BEGIN
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
-      sector, rubro_gasto, sub_rubro, condicion_pago
+      sector, rubro, sub_rubro, condicion_pago
     ) VALUES (
       v_comprobante, v_orden3, v_item3,
       v_programa3, 'Gasto de venta', 'Equipamiento', '30'
@@ -475,7 +475,7 @@ BEGIN
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
-      sector, rubro_gasto, sub_rubro, condicion_pago
+      sector, rubro, sub_rubro, condicion_pago
     ) VALUES (
       v_comprobante, v_orden5, v_item5,
       v_programa5, 'Gasto de venta', 'Creatividad', '30'
@@ -495,10 +495,112 @@ BEGIN
     ) RETURNING id INTO v_comprobante;
     INSERT INTO public.implementacion_comprobantes (
       comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
-      sector, rubro_gasto, sub_rubro, condicion_pago
+      sector, rubro, sub_rubro, condicion_pago
     ) VALUES (
       v_comprobante, v_orden5, v_item5,
       v_programa5, 'Gasto de venta', 'Post Producción', '45'
+    );
+  END IF;
+END $$;
+
+-- ============================================
+-- 8b. COMPROBANTES DE TECNICA
+-- 4 comprobantes vinculados a órdenes OP-2024-001 y OP-2024-003
+-- ============================================
+DO $$
+DECLARE
+  v_orden1 uuid; v_orden3 uuid;
+  v_item1 uuid; v_item3 uuid;
+  v_programa1 text; v_programa3 text;
+  v_comprobante uuid;
+BEGIN
+  SELECT id INTO v_orden1 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-001';
+  SELECT id, programa INTO v_item1, v_programa1 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden1 LIMIT 1;
+
+  SELECT id INTO v_orden3 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-003';
+  SELECT id, programa INTO v_item3, v_programa3 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden3 LIMIT 1;
+
+  IF v_orden1 IS NOT NULL AND v_item1 IS NOT NULL THEN
+    -- Comprobante Tec 1: Implementacion
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda,
+      empresa, concepto, estado, estado_pago, created_by,
+      factura_emitida_a, forma_pago
+    ) VALUES (
+      'egreso', 'Servicios Técnicos del Sur S.A.', '30798765432',
+      35000, 21, 7350, 42350, 'ARS',
+      'Luzu TV', 'Implementación técnica campaña Verano',
+      'activo', 'creado', 'system',
+      'Luzu TV', 'transferencia'
+    ) RETURNING id INTO v_comprobante;
+    INSERT INTO public.tecnica_comprobantes (
+      comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
+      sector, rubro, sub_rubro, condicion_pago
+    ) VALUES (
+      v_comprobante, v_orden1, v_item1,
+      v_programa1, 'Gasto de venta', 'Implementacion', '30'
+    );
+
+    -- Comprobante Tec 2: Produccion
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda,
+      empresa, concepto, estado, estado_pago, created_by,
+      factura_emitida_a, forma_pago
+    ) VALUES (
+      'egreso', 'Productora Visual S.R.L.', '30787654321',
+      28000, 21, 5880, 33880, 'ARS',
+      'Luzu TV', 'Producción técnica set de grabación',
+      'activo', 'pagado', 'system',
+      'Luzu TV SA', 'cheque'
+    ) RETURNING id INTO v_comprobante;
+    INSERT INTO public.tecnica_comprobantes (
+      comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
+      sector, rubro, sub_rubro, condicion_pago
+    ) VALUES (
+      v_comprobante, v_orden1, v_item1,
+      v_programa1, 'Gasto de venta', 'Produccion', '30'
+    );
+  END IF;
+
+  IF v_orden3 IS NOT NULL AND v_item3 IS NOT NULL THEN
+    -- Comprobante Tec 3: Diseno y Edicion
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda,
+      empresa, concepto, estado, estado_pago, created_by,
+      factura_emitida_a, forma_pago
+    ) VALUES (
+      'egreso', 'Diseño Digital Argentina S.A.', '30776543210',
+      18000, 21, 3780, 21780, 'ARS',
+      'Luzu TV', 'Diseño y edición campaña Cashback',
+      'activo', 'creado', 'system',
+      'Luzu TV', 'transferencia'
+    ) RETURNING id INTO v_comprobante;
+    INSERT INTO public.tecnica_comprobantes (
+      comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
+      sector, rubro, sub_rubro, condicion_pago
+    ) VALUES (
+      v_comprobante, v_orden3, v_item3,
+      v_programa3, 'Gasto de venta', 'Diseno y Edicion', '45'
+    );
+
+    -- Comprobante Tec 4: Mejora Inmueble/Equipamiento
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda,
+      empresa, concepto, estado, estado_pago, created_by,
+      factura_emitida_a, forma_pago
+    ) VALUES (
+      'egreso', 'Equipamiento Studio S.R.L.', '30765432109',
+      42000, 21, 8820, 50820, 'ARS',
+      'Luzu TV SA', 'Mejora equipamiento estudio principal',
+      'activo', 'creado', 'system',
+      'Luzu TV SA', 'efectivo'
+    ) RETURNING id INTO v_comprobante;
+    INSERT INTO public.tecnica_comprobantes (
+      comprobante_id, orden_publicidad_id, item_orden_publicidad_id,
+      sector, rubro, sub_rubro, condicion_pago
+    ) VALUES (
+      v_comprobante, v_orden3, v_item3,
+      v_programa3, 'Gasto de venta', 'Mejora Inmueble/Equipamiento', '30'
     );
   END IF;
 END $$;
@@ -521,9 +623,9 @@ BEGIN
 
   -- Formulario 1: Campaña Experiencia Verano - Enero 2024
   INSERT INTO public.experience_formularios (
-    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+    mes_gestion, nombre_campana, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-01', 'Experiencia Verano Luzu', 'Activaciones en playas y eventos de verano', 'produccion', 'activo', v_user_email
+    '2024-01', 'Experiencia Verano Luzu', 'Activaciones en playas y eventos de verano', 'activo', v_user_email
   ) RETURNING id INTO v_form1;
 
   -- Comprobante 1.1: Producción evento playa
@@ -539,10 +641,10 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form1, 'Luzu TV', 'nadie-dice-nada',
-    '2024-01-10', 'argentina'
+    '2024-01-10', 'argentina', 'Gastos de Evento', 'produccion'
   );
 
   -- Comprobante 1.2: Catering evento
@@ -558,17 +660,17 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form1, 'Luzu TV SA', 'fm-luzu',
-    '2024-01-12', 'argentina'
+    '2024-01-12', 'argentina', 'Gastos de Evento', 'produccion'
   );
 
   -- Formulario 2: Campaña Lanzamiento Producto - Febrero 2024
   INSERT INTO public.experience_formularios (
-    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+    mes_gestion, nombre_campana, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-02', 'Lanzamiento Sponsor Tech', 'Evento de lanzamiento de producto tecnológico', 'diseno', 'activo', v_user_email
+    '2024-02', 'Lanzamiento Sponsor Tech', 'Evento de lanzamiento de producto tecnológico', 'activo', v_user_email
   ) RETURNING id INTO v_form2;
 
   -- Comprobante 2.1: Escenografía
@@ -584,10 +686,10 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form2, 'Luzu TV', 'antes-que-nadie',
-    '2024-02-05', 'argentina'
+    '2024-02-05', 'argentina', 'Gastos de Evento', 'diseno'
   );
 
   -- Comprobante 2.2: Equipamiento técnico
@@ -603,17 +705,17 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form2, 'Luzu TV SA', 'vuelta-y-media',
-    '2024-02-08', 'argentina'
+    '2024-02-08', 'argentina', 'Gastos de Evento', 'diseno'
   );
 
   -- Formulario 3: Campaña Feria del Libro - Marzo 2024
   INSERT INTO public.experience_formularios (
-    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+    mes_gestion, nombre_campana, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-03', 'Stand Feria del Libro', 'Presencia en Feria del Libro Buenos Aires', 'tecnica', 'activo', v_user_email
+    '2024-03', 'Stand Feria del Libro', 'Presencia en Feria del Libro Buenos Aires', 'activo', v_user_email
   ) RETURNING id INTO v_form3;
 
   -- Comprobante 3.1: Construcción stand
@@ -629,10 +731,10 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form3, 'Luzu TV', 'seria-increible',
-    '2024-03-01', 'argentina'
+    '2024-03-01', 'argentina', 'Gastos de Evento', 'tecnica'
   );
 
   -- Comprobante 3.2: Personal para stand
@@ -648,17 +750,17 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form3, 'Luzu TV SA', 'patria-y-familia',
-    '2024-03-05', 'argentina'
+    '2024-03-05', 'argentina', 'Gastos de Evento', 'tecnica'
   );
 
   -- Formulario 4: Campaña Evento Deportivo - Marzo 2024
   INSERT INTO public.experience_formularios (
-    mes_gestion, nombre_campana, detalle_campana, subrubro, estado, created_by
+    mes_gestion, nombre_campana, detalle_campana, estado, created_by
   ) VALUES (
-    '2024-03', 'Activación Maratón BA', 'Activación en Maratón de Buenos Aires', 'edicion', 'activo', v_user_email
+    '2024-03', 'Activación Maratón BA', 'Activación en Maratón de Buenos Aires', 'activo', v_user_email
   ) RETURNING id INTO v_form4;
 
   -- Comprobante 4.1: Producción móvil
@@ -674,10 +776,10 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form4, 'Luzu TV', 'podremos-hablar',
-    '2024-03-15', 'argentina'
+    '2024-03-15', 'argentina', 'Gastos de Evento', 'edicion'
   );
 
   -- Comprobante 4.2: Sonido para evento
@@ -693,10 +795,10 @@ BEGIN
   ) RETURNING id INTO v_comprobante;
   INSERT INTO public.experience_comprobantes (
     comprobante_id, formulario_id, empresa, empresa_programa,
-    fecha_comprobante, pais
+    fecha_comprobante, pais, rubro, sub_rubro
   ) VALUES (
     v_comprobante, v_form4, 'Luzu TV SA', 'optimo',
-    '2024-03-18', 'argentina'
+    '2024-03-18', 'argentina', 'Gastos de Evento', 'edicion'
   );
 END $$;
 

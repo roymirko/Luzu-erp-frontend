@@ -12,6 +12,8 @@ erDiagram
         text first_name
         text last_name
         boolean active
+        text password_hash
+        text user_type
     }
 
     roles {
@@ -72,6 +74,7 @@ erDiagram
         text programa
         text monto
         text implementacion
+        text tecnica
     }
 
     ordenes_publicidad ||--o{ items_orden_publicidad : "contains"
@@ -92,15 +95,17 @@ erDiagram
         decimal neto
         decimal iva_monto
         decimal total
-        text estado "pendiente|activo|cerrado|anulado"
-        text estado_pago "pendiente|pagado|pedir_info|anulado"
+        text estado
+        text estado_pago "creado|aprobado|requiere_info|rechazado|pagado"
         text forma_pago
         date fecha_pago
         text factura_emitida_a
         text acuerdo_pago
+        uuid orden_publicidad_id_ingreso FK
     }
 
     entidades ||--o{ comprobantes : "emits"
+    ordenes_publicidad ||--o{ comprobantes : "ingreso"
 
     %% ============================================
     %% IMPLEMENTACION
@@ -110,13 +115,38 @@ erDiagram
         uuid id PK
         uuid comprobante_id FK
         uuid orden_publicidad_id FK
+        uuid item_orden_publicidad_id FK
         text sector
-        text rubro_gasto
+        text rubro
         text sub_rubro
+        text condicion_pago
+        jsonb adjuntos
     }
 
     comprobantes ||--|| implementacion_comprobantes : "context"
     ordenes_publicidad ||--o{ implementacion_comprobantes : "tracks"
+
+    %% ============================================
+    %% TECNICA
+    %% ============================================
+
+    tecnica_comprobantes {
+        uuid id PK
+        uuid comprobante_id FK
+        uuid orden_publicidad_id FK
+        uuid item_orden_publicidad_id FK
+        text sector
+        text rubro
+        text sub_rubro
+        text condicion_pago
+        jsonb adjuntos
+        text unidad_negocio
+        text categoria_negocio
+        text nombre_campana
+    }
+
+    comprobantes ||--|| tecnica_comprobantes : "context"
+    ordenes_publicidad ||--o{ tecnica_comprobantes : "tracks"
 
     %% ============================================
     %% PROGRAMACION
@@ -126,6 +156,7 @@ erDiagram
         uuid id PK
         text mes_gestion
         text programa
+        text ejecutivo
         text unidad_negocio
         text estado
     }
@@ -135,7 +166,12 @@ erDiagram
         uuid comprobante_id FK
         uuid formulario_id FK
         text categoria
+        text cliente
         decimal monto
+        decimal valor_imponible
+        decimal bonificacion
+        text rubro
+        text sub_rubro
     }
 
     comprobantes ||--|| programacion_comprobantes : "context"
@@ -149,7 +185,6 @@ erDiagram
         uuid id PK
         text mes_gestion
         text nombre_campana
-        text subrubro
         text estado
     }
 
@@ -158,7 +193,11 @@ erDiagram
         uuid comprobante_id FK
         uuid formulario_id FK
         text empresa
+        text empresa_programa
+        date fecha_comprobante
         text pais
+        text rubro
+        text sub_rubro
     }
 
     comprobantes ||--|| experience_comprobantes : "context"
@@ -175,33 +214,35 @@ erDiagram
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         COMPROBANTES                            │
-│                    (Central financial table)                    │
+│                    (Central financial table)                     │
 │         tipo_movimiento: ingreso | egreso                       │
-│   estado_pago: pendiente | pagado | pedir_info | anulado       │
-│   Consolidated: factura_emitida_a, acuerdo_pago, forma_pago   │
+│   estado_pago: creado | aprobado | requiere_info | rechazado    │
+│                         | pagado                                │
+│   Consolidated: factura_emitida_a, acuerdo_pago, forma_pago    │
 └─────────────────────────────────────────────────────────────────┘
                               │
-          ┌───────────────────┼───────────────────┐
-          │                   │                   │
-          ▼                   ▼                   ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│ IMPLEMENTACION  │ │  PROGRAMACION   │ │   EXPERIENCE    │
-│  _comprobantes  │ │  _comprobantes  │ │  _comprobantes  │
-│    (context)    │ │    (context)    │ │    (context)    │
-└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
-         │                   │                   │
-         ▼                   ▼                   ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│    ordenes_     │ │  programacion_  │ │  experience_    │
-│   publicidad    │ │   formularios   │ │   formularios   │
-└─────────────────┘ └─────────────────┘ └─────────────────┘
+      ┌───────────────┬───────┼───────┬───────────────┐
+      │               │       │       │               │
+      ▼               ▼       ▼       ▼               ▼
+┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐
+│   IMPL    │ │  TECNICA  │ │   PROG    │ │    EXP    │
+│ _comprob. │ │ _comprob. │ │ _comprob. │ │ _comprob. │
+│ (context) │ │ (context) │ │ (context) │ │ (context) │
+└─────┬─────┘ └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+      │              │             │              │
+      ▼              ▼             ▼              ▼
+┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐
+│  ordenes_ │ │  ordenes_ │ │   prog_   │ │   exp_    │
+│ publicidad│ │ publicidad│ │formularios│ │formularios│
+└───────────┘ └───────────┘ └───────────┘ └───────────┘
 ```
 
 ## Key Relationships
 
 | Module | Header | Context | Links To |
 |--------|--------|---------|----------|
-| Implementación | ordenes_publicidad | implementacion_comprobantes | comprobantes |
-| Programación | programacion_formularios | programacion_comprobantes | comprobantes |
+| Implementacion | ordenes_publicidad | implementacion_comprobantes | comprobantes |
+| Tecnica | ordenes_publicidad | tecnica_comprobantes | comprobantes |
+| Programacion | programacion_formularios | programacion_comprobantes | comprobantes |
 | Experience | experience_formularios | experience_comprobantes | comprobantes |
 | Finanzas/Admin | - | - | comprobantes_full (view) |

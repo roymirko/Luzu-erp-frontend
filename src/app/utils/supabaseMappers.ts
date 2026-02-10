@@ -271,7 +271,7 @@ export const mapGastoFromDB = (dbExpense: any, dbItems: any[] = []): GastoImplem
     cantidadProgramas: dbExpense.cantidad_programas || 0,
     programasDisponibles: dbExpense.programas_disponibles || [],
     sector: dbExpense.sector || 'Implementación',
-    rubroGasto: dbExpense.rubro_gasto || 'Gasto de venta',
+    rubro: dbExpense.rubro || 'Gasto de venta',
     subRubro: dbExpense.sub_rubro || '',
     nombreCampana: dbExpense.nombre_campana || '',
     acuerdoPago: dbExpense.acuerdo_pago || '',
@@ -297,7 +297,7 @@ export const mapGastoToDB = (gasto: Partial<GastoImplementacion>) => {
     if (gasto.cantidadProgramas !== undefined) db.cantidad_programas = gasto.cantidadProgramas;
     if (gasto.programasDisponibles) db.programas_disponibles = gasto.programasDisponibles;
     if (gasto.sector) db.sector = gasto.sector;
-    if (gasto.rubroGasto) db.rubro_gasto = gasto.rubroGasto;
+    if (gasto.rubro) db.rubro = gasto.rubro;
     if (gasto.subRubro) db.sub_rubro = gasto.subRubro;
     if (gasto.nombreCampana) db.nombre_campana = gasto.nombreCampana;
     if (gasto.acuerdoPago) db.acuerdo_pago = gasto.acuerdoPago;
@@ -336,7 +336,7 @@ export const mapBloqueImporteToDB = (item: BloqueImporte, expenseId: string) => 
     proveedor: item.proveedor,
     razon_social: item.razonSocial,
     descripcion: item.programa,
-    rubro_gasto: 'Gasto de venta',
+    rubro: 'Gasto de venta',
     sector: 'Implementación',
     moneda: 'ARS',
     neto: parseFloat(item.neto) || 0,

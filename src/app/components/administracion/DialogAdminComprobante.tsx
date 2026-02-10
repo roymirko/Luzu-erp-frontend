@@ -107,6 +107,11 @@ export function DialogAdminComprobante({
       case 'programacion':
         // FormularioProgramacion expects the comprobante/gasto ID, not formulario ID
         return `/programacion/editar/${comprobante.id}`;
+      case 'tecnica':
+        if (comprobante.tecOrdenPublicidadId) {
+          return `/tecnica/gasto/${comprobante.tecOrdenPublicidadId}`;
+        }
+        return null;
       case 'experience':
         // ExperienceForm expects the comprobante/gasto ID, not formulario ID
         return `/experience/editar/${comprobante.id}`;
@@ -428,8 +433,8 @@ export function DialogAdminComprobante({
                       {comprobante.sector && (
                         <div><span className="text-blue-600 dark:text-blue-400">Sector:</span> {comprobante.sector}</div>
                       )}
-                      {comprobante.rubroGasto && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.rubroGasto}</div>
+                      {comprobante.rubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.rubro}</div>
                       )}
                       {comprobante.subRubro && (
                         <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.subRubro}</div>
@@ -447,6 +452,37 @@ export function DialogAdminComprobante({
                       {comprobante.progUnidadNegocio && (
                         <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.progUnidadNegocio}</div>
                       )}
+                      {comprobante.progRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.progRubro}</div>
+                      )}
+                      {comprobante.progSubRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.progSubRubro}</div>
+                      )}
+                    </>
+                  )}
+                  {comprobante.areaOrigen === 'tecnica' && (
+                    <>
+                      {comprobante.tecOrdenPublicidad && (
+                        <div><span className="text-blue-600 dark:text-blue-400">OP:</span> {comprobante.tecOrdenPublicidad}</div>
+                      )}
+                      {comprobante.tecNombreCampana && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.tecNombreCampana}</div>
+                      )}
+                      {comprobante.tecUnidadNegocio && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.tecUnidadNegocio}</div>
+                      )}
+                      {comprobante.tecCategoriaNegocio && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Categoría:</span> {comprobante.tecCategoriaNegocio}</div>
+                      )}
+                      {comprobante.tecSector && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Sector:</span> {comprobante.tecSector}</div>
+                      )}
+                      {comprobante.tecRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.tecRubro}</div>
+                      )}
+                      {comprobante.tecSubRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.tecSubRubro}</div>
+                      )}
                     </>
                   )}
                   {comprobante.areaOrigen === 'experience' && (
@@ -456,6 +492,12 @@ export function DialogAdminComprobante({
                       )}
                       {comprobante.expMesGestion && (
                         <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {comprobante.expMesGestion}</div>
+                      )}
+                      {comprobante.expRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.expRubro}</div>
+                      )}
+                      {comprobante.expSubRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.expSubRubro}</div>
                       )}
                     </>
                   )}

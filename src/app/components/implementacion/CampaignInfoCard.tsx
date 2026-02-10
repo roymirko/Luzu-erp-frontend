@@ -14,7 +14,7 @@ interface CampaignInfoCardProps {
   categoriaNegocio: string;
   marca?: string;
   nombreCampana: string;
-  rubroGasto: string;
+  rubro: string;
   subRubro: string;
   formatCurrency: (val: number) => string;
 }
@@ -28,7 +28,7 @@ export function CampaignInfoCard({
   categoriaNegocio,
   marca,
   nombreCampana,
-  rubroGasto,
+  rubro,
   subRubro,
   formatCurrency,
 }: CampaignInfoCardProps) {
@@ -43,7 +43,7 @@ export function CampaignInfoCard({
       { label: 'Categoría de Negocio', value: categoriaNegocio || '-' },
       { label: 'Marca', value: marca || '-' },
       { label: 'Nombre de Campaña', value: nombreCampana || '-' },
-      { label: 'Rubro de Gasto', value: rubroGasto || '-' },
+      { label: 'Rubro de Gasto', value: rubro || '-' },
     ],
     [
       { label: 'Subrubro', value: subRubro || '-' },

@@ -336,10 +336,10 @@ export function DialogDetalleComprobante({
                           <span className="font-medium">{comprobante.sector}</span>
                         </div>
                       )}
-                      {comprobante.rubroGasto && (
+                      {comprobante.rubro && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Rubro:</span>{' '}
-                          <span className="font-medium">{comprobante.rubroGasto}</span>
+                          <span className="font-medium">{comprobante.rubro}</span>
                         </div>
                       )}
                     </>

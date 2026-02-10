@@ -2,22 +2,19 @@ import { supabase } from '../services/supabase';
 import type {
   GastoInsert,
   GastoUpdate,
-  ImplementacionGastoInsert,
-  ImplementacionGastoUpdate,
-  ImplementacionGastoFullRow,
+  TecnicaComprobanteInsert,
+  TecnicaComprobanteUpdate,
+  TecnicaGastoFullRow,
   RepositoryResult,
   RepositoryListResult,
   RepositoryError,
   ComprobanteInsert,
   ComprobanteUpdate,
-  ImplementacionComprobanteInsert,
-  ImplementacionComprobanteUpdate,
 } from './types';
 
-// Use actual tables, not views
 const COMPROBANTES_TABLE = 'comprobantes';
-const CONTEXT_TABLE = 'implementacion_comprobantes';
-const VIEW_NAME = 'implementacion_gastos_full'; // Legacy view for reading
+const CONTEXT_TABLE = 'tecnica_comprobantes';
+const VIEW_NAME = 'tecnica_gastos_full';
 
 function mapSupabaseError(error: { code?: string; message: string; details?: string }): RepositoryError {
   return {
@@ -27,9 +24,6 @@ function mapSupabaseError(error: { code?: string; message: string; details?: str
   };
 }
 
-/**
- * Maps old GastoInsert to new ComprobanteInsert
- */
 function mapGastoToComprobante(gasto: GastoInsert, context?: Partial<{ factura_emitida_a: string | null; forma_pago: string | null; fecha_pago: string | null }>): ComprobanteInsert {
   return {
     tipo_movimiento: 'egreso',
@@ -54,16 +48,12 @@ function mapGastoToComprobante(gasto: GastoInsert, context?: Partial<{ factura_e
     estado: gasto.estado || 'activo',
     estado_pago: (gasto.estado_pago === 'pendiente-pago' ? 'creado' : gasto.estado_pago) as 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado',
     created_by: gasto.created_by || null,
-    // Consolidated from context
     factura_emitida_a: context?.factura_emitida_a || null,
     forma_pago: context?.forma_pago || null,
     fecha_pago: context?.fecha_pago || null,
   };
 }
 
-/**
- * Maps old GastoUpdate to new ComprobanteUpdate
- */
 function mapGastoUpdateToComprobante(update: GastoUpdate, extras?: Partial<ComprobanteUpdate>): ComprobanteUpdate {
   const result: ComprobanteUpdate = {};
   if (update.proveedor !== undefined) result.entidad_nombre = update.proveedor;
@@ -91,10 +81,7 @@ function mapGastoUpdateToComprobante(update: GastoUpdate, extras?: Partial<Compr
   return result;
 }
 
-/**
- * Maps old ImplementacionGastoInsert to new ImplementacionComprobanteInsert
- */
-function mapContextInsert(context: Omit<ImplementacionGastoInsert, 'gasto_id'>, comprobanteId: string): ImplementacionComprobanteInsert {
+function mapContextInsert(context: Omit<TecnicaGastoInsert, 'gasto_id'>, comprobanteId: string): TecnicaComprobanteInsert {
   return {
     comprobante_id: comprobanteId,
     orden_publicidad_id: context.orden_publicidad_id || null,
@@ -104,13 +91,31 @@ function mapContextInsert(context: Omit<ImplementacionGastoInsert, 'gasto_id'>, 
     sub_rubro: context.sub_rubro || null,
     condicion_pago: context.condicion_pago || null,
     adjuntos: context.adjuntos || null,
+    unidad_negocio: context.unidad_negocio || null,
+    categoria_negocio: context.categoria_negocio || null,
+    nombre_campana: context.nombre_campana || null,
   };
 }
 
-/**
- * Obtiene todos los gastos de implementación (desde la vista)
- */
-export async function findAll(): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
+// Re-use the same shape as ImplementacionGastoInsert for the context insert
+type TecnicaGastoInsert = {
+  gasto_id: string;
+  orden_publicidad_id: string | null;
+  item_orden_publicidad_id: string | null;
+  factura_emitida_a: string | null;
+  sector: string | null;
+  rubro: string | null;
+  sub_rubro: string | null;
+  condicion_pago: string | null;
+  forma_pago: string | null;
+  fecha_pago: string | null;
+  adjuntos: unknown | null;
+  unidad_negocio: string | null;
+  categoria_negocio: string | null;
+  nombre_campana: string | null;
+};
+
+export async function findAll(): Promise<RepositoryListResult<TecnicaGastoFullRow>> {
   const { data, error } = await supabase
     .from(VIEW_NAME)
     .select('*')
@@ -120,13 +125,10 @@ export async function findAll(): Promise<RepositoryListResult<ImplementacionGast
     return { data: [], error: mapSupabaseError(error) };
   }
 
-  return { data: data as ImplementacionGastoFullRow[], error: null };
+  return { data: data as TecnicaGastoFullRow[], error: null };
 }
 
-/**
- * Obtiene un gasto por ID (desde la vista)
- */
-export async function findById(id: string): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+export async function findById(id: string): Promise<RepositoryResult<TecnicaGastoFullRow>> {
   const { data, error } = await supabase
     .from(VIEW_NAME)
     .select('*')
@@ -137,13 +139,10 @@ export async function findById(id: string): Promise<RepositoryResult<Implementac
     return { data: null, error: mapSupabaseError(error) };
   }
 
-  return { data: data as ImplementacionGastoFullRow, error: null };
+  return { data: data as TecnicaGastoFullRow, error: null };
 }
 
-/**
- * Obtiene todos los gastos de una orden de publicidad
- */
-export async function findByOrdenId(ordenId: string): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
+export async function findByOrdenId(ordenId: string): Promise<RepositoryListResult<TecnicaGastoFullRow>> {
   const { data, error } = await supabase
     .from(VIEW_NAME)
     .select('*')
@@ -154,13 +153,10 @@ export async function findByOrdenId(ordenId: string): Promise<RepositoryListResu
     return { data: [], error: mapSupabaseError(error) };
   }
 
-  return { data: data as ImplementacionGastoFullRow[], error: null };
+  return { data: data as TecnicaGastoFullRow[], error: null };
 }
 
-/**
- * Obtiene todos los gastos de un item de orden de publicidad
- */
-export async function findByItemOrdenId(itemId: string): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
+export async function findByItemOrdenId(itemId: string): Promise<RepositoryListResult<TecnicaGastoFullRow>> {
   const { data, error } = await supabase
     .from(VIEW_NAME)
     .select('*')
@@ -171,24 +167,31 @@ export async function findByItemOrdenId(itemId: string): Promise<RepositoryListR
     return { data: [], error: mapSupabaseError(error) };
   }
 
-  return { data: data as ImplementacionGastoFullRow[], error: null };
+  return { data: data as TecnicaGastoFullRow[], error: null };
 }
 
-/**
- * Crea un nuevo gasto de implementación
- * Inserta en comprobantes (core) y luego en implementacion_comprobantes (contexto)
- */
 export async function create(
   gasto: GastoInsert,
-  context: Omit<ImplementacionGastoInsert, 'gasto_id'>
-): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
-  // 1. Map and insert into comprobantes (core) - include consolidated fields
+  context: Omit<TecnicaGastoInsert, 'gasto_id'>
+): Promise<RepositoryResult<TecnicaGastoFullRow>> {
+  // Validate FK: ensure orden_publicidad_id exists before insert
+  if (context.orden_publicidad_id) {
+    const { data: opExists } = await supabase
+      .from('ordenes_publicidad')
+      .select('id')
+      .eq('id', context.orden_publicidad_id)
+      .single();
+    if (!opExists) {
+      console.error('[TecnicaRepo] orden_publicidad_id not found:', context.orden_publicidad_id);
+      return { data: null, error: { code: 'FK_VIOLATION', message: `La orden de publicidad no existe. Verifique que el formulario sea válido.` } };
+    }
+  }
+
   const comprobanteData = mapGastoToComprobante(gasto, {
     factura_emitida_a: context.factura_emitida_a || null,
     forma_pago: context.forma_pago || null,
     fecha_pago: context.fecha_pago || null,
   });
-  console.log('[ImplementacionRepo] Insertando comprobante:', comprobanteData);
 
   const { data: comprobante, error: comprobanteError } = await supabase
     .from(COMPROBANTES_TABLE)
@@ -197,40 +200,29 @@ export async function create(
     .single();
 
   if (comprobanteError || !comprobante) {
-    console.error('[ImplementacionRepo] Error insertando comprobante:', comprobanteError);
+    console.error('[TecnicaRepo] Error insertando comprobante:', comprobanteError);
     return { data: null, error: mapSupabaseError(comprobanteError || { message: 'Error al crear comprobante' }) };
   }
-  console.log('[ImplementacionRepo] Comprobante creado:', comprobante.id);
 
-  // 2. Insert into implementacion_comprobantes (context)
   const contextInsert = mapContextInsert(context, comprobante.id);
-  console.log('[ImplementacionRepo] Insertando contexto:', contextInsert);
 
   const { error: contextError } = await supabase
     .from(CONTEXT_TABLE)
     .insert(contextInsert);
 
   if (contextError) {
-    console.error('[ImplementacionRepo] Error insertando contexto:', contextError);
-    // Rollback: delete the comprobante we just created
+    console.error('[TecnicaRepo] Error insertando contexto:', contextError);
     await supabase.from(COMPROBANTES_TABLE).delete().eq('id', comprobante.id);
     return { data: null, error: mapSupabaseError(contextError) };
   }
-  console.log('[ImplementacionRepo] Contexto insertado exitosamente');
 
-  // 3. Return full record from view
-  const result = await findById(comprobante.id);
-  console.log('[ImplementacionRepo] Registro completo desde vista:', result);
-  return result;
+  return findById(comprobante.id);
 }
 
-/**
- * Crea múltiples gastos de implementación
- */
 export async function createMultiple(
-  items: Array<{ gasto: GastoInsert; context: Omit<ImplementacionGastoInsert, 'gasto_id'> }>
-): Promise<RepositoryListResult<ImplementacionGastoFullRow>> {
-  const results: ImplementacionGastoFullRow[] = [];
+  items: Array<{ gasto: GastoInsert; context: Omit<TecnicaGastoInsert, 'gasto_id'> }>
+): Promise<RepositoryListResult<TecnicaGastoFullRow>> {
+  const results: TecnicaGastoFullRow[] = [];
   const errors: RepositoryError[] = [];
 
   for (const item of items) {
@@ -249,16 +241,12 @@ export async function createMultiple(
   return { data: results, error: null };
 }
 
-/**
- * Actualiza un gasto de implementación
- */
 export async function update(
   id: string,
   gastoUpdate?: GastoUpdate,
-  contextUpdate?: ImplementacionGastoUpdate,
+  contextUpdate?: TecnicaComprobanteUpdate,
   comprobanteExtras?: Partial<ComprobanteUpdate>
-): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
-  // 1. Update comprobantes (core) if provided
+): Promise<RepositoryResult<TecnicaGastoFullRow>> {
   if ((gastoUpdate && Object.keys(gastoUpdate).length > 0) || (comprobanteExtras && Object.keys(comprobanteExtras).length > 0)) {
     const comprobanteUpdate = mapGastoUpdateToComprobante(gastoUpdate || {}, comprobanteExtras);
     const { error: comprobanteError } = await supabase
@@ -271,7 +259,6 @@ export async function update(
     }
   }
 
-  // 2. Update implementacion_comprobantes (context) if provided
   if (contextUpdate && Object.keys(contextUpdate).length > 0) {
     const { error: contextError } = await supabase
       .from(CONTEXT_TABLE)
@@ -283,14 +270,9 @@ export async function update(
     }
   }
 
-  // 3. Return updated record from view
   return findById(id);
 }
 
-/**
- * Elimina un gasto de implementación
- * El CASCADE en implementacion_comprobantes eliminará automáticamente el contexto
- */
 export async function remove(id: string): Promise<RepositoryResult<null>> {
   const { error } = await supabase
     .from(COMPROBANTES_TABLE)
@@ -304,16 +286,10 @@ export async function remove(id: string): Promise<RepositoryResult<null>> {
   return { data: null, error: null };
 }
 
-/**
- * Actualiza el estado de un gasto (pendiente, activo, cerrado, anulado)
- */
-export async function updateEstado(id: string, estado: string): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+export async function updateEstado(id: string, estado: string): Promise<RepositoryResult<TecnicaGastoFullRow>> {
   return update(id, { estado });
 }
 
-/**
- * Actualiza el estado de pago de un gasto
- */
-export async function updateEstadoPago(id: string, estadoPago: string): Promise<RepositoryResult<ImplementacionGastoFullRow>> {
+export async function updateEstadoPago(id: string, estadoPago: string): Promise<RepositoryResult<TecnicaGastoFullRow>> {
   return update(id, { estado_pago: estadoPago });
 }

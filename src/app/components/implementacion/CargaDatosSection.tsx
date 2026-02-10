@@ -31,7 +31,7 @@ interface CargaDatosSectionProps {
   categoriaNegocio: string;
   setCategoriaNegocio: (v: string) => void;
   sector: string;
-  rubroGasto: string;
+  rubro: string;
   subRubro: string;
   nombreCampana: string;
   conceptoGasto: string;
@@ -53,7 +53,7 @@ export function CargaDatosSection(props: CargaDatosSectionProps) {
     categoriaNegocio,
     setCategoriaNegocio,
     sector,
-    rubroGasto,
+    rubro,
     subRubro,
     nombreCampana,
     conceptoGasto,
@@ -168,7 +168,7 @@ export function CargaDatosSection(props: CargaDatosSectionProps) {
         />
         <FormInput
           label="Rubro de gasto"
-          value={rubroGasto}
+          value={rubro}
           disabled
           isDark={isDark}
         />

@@ -49,7 +49,8 @@ function mapFromDB(row: ExperienceGastoFullRow): GastoExperience {
     mesGestion: row.mes_gestion || '',
     nombreCampana: row.nombre_campana || '',
     detalleCampana: row.detalle_campana || undefined,
-    subrubro: row.subrubro || '',
+    rubro: row.rubro || '',
+    subRubro: row.sub_rubro || '',
     formularioEstado: (row.formulario_estado || 'activo') as EstadoFormularioExperience,
     formularioCreatedAt: row.formulario_created_at ? new Date(row.formulario_created_at) : undefined,
     formularioCreatedBy: row.formulario_created_by || undefined,
@@ -99,7 +100,6 @@ function mapToDBInserts(input: CreateGastoExperienceInput): {
       mes_gestion: input.mesGestion || new Date().toISOString().slice(0, 7),
       nombre_campana: input.nombreCampana || null,
       detalle_campana: input.detalleCampana || null,
-      subrubro: input.subrubro || null,
       estado: 'activo',
       created_by: input.createdBy || null,
     },
@@ -111,6 +111,8 @@ function mapToDBInserts(input: CreateGastoExperienceInput): {
       acuerdo_pago: input.acuerdoPago || null,
       forma_pago: input.formaPago || null,
       pais: input.pais || 'argentina',
+      rubro: 'Gastos de Evento',
+      sub_rubro: input.subrubro || null,
     },
   };
 }
@@ -226,11 +228,11 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
     if (!g.empresaPrograma?.trim()) {
       return { data: [], error: `Gasto #${i + 1}: Debe seleccionar Empresa/Programa` };
     }
-    if (!g.acuerdoPago?.trim()) {
-      return { data: [], error: `Gasto #${i + 1}: Debe seleccionar un acuerdo de pago` };
-    }
     if (!g.formaPago?.trim()) {
       return { data: [], error: `Gasto #${i + 1}: Debe seleccionar una forma de pago` };
+    }
+    if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) {
+      return { data: [], error: `Gasto #${i + 1}: Debe seleccionar un acuerdo de pago` };
     }
   }
 
@@ -239,7 +241,6 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
     mes_gestion: input.mesGestion || new Date().toISOString().slice(0, 7),
     nombre_campana: input.nombreCampana || null,
     detalle_campana: input.detalleCampana || null,
-    subrubro: input.subrubro || null,
     estado: 'activo',
     created_by: input.createdBy || null,
   };
@@ -276,6 +277,8 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
         acuerdo_pago: g.acuerdoPago || null,
         forma_pago: g.formaPago || null,
         pais: g.pais || 'argentina',
+        rubro: 'Gastos de Evento',
+        sub_rubro: input.subrubro || null,
       },
     };
   });
@@ -393,7 +396,6 @@ export async function update(input: UpdateGastoExperienceInput): Promise<{ data:
   if (fields.mesGestion !== undefined) formularioUpdate.mes_gestion = fields.mesGestion;
   if (fields.nombreCampana !== undefined) formularioUpdate.nombre_campana = fields.nombreCampana;
   if (fields.detalleCampana !== undefined) formularioUpdate.detalle_campana = fields.detalleCampana;
-  if (fields.subrubro !== undefined) formularioUpdate.subrubro = fields.subrubro;
 
   // Consolidated fields → comprobante update (not context)
   if (fields.facturaEmitidaA !== undefined) gastoUpdate.factura_emitida_a = fields.facturaEmitidaA;
@@ -401,6 +403,7 @@ export async function update(input: UpdateGastoExperienceInput): Promise<{ data:
   if (fields.formaPago !== undefined) gastoUpdate.forma_pago = fields.formaPago;
 
   // Context
+  if (fields.subrubro !== undefined) contextUpdate.sub_rubro = fields.subrubro;
   if (fields.empresaContext !== undefined) contextUpdate.empresa = fields.empresaContext;
   if (fields.empresaPrograma !== undefined) contextUpdate.empresa_programa = fields.empresaPrograma;
   if (fields.fechaComprobante !== undefined) contextUpdate.fecha_comprobante = fields.fechaComprobante;

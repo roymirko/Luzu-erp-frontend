@@ -1,12 +1,7 @@
 export type EstadoGasto = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
 export type EstadoPago = 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
 
-/**
- * Domain model for a gasto de implementacion
- * Flattened structure combining gastos (core) + implementacion_gastos (context)
- */
-export interface GastoImplementacion {
-  // Core gasto fields (from gastos table)
+export interface GastoTecnica {
   id: string;
   proveedor: string;
   razonSocial: string;
@@ -25,7 +20,6 @@ export interface GastoImplementacion {
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;
-  // Implementacion context fields (from implementacion_gastos table)
   ordenPublicidadId?: string;
   itemOrdenPublicidadId?: string;
   facturaEmitidaA: string;
@@ -36,7 +30,6 @@ export interface GastoImplementacion {
   formaPago?: string;
   fechaPago?: string;
   adjuntos?: string[];
-  // Joined fields from ordenes_publicidad
   ordenPublicidad?: string;
   responsable?: string;
   unidadNegocio?: string;
@@ -47,11 +40,7 @@ export interface GastoImplementacion {
   acuerdoPago?: string;
 }
 
-/**
- * Input for creating a new gasto de implementacion
- */
-export interface CreateGastoImplementacionInput {
-  // Core gasto fields
+export interface CreateGastoTecnicaInput {
   proveedor: string;
   razonSocial?: string;
   tipoFactura?: string;
@@ -64,7 +53,6 @@ export interface CreateGastoImplementacionInput {
   conceptoGasto: string;
   observaciones?: string;
   createdBy?: string;
-  // Implementacion context fields
   ordenPublicidadId?: string;
   itemOrdenPublicidadId?: string;
   facturaEmitidaA: string;
@@ -75,12 +63,12 @@ export interface CreateGastoImplementacionInput {
   formaPago?: string;
   fechaPago?: string;
   adjuntos?: string[];
+  unidadNegocio?: string;
+  categoriaNegocio?: string;
+  nombreCampana?: string;
 }
 
-/**
- * Input for updating a gasto de implementacion
- */
-export interface UpdateGastoImplementacionInput extends Partial<CreateGastoImplementacionInput> {
+export interface UpdateGastoTecnicaInput extends Partial<CreateGastoTecnicaInput> {
   id: string;
   estado?: EstadoGasto;
   estadoPago?: EstadoPago;
