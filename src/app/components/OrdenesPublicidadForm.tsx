@@ -28,27 +28,13 @@ import { ConfiguracionSection } from './comercial/ConfiguracionSection';
 import { MarcaCategoriaSection } from './comercial/MarcaCategoriaSection';
 import { formatPesos, formatPesosInput, formatPorcentaje, getNumericValue } from '@/app/utils/formatters';
 import { ProgramasList } from './comercial/ProgramasList';
+import { PROGRAMAS_LUZU } from '@/app/utils/implementacionConstants';
 
 interface OrdenesPublicidadFormProps {
   onFormularioGuardado?: () => void;
   onCancel?: () => void;
   formularioId?: string | null;
 }
-
-
-const PROGRAMAS_LUZU = [
-  'FM Luzu',
-  'Antes Que Nadie',
-  'Nadie Dice Nada',
-  'Patria y Familia',
-  'Se Fue Larga',
-  'La Novela',
-  'Algo Va A Picar',
-  'Los No Talentos',
-  'Algo de Música',
-  'Xtream Master',
-  'Edición Especial',
-];
 
 const MAX_CHARS_CAMPANA = 100;
 const MAX_CHARS_OBSERVACIONES = 500;

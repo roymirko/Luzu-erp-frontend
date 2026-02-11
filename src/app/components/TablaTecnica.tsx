@@ -45,6 +45,7 @@ type ProgramaRow = {
   formId: string;
   itemId?: string;
   linkedGastoId?: string;
+  isStandalone?: boolean;
   estado: string;
   mesServicio: string;
   fechaRegistro: string;
@@ -72,10 +73,11 @@ const InfoRow = ({ label, value }: { label: string; value?: string | number }) =
 
 interface TablaTecnicaProps {
   onOpen?: (formId: string, itemId?: string) => void;
+  onOpenStandalone?: (gastoId: string) => void;
   onNew?: () => void;
 }
 
-export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
+export function TablaTecnica({ onOpen, onOpenStandalone, onNew }: TablaTecnicaProps = {}) {
   const { isDark } = useTheme();
   const { formularios } = useFormularios();
   const { gastos, getGastoById } = useTecnica();
@@ -159,7 +161,7 @@ export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
       return [{
         id: form.id,
         formId: form.id,
-        itemId: itemsWithTecnica[0]?.id,
+        itemId: undefined,
         estado: linkedGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
         mesServicio: formatMesServicio(form.mesServicio),
         fechaRegistro,
@@ -180,33 +182,43 @@ export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
     });
 
     const formIds = new Set(formularios.map(f => f.id));
-    const standaloneGastos = gastos
-      .filter(g => !g.ordenPublicidadId || !formIds.has(g.ordenPublicidadId))
-      .map((gasto) => {
-        const netoTotal = gasto.neto || 0;
-        const presupuesto = gasto.neto || 0;
-        return {
-          id: gasto.id,
-          formId: gasto.id,
-          itemId: undefined,
-          estado: gasto.estado === 'pendiente' ? 'Pendiente' : gasto.estado === 'activo' ? 'Activo' : gasto.estado === 'cerrado' ? 'Cerrado' : 'Anulado',
-          mesServicio: formatMesServicio(gasto.mesServicio),
-          fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
-          responsable: gasto.responsable || '-',
-          unidadNegocio: gasto.unidadNegocio || '-',
-          categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-          marca: gasto.marca || '-',
-          ordenPublicidad: gasto.ordenPublicidad || '-',
-          presupuesto,
-          dineroDisponible: presupuesto - netoTotal,
-          cantidadProgramas: 1,
-          sector: gasto.sector || '-',
-          rubro: gasto.rubro || '-',
-          subRubro: gasto.subRubro || '-',
-          nombreCampana: gasto.nombreCampana || '-',
-          netoTotal,
-        };
-      });
+    const standaloneRaw = gastos.filter(g => !g.ordenPublicidadId || !formIds.has(g.ordenPublicidadId));
+
+    // Group standalone gastos by nombreCampana so they appear as one row
+    const groupedByName = new Map<string, typeof standaloneRaw>();
+    for (const g of standaloneRaw) {
+      const key = g.nombreCampana || g.id;
+      const group = groupedByName.get(key) || [];
+      group.push(g);
+      groupedByName.set(key, group);
+    }
+
+    const standaloneGastos = Array.from(groupedByName.values()).map((group) => {
+      const first = group[0];
+      const netoTotal = group.reduce((sum, g) => sum + (g.neto || 0), 0);
+      return {
+        id: first.id,
+        formId: '',
+        itemId: undefined,
+        isStandalone: true,
+        estado: first.estado === 'pendiente' ? 'Pendiente' : first.estado === 'activo' ? 'Activo' : first.estado === 'cerrado' ? 'Cerrado' : 'Anulado',
+        mesServicio: formatMesServicio(first.mesServicio),
+        fechaRegistro: formatDateDDMMYYYY(first.createdAt),
+        responsable: first.responsable || '-',
+        unidadNegocio: first.unidadNegocio || '-',
+        categoriaNegocio: first.categoriaNegocio || 'N/A',
+        marca: first.marca || '-',
+        ordenPublicidad: '-',
+        presupuesto: 0,
+        dineroDisponible: 0,
+        cantidadProgramas: group.length,
+        sector: first.sector || '-',
+        rubro: first.rubro || '-',
+        subRubro: first.subRubro || '-',
+        nombreCampana: first.nombreCampana || '-',
+        netoTotal,
+      };
+    });
 
     return [...fromFormularios, ...standaloneGastos].filter((row) => {
       if (!searchTerm) return true;
@@ -272,9 +284,10 @@ export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
         const netoGasto = gasto.neto || 0;
         return {
           id: gasto.id,
-          formId: gasto.id,
+          formId: '',
           itemId: undefined,
           linkedGastoId: gasto.id,
+          isStandalone: true,
           estado: gasto.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente de pago',
           mesServicio: formatMesServicio(gasto.mesServicio),
           fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
@@ -282,7 +295,7 @@ export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
           unidadNegocio: gasto.unidadNegocio || '-',
           categoriaNegocio: gasto.categoriaNegocio || 'N/A',
           marca: gasto.marca || '-',
-          empresaPrograma: '-',
+          empresaPrograma: gasto.sector || '-',
           ordenPublicidad: gasto.ordenPublicidad || '-',
           presupuesto: netoGasto,
           dineroDisponible: 0,
@@ -364,8 +377,11 @@ export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
           ) : (
             currentRows.map((row) => (
               <DataTableRow key={row.id} onClick={() => {
+                console.log('[TablaTecnica] Row click →', { viewMode, id: row.id, formId: row.formId, itemId: row.itemId, isStandalone: row.isStandalone });
                 if (viewMode === 'programa') {
                   setSelectedRow(row as ProgramaRow);
+                } else if (row.isStandalone) {
+                  onOpenStandalone?.(row.id);
                 } else {
                   onOpen?.(row.formId, row.itemId);
                 }
@@ -414,7 +430,11 @@ export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onOpen && onOpen(row.formId, row.itemId);
+                        if (row.isStandalone) {
+                          onOpenStandalone?.(row.id);
+                        } else {
+                          onOpen?.(row.formId, row.itemId);
+                        }
                       }}
                       className={isDark ? 'text-gray-400 hover:text-white hover:bg-[#1e1e1e]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}
                     >
@@ -484,7 +504,11 @@ export function TablaTecnica({ onOpen, onNew }: TablaTecnicaProps = {}) {
             </Button>
             <Button onClick={() => {
               if (selectedRow) {
-                onOpen?.(selectedRow.formId, selectedRow.itemId);
+                if ((selectedRow as any).isStandalone) {
+                  onOpenStandalone?.(selectedRow.id);
+                } else {
+                  onOpen?.(selectedRow.formId, selectedRow.itemId);
+                }
                 setSelectedRow(null);
               }
             }}>

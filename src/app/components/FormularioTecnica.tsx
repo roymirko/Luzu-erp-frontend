@@ -24,6 +24,7 @@ import {
   UNIDADES_NEGOCIO_OPTIONS,
   CATEGORIAS_NEGOCIO_OPTIONS,
   SUBRUBROS_TECNICA_OPTIONS,
+  PROGRAMAS_LUZU,
 } from '@/app/utils/implementacionConstants';
 
 interface FormularioTecnicaProps {
@@ -100,6 +101,7 @@ function bloqueToCreateInput(
 export function FormularioTecnica({ gastoId, formId, itemId, onClose }: FormularioTecnicaProps) {
   const { isDark } = useTheme();
   const {
+    gastos: allGastos,
     addGasto,
     addMultipleGastos,
     updateGasto,
@@ -111,28 +113,8 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
   const { currentUser } = useData();
 
   const ordenPublicidadData = useMemo(() => {
-    // Standalone mode: build program list from ALL formularios with tecnica budget
+    // Standalone mode: show all available programs
     if (!formId) {
-      const allProgramas = formularios.flatMap((form) =>
-        (form.importeRows || [])
-          .filter((row) => {
-            if (!row.programa) return false;
-            const tec = row.tecnica;
-            return tec !== null && tec !== undefined && tec !== '';
-          })
-          .map((row) => {
-            const presupuesto = parseFloat(String(row.tecnica || '0').replace(/[^0-9.-]/g, '')) || 0;
-            const gastosDelPrograma = getGastosByItemOrdenId(row.id);
-            const totalGastado = gastosDelPrograma.reduce((sum, g) => sum + (g.neto || 0), 0);
-            const limiteRestante = presupuesto - totalGastado;
-            return {
-              value: row.programa,
-              label: `${row.programa} - Limite: ${formatCurrency(limiteRestante)}`,
-              limite: limiteRestante,
-              itemId: row.id,
-            };
-          })
-      );
       return {
         ordenPublicidad: '',
         unidadNegocio: '',
@@ -140,7 +122,12 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
         nombreCampana: '',
         acuerdoPago: '',
         presupuesto: 0,
-        programasConPresupuesto: allProgramas,
+        programasConPresupuesto: PROGRAMAS_LUZU.map((p) => ({
+          value: p,
+          label: p,
+          limite: 0,
+          itemId: '',
+        })),
         responsable: '',
         marca: '',
         mesServicio: '',
@@ -254,6 +241,8 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       dataLoadedRef.current = true;
     };
 
+    console.log('[FormTecnica] useEffect →', { gastoId, formId, itemId, isStandalone, gastosCount: getGastosByOrdenId(formId || '').length });
+
     if (isStandalone && !gastoId) {
       initEmptyForm();
       return;
@@ -262,11 +251,25 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
     if (gastoId) {
       const existingGasto = getGastoById(gastoId);
       if (existingGasto) {
-        setFacturaEmitidaA(existingGasto.facturaEmitidaA);
-        setEmpresa(existingGasto.empresa);
-        setEstadoOP(existingGasto.estado);
-        setImportes([gastoToBloqueImporte(existingGasto)]);
-        loadedGastoIdsRef.current = new Set([existingGasto.id]);
+        // Standalone: load ALL gastos with same nombreCampana (they were created together)
+        if (!existingGasto.ordenPublicidadId && existingGasto.nombreCampana) {
+          const relatedGastos = allGastos.filter(g =>
+            !g.ordenPublicidadId && g.nombreCampana === existingGasto.nombreCampana
+          );
+          console.log('[FormTecnica] Standalone group by nombreCampana:', existingGasto.nombreCampana, '→', relatedGastos.length, 'gastos');
+          loadGastos(relatedGastos.length > 0 ? relatedGastos : [existingGasto]);
+          setUnidadNegocio(existingGasto.unidadNegocio || '');
+          setCategoriaNegocio(existingGasto.categoriaNegocio || '');
+          setSubRubro(existingGasto.subRubro || '');
+          setNombreCampana(existingGasto.nombreCampana || '');
+        } else {
+          // OP-linked or no campaign: load just this gasto
+          setFacturaEmitidaA(existingGasto.facturaEmitidaA);
+          setEmpresa(existingGasto.empresa);
+          setEstadoOP(existingGasto.estado);
+          setImportes([gastoToBloqueImporte(existingGasto)]);
+          loadedGastoIdsRef.current = new Set([existingGasto.id]);
+        }
         dataLoadedRef.current = true;
       }
     } else if (formId && itemId) {
@@ -278,13 +281,14 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       }
     } else if (formId) {
       const existingGastos = getGastosByOrdenId(formId);
+      console.log('[FormTecnica] formId-only branch → gastos found:', existingGastos.length, existingGastos.map(g => ({ id: g.id, ordenPublicidadId: g.ordenPublicidadId, itemId: g.itemOrdenPublicidadId })));
       if (existingGastos.length > 0) {
         loadGastos(existingGastos);
       } else {
         initEmptyForm();
       }
     }
-  }, [gastoId, formId, itemId, isStandalone, getGastoById, getGastosByItemOrdenId, getGastosByOrdenId]);
+  }, [gastoId, formId, itemId, isStandalone, allGastos, getGastoById, getGastosByItemOrdenId, getGastosByOrdenId]);
 
   const isCerrado = estadoOP === 'cerrado' || estadoOP === 'anulado';
   const existingGastoIds = loadedGastoIdsRef.current;

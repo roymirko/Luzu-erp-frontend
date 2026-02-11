@@ -86,6 +86,24 @@ export const PROGRAMAS_EXPERIENCE_OPTIONS: FormSelectOption[] = [
   { value: 'buenos-dias-buenos-aires', label: 'Buenos Días Buenos Aires' },
 ];
 
+export const PROGRAMAS_LUZU: string[] = [
+  'FM Luzu',
+  'Antes Que Nadie',
+  'Nadie Dice Nada',
+  'Patria y Familia',
+  'Se Fue Larga',
+  'La Novela',
+  'Algo Va A Picar',
+  'Los No Talentos',
+  'Algo de Música',
+  'Xtream Master',
+  'Edición Especial',
+];
+
+export const PROGRAMAS_LUZU_OPTIONS: FormSelectOption[] = PROGRAMAS_LUZU.map(
+  (p) => ({ value: p, label: p })
+);
+
 export const IMPLEMENTACION_DEFAULTS = {
   sector: 'Implementación',
   rubro: 'Gasto de venta',

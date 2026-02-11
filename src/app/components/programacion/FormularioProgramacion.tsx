@@ -59,26 +59,10 @@ import {
   EMPRESAS_OPTIONS,
   ACUERDOS_PAGO_EXPERIENCE_OPTIONS,
   FORMAS_PAGO_EXPERIENCE_OPTIONS,
+  PROGRAMAS_LUZU_OPTIONS,
 } from '../../utils/implementacionConstants';
 
-const PROGRAMAS_LUZU = [
-  "FM Luzu",
-  "Antes Que Nadie",
-  "Nadie Dice Nada",
-  "Patria y Familia",
-  "Se Fue Larga",
-  "La Novela",
-  "Algo Va A Picar",
-  "Los No Talentos",
-  "Algo de Música",
-  "Xtream Master",
-  "Edición Especial",
-];
 const MAX_OBSERVACIONES_LENGTH = 250;
-
-// Convert string arrays to option format for GastoCard
-const toOptions = (arr: string[]) => arr.map((v) => ({ value: v, label: v }));
-const PROGRAMAS_LUZU_OPTIONS = toOptions(PROGRAMAS_LUZU);
 
 // Use shared options from implementacionConstants
 const ACUERDOS_PAGO_OPTIONS = ACUERDOS_PAGO_EXPERIENCE_OPTIONS;

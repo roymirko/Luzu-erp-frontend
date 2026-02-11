@@ -201,6 +201,13 @@ function AppContent() {
         { label: "Nuevo Formulario", path: null },
       ];
     }
+    if (path.startsWith("/tecnica/editar/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Técnica", path: "/tecnica" },
+        { label: "Editar Gasto", path: null },
+      ];
+    }
     if (path.startsWith("/tecnica/gasto/")) {
       return [
         { label: "Inicio", path: null },
@@ -461,6 +468,7 @@ function AppContent() {
               <Route path="/implementacion/gasto/:formId/:itemId" element={<GastoImplementacionPage />} />
               <Route path="/tecnica" element={<TecnicaPage />} />
               <Route path="/tecnica/nuevo" element={<NuevoGastoTecnicaPage />} />
+              <Route path="/tecnica/editar/:gastoId" element={<EditarGastoTecnicaPage />} />
               <Route path="/tecnica/gasto/:formId" element={<GastoTecnicaPage />} />
               <Route path="/tecnica/gasto/:formId/:itemId" element={<GastoTecnicaPage />} />
               <Route path="/programacion" element={<ProgramacionPage />} />
@@ -568,6 +576,7 @@ function TecnicaPage() {
           navigate(`/tecnica/gasto/${formId}`);
         }
       }}
+      onOpenStandalone={(gastoId) => navigate(`/tecnica/editar/${gastoId}`)}
       onNew={() => navigate("/tecnica/nuevo")}
     />
   );
@@ -587,6 +596,17 @@ function GastoTecnicaPage() {
     <FormularioTecnica
       formId={formId}
       itemId={itemId}
+      onClose={() => navigate("/tecnica")}
+    />
+  );
+}
+
+function EditarGastoTecnicaPage() {
+  const navigate = useNavigate();
+  const { gastoId } = useParams();
+  return (
+    <FormularioTecnica
+      gastoId={gastoId}
       onClose={() => navigate("/tecnica")}
     />
   );
