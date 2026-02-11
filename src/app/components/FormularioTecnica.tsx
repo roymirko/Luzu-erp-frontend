@@ -112,7 +112,43 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
   const ordenPublicidadData = useMemo(() => {
     const formatCurrency = (val: number) =>
       new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
-    if (!formId) return null;
+
+    // Standalone mode: build program list from ALL formularios with tecnica budget
+    if (!formId) {
+      const allProgramas = formularios.flatMap((form) =>
+        (form.importeRows || [])
+          .filter((row) => {
+            if (!row.programa) return false;
+            const tec = row.tecnica;
+            return tec !== null && tec !== undefined && tec !== '';
+          })
+          .map((row) => {
+            const presupuesto = parseFloat(String(row.tecnica || '0').replace(/[^0-9.-]/g, '')) || 0;
+            const gastosDelPrograma = getGastosByItemOrdenId(row.id);
+            const totalGastado = gastosDelPrograma.reduce((sum, g) => sum + (g.neto || 0), 0);
+            const limiteRestante = presupuesto - totalGastado;
+            return {
+              value: row.programa,
+              label: `${row.programa} - Limite: ${formatCurrency(limiteRestante)}`,
+              limite: limiteRestante,
+              itemId: row.id,
+            };
+          })
+      );
+      return {
+        ordenPublicidad: '',
+        unidadNegocio: '',
+        categoriaNegocio: '',
+        nombreCampana: '',
+        acuerdoPago: '',
+        presupuesto: 0,
+        programasConPresupuesto: allProgramas,
+        responsable: '',
+        marca: '',
+        mesServicio: '',
+      };
+    }
+
     const formulario = formularios.find((f) => f.id === formId);
     if (!formulario) return null;
 
@@ -360,6 +396,15 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
     );
   };
 
+  // In standalone mode, resolve ordenPublicidadId from the item's parent formulario
+  const resolveOrdenId = useCallback((importeItemId?: string): string | undefined => {
+    if (!isStandalone || !importeItemId) return formId;
+    const ownerForm = formularios.find(f =>
+      f.importeRows?.some(row => row.id === importeItemId)
+    );
+    return ownerForm?.id || formId;
+  }, [isStandalone, formId, formularios]);
+
   const handleSaveGasto = async (importe: BloqueImporte, index: number): Promise<boolean> => {
     const isExisting = loadedGastoIdsRef.current.has(importe.id);
 
@@ -390,7 +435,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
         }
       } else {
         const input: CreateGastoTecnicaInput = bloqueToCreateInput(importe, {
-          ordenPublicidadId: formId,
+          ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
           defaultItemOrdenPublicidadId: itemId,
           rubro: TECNICA_DEFAULTS.rubro,
           subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
@@ -481,7 +526,10 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
 
       if (importesToCreate.length > 0) {
         const inputs: CreateGastoTecnicaInput[] = importesToCreate.map((imp) =>
-          bloqueToCreateInput(imp, sharedFields)
+          bloqueToCreateInput(imp, {
+            ...sharedFields,
+            ordenPublicidadId: resolveOrdenId(imp.itemOrdenPublicidadId),
+          })
         );
         const created = await addMultipleGastos(inputs);
         createCount = created.length;
