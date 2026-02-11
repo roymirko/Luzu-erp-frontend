@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Eye } from 'lucide-react';
 import { cn } from '@/app/components/ui/utils';
+import { formatCurrency } from '@/app/utils/format';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { TableHeader } from '@/app/components/ui/table-header';
 import { FilterToggle } from '@/app/components/ui/filter-toggle';
@@ -42,13 +43,6 @@ interface TablaComprobantesProps {
   title?: string;
 }
 
-function formatCurrency(amount: number, moneda: string = 'ARS'): string {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: moneda,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
 
 function formatDate(date: Date | undefined): string {
   if (!date) return '-';

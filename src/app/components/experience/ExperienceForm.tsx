@@ -15,8 +15,11 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { cn } from '@/app/components/ui/utils';
+import { formatCurrency } from '@/app/utils/format';
+import { formStyles } from '@/app/components/shared/formStyles';
+import { FormHeader } from '@/app/components/shared/FormHeader';
+import { FormFooter } from '@/app/components/shared/FormFooter';
 import { GastoCard, type GastoData } from '@/app/components/shared';
-import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   SUBRUBROS_EXPERIENCE_OPTIONS,
@@ -516,49 +519,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     }
   };
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(val);
-
-  const labelClass = cn(
-    'flex items-center gap-1 text-sm font-semibold',
-    isDark ? 'text-gray-400' : 'text-[#374151]'
-  );
-
-  const inputClass = cn(
-    'h-[32px] transition-colors text-sm',
-    isDark
-      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600'
-      : 'bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]',
-    'disabled:opacity-60 disabled:cursor-not-allowed'
-  );
-
-  const selectTriggerClass = cn(
-    'h-[32px] w-full transition-colors text-sm',
-    isDark
-      ? 'bg-[#141414] border-gray-800 text-white'
-      : 'bg-white border-[#d1d5db] text-gray-900',
-    'disabled:opacity-60 disabled:cursor-not-allowed'
-  );
-
-  const disabledSelectClass = cn(
-    'h-[32px] w-full transition-colors text-sm',
-    isDark
-      ? 'bg-[#1e1e1e] border-gray-800 text-gray-400'
-      : 'bg-[#f3f4f6] border-[#d1d5db] text-gray-600',
-    'cursor-not-allowed'
-  );
-
-  const textareaClass = cn(
-    'min-h-[72px] resize-none transition-colors text-sm',
-    isDark
-      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600'
-      : 'bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]',
-    'disabled:opacity-60 disabled:cursor-not-allowed'
-  );
+  const { label: labelClass, input: inputClass, selectTrigger: selectTriggerClass, disabledSelect: disabledSelectClass, textarea: textareaClass } = formStyles(isDark);
 
 
   // Show loading state while fetching data (only for edit mode)
@@ -577,48 +538,17 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
       <div className="max-w-[660px] mx-auto px-6 sm:px-8 lg:px-0">
         <div className="space-y-6 sm:space-y-8">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-[#101828]')}>
-                {isEditing ? 'Editar Gasto' : 'Cargar Datos'}
-              </h1>
-              {isFormularioCerrado && (
-                <span
-                  className={cn(
-                    'px-2 py-1 text-xs font-medium rounded',
-                    existingFormulario?.formularioEstado === 'anulado'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  )}
-                >
-                  {existingFormulario?.formularioEstado === 'anulado' ? 'Anulado' : 'Cerrado'}
-                </span>
-              )}
-            </div>
-            <p className={cn('text-sm', isDark ? 'text-gray-500' : 'text-[#4a5565]')}>
-              {isEditing
-                ? 'Edite la información del formulario de Experience'
-                : 'Complete la información del nuevo formulario de Experience'}
-            </p>
-          </div>
-
-          {/* Locked Form Alert */}
-          {isFormularioCerrado && (
-            <div
-              className={cn(
-                'flex items-center gap-3 p-4 rounded-lg border',
-                isDark
-                  ? 'bg-yellow-900/20 border-yellow-800 text-yellow-300'
-                  : 'bg-yellow-50 border-yellow-200 text-yellow-800'
-              )}
-            >
-              <Lock className="h-5 w-5 flex-shrink-0" />
-              <p className="text-sm">
-                Este gasto está {existingFormulario?.formularioEstado} y no puede ser editado.
-              </p>
-            </div>
-          )}
+          <FormHeader
+            isDark={isDark}
+            title={isEditing ? 'Editar Gasto' : 'Cargar Datos'}
+            subtitle={isEditing
+              ? 'Edite la información del formulario de Experience'
+              : 'Complete la información del nuevo formulario de Experience'}
+            isCerrado={isFormularioCerrado}
+            estadoLabel={existingFormulario?.formularioEstado || 'cerrado'}
+            badgeVariant="colored"
+            warningVariant="yellow"
+          />
 
           {/* Read-only fields for edit mode */}
           {isEditing && (
@@ -834,26 +764,15 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             </CardContent>
           </Card>
 
-          {/* Footer Buttons */}
-          <div className="flex justify-end gap-3 pt-4 pb-8">
-            <Button
-              variant="ghost"
-              onClick={onCancel}
-              className="text-[#0070ff] hover:text-[#0060dd]"
-              disabled={saving}
-            >
-              {isFormularioCerrado ? 'Volver' : 'Cancelar'}
-            </Button>
-            {!isFormularioCerrado && (
-              <Button
-                onClick={handleGuardar}
-                className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8"
-                disabled={saving}
-              >
-                {saving ? 'Guardando...' : 'Guardar'}
-              </Button>
-            )}
-          </div>
+          <FormFooter
+            saving={saving}
+            onCancel={onCancel}
+            onSave={handleGuardar}
+            isCerrado={isFormularioCerrado}
+            hideSaveWhenCerrado
+            cancelLabelCerrado="Volver"
+            paddingTop="pt-4"
+          />
         </div>
       </div>
     </div>

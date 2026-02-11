@@ -8,6 +8,7 @@ import * as proveedoresService from '../services/proveedoresService';
 import type { Proveedor } from '../types/proveedores';
 import { useTheme } from '../contexts/ThemeContext';
 import { cn } from './ui/utils';
+import { formStyles } from '@/app/components/shared/formStyles';
 
 export interface ProveedorSelectorValue {
   proveedor?: string;
@@ -30,10 +31,7 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
   const [localProveedor, setLocalProveedor] = useState<string>(value?.proveedor || '');
   const [localRazonSocial, setLocalRazonSocial] = useState<string>(value?.razonSocial || '');
 
-  const labelClass = cn(
-    "flex items-center gap-1 text-sm font-semibold mb-1",
-    isDark ? "text-gray-400" : "text-[#374151]",
-  );
+  const labelClass = cn(formStyles(isDark).label, 'mb-1');
 
   const fetchProveedores = async () => {
     const { data, error } = await proveedoresService.getActive();

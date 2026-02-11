@@ -21,6 +21,7 @@ import {
 import { FormDatePicker } from '@/app/components/ui/form-date-picker';
 import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
+import { dialogFormStyles } from '@/app/components/shared/formStyles';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import * as comprobantesService from '@/app/services/comprobantesService';
@@ -197,17 +198,7 @@ export function DialogNuevoComprobante({
     }
   };
 
-  const labelClass = cn(
-    "text-sm font-semibold",
-    isDark ? "text-gray-400" : "text-[#374151]"
-  );
-
-  const inputClass = cn(
-    "h-9",
-    isDark
-      ? "bg-[#141414] border-gray-800 text-white placeholder:text-gray-600"
-      : "bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]"
-  );
+  const { label: labelClass, input: inputClass } = dialogFormStyles(isDark);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

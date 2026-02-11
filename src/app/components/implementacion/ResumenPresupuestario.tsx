@@ -1,4 +1,5 @@
 import { cn } from '@/app/components/ui/utils';
+import { formatCurrency } from '@/app/utils/format';
 
 interface ResumenPresupuestarioProps {
   isDark: boolean;
@@ -6,11 +7,10 @@ interface ResumenPresupuestarioProps {
   ejecutado: number;
   disponible: number;
   excedido: boolean;
-  formatCurrency: (val: number) => string;
 }
 
 export function ResumenPresupuestario(props: ResumenPresupuestarioProps) {
-  const { isDark, asignado, ejecutado, disponible, excedido, formatCurrency } = props;
+  const { isDark, asignado, ejecutado, disponible, excedido } = props;
 
   const calcPercentage = (value: number) => {
     return asignado > 0 ? `${Math.round((value / asignado) * 100)}%` : '0%';

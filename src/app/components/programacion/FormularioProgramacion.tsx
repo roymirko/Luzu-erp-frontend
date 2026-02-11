@@ -16,8 +16,12 @@ import {
 } from "../ui/select";
 import { ProveedorSelector } from "../ProveedorSelector";
 import { toast } from "sonner";
-import { Lock, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { cn } from "../ui/utils";
+import { formatCurrency } from "@/app/utils/format";
+import { formStyles } from "@/app/components/shared/formStyles";
+import { FormHeader } from "@/app/components/shared/FormHeader";
+import { FormFooter } from "@/app/components/shared/FormFooter";
 import { GastoCard, type GastoData } from "../shared";
 import { formatDateDDMMYYYY } from "../../utils/dateFormatters";
 import type {
@@ -563,13 +567,6 @@ export function FormularioProgramacion({
     }
   };
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      minimumFractionDigits: 0,
-    }).format(val);
-
 
 
   // Get responsable name for edit mode
@@ -584,42 +581,7 @@ export function FormularioProgramacion({
     ? formatDateDDMMYYYY(existingGasto.createdAt)
     : "";
 
-  const labelClass = cn(
-    "flex items-center gap-1 text-sm font-semibold",
-    isDark ? "text-gray-400" : "text-[#374151]",
-  );
-
-  const inputClass = cn(
-    "h-[32px] transition-colors text-sm",
-    isDark
-      ? "bg-[#141414] border-gray-800 text-white placeholder:text-gray-600"
-      : "bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]",
-    "disabled:opacity-60 disabled:cursor-not-allowed",
-  );
-
-  const selectTriggerClass = cn(
-    "h-[32px] w-full transition-colors text-sm",
-    isDark
-      ? "bg-[#141414] border-gray-800 text-white"
-      : "bg-white border-[#d1d5db] text-gray-900",
-    "disabled:opacity-60 disabled:cursor-not-allowed",
-  );
-
-  const disabledSelectClass = cn(
-    "h-[32px] w-full transition-colors text-sm",
-    isDark
-      ? "bg-[#1e1e1e] border-gray-800 text-gray-400"
-      : "bg-[#f3f4f6] border-[#d1d5db] text-gray-600",
-    "cursor-not-allowed",
-  );
-
-  const textareaClass = cn(
-    "min-h-[72px] resize-none transition-colors text-sm",
-    isDark
-      ? "bg-[#141414] border-gray-800 text-white placeholder:text-gray-600"
-      : "bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]",
-    "disabled:opacity-60 disabled:cursor-not-allowed",
-  );
+  const { label: labelClass, input: inputClass, selectTrigger: selectTriggerClass, disabledSelect: disabledSelectClass, textarea: textareaClass } = formStyles(isDark);
 
 
   return (
@@ -631,42 +593,12 @@ export function FormularioProgramacion({
     >
       <div className="max-w-[660px] mx-auto px-6 sm:px-8 lg:px-0">
         <div className="space-y-6 sm:space-y-8">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1
-                  className={cn(
-                    "text-2xl font-bold mb-2",
-                    isDark ? "text-white" : "text-[#101828]",
-                  )}
-                >
-                  Cargar Datos
-                </h1>
-                <p
-                  className={cn(
-                    "text-sm",
-                    isDark ? "text-gray-500" : "text-[#4a5565]",
-                  )}
-                >
-                  Complete la información del nuevo formulario de Programación
-                </p>
-              </div>
-              {isFormularioCerrado && (
-                <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300 border border-gray-500">
-                  Gasto Cerrado
-                </span>
-              )}
-            </div>
-            {isFormularioCerrado && (
-              <div className="mt-4 p-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 flex items-center gap-2 text-red-700 dark:text-red-400">
-                <Lock className="w-4 h-4" />
-                <span className="text-sm">
-                  Este gasto está cerrado y no puede ser editado.
-                </span>
-              </div>
-            )}
-          </div>
+          <FormHeader
+            isDark={isDark}
+            title="Cargar Datos"
+            subtitle="Complete la información del nuevo formulario de Programación"
+            isCerrado={isFormularioCerrado}
+          />
 
           {/* Read-only fields - only visible when editing */}
           {isEditing && (
@@ -978,24 +910,14 @@ export function FormularioProgramacion({
             </CardContent>
           </Card>
 
-          {/* Footer Buttons */}
-          <div className="flex justify-end gap-3 pt-4 pb-8">
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              className="text-[#0070ff] hover:text-[#0060dd]"
-              disabled={saving}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleGuardar}
-              className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8"
-              disabled={saving || isFormularioCerrado}
-            >
-              {saving ? "Guardando..." : "Guardar"}
-            </Button>
-          </div>
+          <FormFooter
+            saving={saving}
+            onCancel={onClose}
+            onSave={handleGuardar}
+            isCerrado={isFormularioCerrado}
+            disableSaveWhenCerrado
+            paddingTop="pt-4"
+          />
         </div>
       </div>
     </div>

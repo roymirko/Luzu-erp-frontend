@@ -1,13 +1,13 @@
 import { cn } from '@/app/components/ui/utils';
+import { formatCurrency } from '@/app/utils/format';
 
 interface ExperienceResumenProps {
   isDark: boolean;
   total: number;
-  formatCurrency: (val: number) => string;
 }
 
 export function ExperienceResumen(props: ExperienceResumenProps) {
-  const { isDark, total, formatCurrency } = props;
+  const { isDark, total } = props;
 
   return (
     <div

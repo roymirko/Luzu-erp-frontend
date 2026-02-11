@@ -155,9 +155,13 @@ erDiagram
     programacion_formularios {
         uuid id PK
         text mes_gestion
+        text mes_venta
+        text mes_inicio
+        text unidad_negocio
+        text categoria_negocio
         text programa
         text ejecutivo
-        text unidad_negocio
+        text detalle_campana
         text estado
     }
 
@@ -185,6 +189,7 @@ erDiagram
         uuid id PK
         text mes_gestion
         text nombre_campana
+        text detalle_campana
         text estado
     }
 

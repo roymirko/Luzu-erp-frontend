@@ -3,6 +3,7 @@ import { useImplementacion, BloqueImporte } from '../contexts/ImplementacionCont
 import { useTheme } from '../contexts/ThemeContext';
 import { Button } from './ui/button';
 import { Key, MoreVertical } from 'lucide-react';
+import { formatCurrency } from '@/app/utils/format';
 import { ActionCard } from './ui/action-card';
 import { TableHeader } from './ui/table-header';
 import { FilterToggle } from './ui/filter-toggle';
@@ -52,10 +53,6 @@ export function TablaImplementacion({ onNewGasto, onEditGasto }: TablaImplementa
     onNewGasto?.();
   };
 
-  const formatCurrency = (val: string | number) => {
-    const num = typeof val === 'string' ? parseFloat(val) : val;
-    return isNaN(num) ? '-' : new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(num);
-  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {

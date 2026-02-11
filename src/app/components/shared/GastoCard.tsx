@@ -8,6 +8,7 @@ import { Textarea } from '@/app/components/ui/textarea';
 import { Button } from '@/app/components/ui/button';
 import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import { cn } from '@/app/components/ui/utils';
+import { formStyles } from '@/app/components/shared/formStyles';
 import { StatusBadge, type EstadoPago, type EstadoOP, type EstadoPGM } from './StatusBadge';
 import {
   FACTURAS_OPTIONS,
@@ -173,18 +174,7 @@ export function GastoCard(props: GastoCardProps) {
     }
   };
 
-  const labelClass = cn(
-    'flex items-center gap-1 text-sm font-semibold',
-    isDark ? 'text-gray-400' : 'text-[#374151]'
-  );
-
-  const textareaClass = cn(
-    'min-h-[72px] resize-none transition-colors text-sm',
-    isDark
-      ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600'
-      : 'bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]',
-    'disabled:opacity-60 disabled:cursor-not-allowed'
-  );
+  const { label: labelClass, textarea: textareaClass } = formStyles(isDark);
 
   const showButtons = !isDisabled && (onSave || onCancel);
 

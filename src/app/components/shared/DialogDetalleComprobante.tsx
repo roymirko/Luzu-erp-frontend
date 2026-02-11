@@ -21,6 +21,7 @@ import {
 import { FormDatePicker } from '@/app/components/ui/form-date-picker';
 import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
+import { dialogFormStyles } from '@/app/components/shared/formStyles';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import * as comprobantesService from '@/app/services/comprobantesService';
@@ -219,18 +220,9 @@ export function DialogDetalleComprobante({
 
   if (!comprobante) return null;
 
-  const labelClass = cn(
-    "text-sm font-semibold",
-    isDark ? "text-gray-400" : "text-[#374151]"
-  );
-
-  const inputClass = cn(
-    "h-9",
-    isDark
-      ? "bg-[#141414] border-gray-800 text-white placeholder:text-gray-600"
-      : "bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]",
-    isLocked && "opacity-60 cursor-not-allowed"
-  );
+  const styles = dialogFormStyles(isDark);
+  const labelClass = styles.label;
+  const inputClass = cn(styles.input, isLocked && "opacity-60 cursor-not-allowed");
 
   const readonlyInputClass = cn(inputClass, "bg-gray-100 dark:bg-gray-900");
 

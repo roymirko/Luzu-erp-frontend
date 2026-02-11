@@ -3,10 +3,11 @@ import { useTecnica } from '../contexts/TecnicaContext';
 import { useFormularios } from '../contexts/FormulariosContext';
 import { useData } from '../contexts/DataContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { Lock } from 'lucide-react';
 import { cn } from './ui/utils';
+import { formatCurrency } from '@/app/utils/format';
+import { FormHeader } from '@/app/components/shared/FormHeader';
+import { FormFooter } from '@/app/components/shared/FormFooter';
 import {
   CampaignInfoCard,
   CargaImportesSection,
@@ -110,9 +111,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
   const { currentUser } = useData();
 
   const ordenPublicidadData = useMemo(() => {
-    const formatCurrency = (val: number) =>
-      new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
-
     // Standalone mode: build program list from ALL formularios with tecnica budget
     if (!formId) {
       const allProgramas = formularios.flatMap((form) =>
@@ -578,36 +576,17 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
   const disponible = asignado - totalEjecutado;
   const excedido = totalEjecutado > asignado;
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(val);
-
   return (
     <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
       <div className="max-w-[620px] mx-auto px-6 sm:px-8 lg:px-0">
         <div className="space-y-6 sm:space-y-8">
-          <div className="mb-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className={cn('text-2xl font-bold mb-2', isDark ? 'text-white' : 'text-[#101828]')}>
-                  Información de campaña
-                </h1>
-                <p className={cn('text-sm', isDark ? 'text-gray-500' : 'text-[#4a5565]')}>
-                  Detalle de la orden y registro de importes de técnica
-                </p>
-              </div>
-              {isCerrado && (
-                <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-gray-700 dark:text-gray-300 border border-gray-500">
-                  Gasto Cerrado
-                </span>
-              )}
-            </div>
-            {isCerrado && (
-              <div className="mt-4 p-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 flex items-center gap-2 text-red-700 dark:text-red-400">
-                <Lock className="w-4 h-4" />
-                <span className="text-sm">Este gasto está {estadoOP} y no puede ser editado.</span>
-              </div>
-            )}
-          </div>
+          <FormHeader
+            isDark={isDark}
+            title="Información de campaña"
+            subtitle="Detalle de la orden y registro de importes de técnica"
+            isCerrado={isCerrado}
+            estadoLabel={estadoOP}
+          />
 
           {isStandalone ? (
             <div className={cn(
@@ -671,7 +650,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
               nombreCampana={ordenPublicidadData?.nombreCampana || ''}
               rubro={TECNICA_DEFAULTS.rubro}
               subRubro={TECNICA_DEFAULTS.subRubro}
-              formatCurrency={formatCurrency}
             />
           )}
 
@@ -697,27 +675,10 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
               ejecutado={totalEjecutado}
               disponible={disponible}
               excedido={excedido}
-              formatCurrency={formatCurrency}
             />
           )}
 
-          <div className="flex justify-end gap-3 pt-8 pb-8">
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              className="text-[#0070ff] hover:text-[#0060dd]"
-              disabled={saving}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleGuardar}
-              className="bg-[#0070ff] hover:bg-[#0060dd] text-white px-8"
-              disabled={saving}
-            >
-              {saving ? 'Guardando...' : 'Guardar'}
-            </Button>
-          </div>
+          <FormFooter saving={saving} onCancel={onClose} onSave={handleGuardar} />
         </div>
       </div>
     </div>

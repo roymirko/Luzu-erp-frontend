@@ -307,7 +307,7 @@ Table gastos_implementacion {
   cantidad_programas integer
   programas_disponibles jsonb
   sector text
-  rubro text
+  rubro_gasto text
   sub_rubro text
   factura_emitida_a text
   empresa text
@@ -325,7 +325,7 @@ Table items_gasto_implementacion {
   proveedor text [not null]
   razon_social text
   descripcion text
-  rubro text [not null]
+  rubro_gasto text [not null]
   sub_rubro text
   sector text [not null]
   moneda text [default: 'ARS']

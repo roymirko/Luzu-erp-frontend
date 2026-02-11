@@ -1,4 +1,5 @@
 import { cn } from '@/app/components/ui/utils';
+import { formatCurrency } from '@/app/utils/format';
 
 interface CampaignInfoItem {
   label: string;
@@ -16,7 +17,6 @@ interface CampaignInfoCardProps {
   nombreCampana: string;
   rubro: string;
   subRubro: string;
-  formatCurrency: (val: number) => string;
 }
 
 export function CampaignInfoCard({
@@ -30,7 +30,6 @@ export function CampaignInfoCard({
   nombreCampana,
   rubro,
   subRubro,
-  formatCurrency,
 }: CampaignInfoCardProps) {
   const items: CampaignInfoItem[][] = [
     [

@@ -22,6 +22,8 @@ import {
 import { FormDatePicker } from '@/app/components/ui/form-date-picker';
 import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
+import { formatCurrency } from '@/app/utils/format';
+import { dialogFormStyles } from '@/app/components/shared/formStyles';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { CheckCircle, XCircle, HelpCircle, Ban, CreditCard, ExternalLink } from 'lucide-react';
 import * as comprobantesService from '@/app/services/comprobantesService';
@@ -76,13 +78,6 @@ function formatDate(date: Date | undefined): string {
   return `${year}-${month}-${day}`;
 }
 
-function formatCurrency(amount: number, moneda: string = 'ARS'): string {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: moneda,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
 
 export function DialogAdminComprobante({
   open,
@@ -290,17 +285,7 @@ export function DialogAdminComprobante({
   const isAdminLocked = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
   const canMarkPagado = comprobante.estadoPago === 'aprobado';
 
-  const labelClass = cn(
-    "text-sm font-semibold",
-    isDark ? "text-gray-400" : "text-[#374151]"
-  );
-
-  const inputClass = cn(
-    "h-9",
-    isDark
-      ? "bg-[#141414] border-gray-800 text-white placeholder:text-gray-600"
-      : "bg-white border-[#d1d5db] text-gray-900 placeholder:text-[#d1d5db]"
-  );
+  const { label: labelClass, input: inputClass } = dialogFormStyles(isDark);
 
   const financialInputClass = cn(inputClass, isFinancialLocked && "opacity-60 cursor-not-allowed");
   const adminInputClass = cn(inputClass, isAdminLocked && "opacity-60 cursor-not-allowed");
