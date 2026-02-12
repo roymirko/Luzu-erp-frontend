@@ -377,7 +377,6 @@ export function TablaTecnica({ onOpen, onOpenStandalone, onNew }: TablaTecnicaPr
           ) : (
             currentRows.map((row) => (
               <DataTableRow key={row.id} onClick={() => {
-                console.log('[TablaTecnica] Row click →', { viewMode, id: row.id, formId: row.formId, itemId: row.itemId, isStandalone: row.isStandalone });
                 if (viewMode === 'programa') {
                   setSelectedRow(row as ProgramaRow);
                 } else if (row.isStandalone) {

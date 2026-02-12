@@ -241,8 +241,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       dataLoadedRef.current = true;
     };
 
-    console.log('[FormTecnica] useEffect →', { gastoId, formId, itemId, isStandalone, gastosCount: getGastosByOrdenId(formId || '').length });
-
     if (isStandalone && !gastoId) {
       initEmptyForm();
       return;
@@ -256,7 +254,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
           const relatedGastos = allGastos.filter(g =>
             !g.ordenPublicidadId && g.nombreCampana === existingGasto.nombreCampana
           );
-          console.log('[FormTecnica] Standalone group by nombreCampana:', existingGasto.nombreCampana, '→', relatedGastos.length, 'gastos');
           loadGastos(relatedGastos.length > 0 ? relatedGastos : [existingGasto]);
           setUnidadNegocio(existingGasto.unidadNegocio || '');
           setCategoriaNegocio(existingGasto.categoriaNegocio || '');
@@ -281,7 +278,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       }
     } else if (formId) {
       const existingGastos = getGastosByOrdenId(formId);
-      console.log('[FormTecnica] formId-only branch → gastos found:', existingGastos.length, existingGastos.map(g => ({ id: g.id, ordenPublicidadId: g.ordenPublicidadId, itemId: g.itemOrdenPublicidadId })));
       if (existingGastos.length > 0) {
         loadGastos(existingGastos);
       } else {
