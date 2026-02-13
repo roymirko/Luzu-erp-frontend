@@ -47,6 +47,8 @@ export interface GastoExperience extends Gasto {
   mesGestion: string;
   nombreCampana: string;
   detalleCampana?: string;
+  rubro?: string;
+  subrubro?: string;
   formularioEstado?: EstadoFormularioExperience;
   formularioCreatedAt?: Date;
   formularioCreatedBy?: string;
@@ -70,6 +72,7 @@ export interface CreateGastoExperienceInput {
   mesGestion?: string;
   nombreCampana: string;
   detalleCampana?: string;
+  subrubro?: string;
   // Gasto base
   proveedor: string;
   razonSocial: string;
@@ -116,6 +119,7 @@ export interface FormularioExperienceAgrupado {
   createdBy?: string;
   nombreCampana: string;
   detalleCampana?: string;
+  subrubro?: string;
   proveedor?: string;
   razonSocial?: string;
   facturaEmitidaA?: string;
@@ -151,6 +155,7 @@ export interface CreateMultipleGastosExperienceInput {
   mesGestion?: string;
   nombreCampana: string;
   detalleCampana?: string;
+  subrubro?: string;
   createdBy?: string;
   // Individual gastos
   gastos: GastoExperienceItemInput[];

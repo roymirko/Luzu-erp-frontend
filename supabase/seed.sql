@@ -803,6 +803,92 @@ BEGIN
 END $$;
 
 -- ============================================
+-- 9b. PRODUCTORA SEED DATA
+-- ============================================
+DO $$
+DECLARE
+  v_user_email TEXT := 'system';
+  v_form1 uuid;
+  v_form2 uuid;
+  v_comprobante uuid;
+BEGIN
+  -- Formulario 1: Campaña Productora Lanzamiento
+  INSERT INTO public.productora_formularios (
+    mes_gestion, unidad_negocio, categoria_negocio, rubro, sub_rubro,
+    nombre_campana, detalle_campana, estado, created_by
+  ) VALUES (
+    '2024-02', 'Productora', 'Media', 'Gasto de Campaña', 'Implementación',
+    'Lanzamiento Marca X', 'Producción audiovisual para lanzamiento', 'activo', v_user_email
+  ) RETURNING id INTO v_form1;
+
+  -- Comprobante 1.1
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by,
+    factura_emitida_a, acuerdo_pago, forma_pago
+  ) VALUES (
+    'egreso', 'Productora Visual S.R.L.', '30712345678',
+    'FA', '0005', '00007777', '2024-02-10',
+    85000, 21, 17850, 102850, 'ARS', 'activo', 'creado', v_user_email,
+    'Luzu TV', '30', 'transferencia'
+  ) RETURNING id INTO v_comprobante;
+  INSERT INTO public.productora_comprobantes (
+    comprobante_id, formulario_id, empresa, empresa_programa,
+    fecha_comprobante, pais, rubro, sub_rubro
+  ) VALUES (
+    v_comprobante, v_form1, 'Luzu TV', 'nadie-dice-nada',
+    '2024-02-10', 'argentina', 'Gasto de Campaña', 'Implementación'
+  );
+
+  -- Comprobante 1.2
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by,
+    factura_emitida_a, acuerdo_pago, forma_pago
+  ) VALUES (
+    'egreso', 'Ediciones Gráficas S.A.', '30798765432',
+    'FA', '0005', '00008888', '2024-02-15',
+    32000, 21, 6720, 38720, 'ARS', 'activo', 'pagado', v_user_email,
+    'Luzu TV SA', '45', 'cheque'
+  ) RETURNING id INTO v_comprobante;
+  INSERT INTO public.productora_comprobantes (
+    comprobante_id, formulario_id, empresa, empresa_programa,
+    fecha_comprobante, pais, rubro, sub_rubro
+  ) VALUES (
+    v_comprobante, v_form1, 'Luzu TV SA', 'vuelta-y-media',
+    '2024-02-15', 'argentina', 'Gasto de Campaña', 'Diseño y Edición'
+  );
+
+  -- Formulario 2: Evento Streaming
+  INSERT INTO public.productora_formularios (
+    mes_gestion, unidad_negocio, categoria_negocio, rubro, sub_rubro,
+    nombre_campana, detalle_campana, estado, created_by
+  ) VALUES (
+    '2024-03', 'Experience', 'PEM - Proyectos especiales Marketing', 'Gasto de Evento', 'Técnica',
+    'Streaming Festival', 'Producción técnica para streaming en vivo', 'activo', v_user_email
+  ) RETURNING id INTO v_form2;
+
+  -- Comprobante 2.1
+  INSERT INTO public.comprobantes (
+    tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+    neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by,
+    factura_emitida_a, acuerdo_pago, forma_pago
+  ) VALUES (
+    'egreso', 'Streaming Pro S.R.L.', '30756789012',
+    'FA', '0006', '00009999', '2024-03-01',
+    120000, 21, 25200, 145200, 'ARS', 'activo', 'creado', v_user_email,
+    'Luzu TV', '60', 'transferencia'
+  ) RETURNING id INTO v_comprobante;
+  INSERT INTO public.productora_comprobantes (
+    comprobante_id, formulario_id, empresa, empresa_programa,
+    fecha_comprobante, pais, rubro, sub_rubro
+  ) VALUES (
+    v_comprobante, v_form2, 'Luzu TV', 'antes-que-nadie',
+    '2024-03-01', 'argentina', 'Gasto de Evento', 'Técnica'
+  );
+END $$;
+
+-- ============================================
 -- 10. COMPROBANTES DE INGRESOS (FACTURAS EMITIDAS)
 -- Ingresos directos por servicios publicitarios
 -- ============================================

@@ -127,6 +127,42 @@ export const TECNICA_DEFAULTS = {
   ivaDefault: 21,
 } as const;
 
+// ============================================
+// Productora Module Constants
+// ============================================
+
+export const UNIDADES_NEGOCIO_PRODUCTORA_OPTIONS: FormSelectOption[] = [
+  { value: 'Media', label: 'Media' },
+  { value: 'Experience', label: 'Experience' },
+  { value: 'Productora', label: 'Productora' },
+  { value: 'Productora E-Commerce', label: 'Productora E-Commerce' },
+  { value: 'Estructura', label: 'Estructura' },
+];
+
+export const CATEGORIAS_NEGOCIO_PRODUCTORA_OPTIONS: FormSelectOption[] = [
+  { value: 'Media', label: 'Media' },
+  { value: 'PEM - Proyectos especiales Marketing', label: 'PEM - Proyectos especiales Marketing' },
+  { value: 'PEP - Proyectos Especiales Programación', label: 'PEP - Proyectos Especiales Programación' },
+  { value: 'BC - Branded content', label: 'BC - Branded content' },
+  { value: 'No aplica', label: 'No aplica' },
+];
+
+export const RUBROS_PRODUCTORA_OPTIONS: FormSelectOption[] = [
+  { value: 'Gasto de Evento', label: 'Gasto de Evento' },
+  { value: 'Gasto de Venta', label: 'Gasto de Venta' },
+  { value: 'Gasto de Programación', label: 'Gasto de Programación' },
+  { value: 'Gasto de MKT', label: 'Gasto de MKT' },
+  { value: 'Gasto de Campaña', label: 'Gasto de Campaña' },
+];
+
+export const SUBRUBROS_PRODUCTORA_OPTIONS: FormSelectOption[] = [
+  { value: 'Implementación', label: 'Implementación' },
+  { value: 'Técnica', label: 'Técnica' },
+  { value: 'Diseño y Edición', label: 'Diseño y Edición' },
+];
+
+export const PROGRAMAS_PRODUCTORA_OPTIONS: FormSelectOption[] = PROGRAMAS_EXPERIENCE_OPTIONS;
+
 export const FIELD_MAX_LENGTHS = {
   conceptoGasto: 250,
   observaciones: 500,

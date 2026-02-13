@@ -31,6 +31,15 @@ function parseFormattedNumber(value: string): string {
   return value.replace(/\./g, '');
 }
 
+// Flex row: 1 child = full width, 2 children = 50/50
+function FormRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col md:flex-row gap-4 [&>*]:flex-1 [&>*]:min-w-0">
+      {children}
+    </div>
+  );
+}
+
 // Base gasto data interface - all possible fields
 export interface GastoData {
   id: string;
@@ -41,6 +50,7 @@ export interface GastoData {
   razonSocial: string;
   proveedor: string;
   acuerdoPago: string;
+  numeroComprobante?: string;
   formaPago?: string;
   pais?: string;
   neto: string;
@@ -54,6 +64,7 @@ export interface GastoCardErrors {
   fechaComprobante?: string;
   proveedor?: string;
   acuerdoPago?: string;
+  numeroComprobante?: string;
   formaPago?: string;
   pais?: string;
   neto?: string;
@@ -200,32 +211,84 @@ export function GastoCard(props: GastoCardProps) {
       {/* Expanded Content */}
       {!isCollapsed && (
         <div className="mt-5 space-y-5">
-          {/* Row 1: Factura emitida a / Empresa */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormSelect
-              label="Factura emitida a"
-              value={gasto.facturaEmitidaA}
-              onChange={(v) => onUpdate('facturaEmitidaA', v)}
-              options={facturaOptions}
-              required
-              disabled={isDisabled}
-              error={errors.facturaEmitidaA}
-              isDark={isDark}
-            />
-            <FormSelect
-              label="Empresa"
-              value={gasto.empresa}
-              onChange={(v) => onUpdate('empresa', v)}
-              options={empresaOptions}
-              required
-              disabled={isDisabled}
-              error={errors.empresa}
-              isDark={isDark}
-            />
-          </div>
+          {/* ── Grupo: Pago ── */}
+          <FormRow>
+            {showFormaPago && (
+              <FormSelect
+                label="Forma de pago"
+                value={gasto.formaPago || ''}
+                onChange={(v) => onUpdate('formaPago', v)}
+                options={formaPagoOptions}
+                required
+                disabled={isDisabled}
+                error={errors.formaPago}
+                isDark={isDark}
+              />
+            )}
+            {(!showFormaPago || gasto.formaPago === 'cheque') && (
+              <FormSelect
+                label="Acuerdo de pago"
+                value={gasto.acuerdoPago}
+                onChange={(v) => onUpdate('acuerdoPago', v)}
+                options={acuerdoPagoOptions}
+                required
+                disabled={isDisabled}
+                error={errors.acuerdoPago}
+                isDark={isDark}
+              />
+            )}
+          </FormRow>
 
-          {/* Row 2: Empresa/Programa / Fecha de comprobante */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ── Grupo: Comprobante (hidden on efectivo) ── */}
+          {gasto.formaPago !== 'efectivo' && (
+            <>
+              <FormRow>
+                <FormInput
+                  label="Nro. Comprobante"
+                  value={gasto.numeroComprobante || ''}
+                  onChange={(v) => onUpdate('numeroComprobante', v)}
+                  disabled={isDisabled}
+                  error={errors.numeroComprobante}
+                  isDark={isDark}
+                />
+                <FormDatePicker
+                  label="Fecha de comprobante"
+                  value={gasto.fechaComprobante}
+                  onChange={(v) => onUpdate('fechaComprobante', v)}
+                  required
+                  disabled={isDisabled}
+                  error={errors.fechaComprobante}
+                  isDark={isDark}
+                />
+              </FormRow>
+
+              <FormRow>
+                <FormSelect
+                  label="Factura emitida a"
+                  value={gasto.facturaEmitidaA}
+                  onChange={(v) => onUpdate('facturaEmitidaA', v)}
+                  options={facturaOptions}
+                  required
+                  disabled={isDisabled}
+                  error={errors.facturaEmitidaA}
+                  isDark={isDark}
+                />
+                <FormSelect
+                  label="Empresa"
+                  value={gasto.empresa}
+                  onChange={(v) => onUpdate('empresa', v)}
+                  options={empresaOptions}
+                  required
+                  disabled={isDisabled}
+                  error={errors.empresa}
+                  isDark={isDark}
+                />
+              </FormRow>
+            </>
+          )}
+
+          {/* ── Grupo: Programa (always visible) ── */}
+          <FormRow>
             {programOptions ? (
               <FormSelect
                 label="Empresa/Programa"
@@ -248,19 +311,10 @@ export function GastoCard(props: GastoCardProps) {
                 isDark={isDark}
               />
             )}
-            <FormDatePicker
-              label="Fecha de comprobante"
-              value={gasto.fechaComprobante}
-              onChange={(v) => onUpdate('fechaComprobante', v)}
-              required
-              disabled={isDisabled}
-              error={errors.fechaComprobante}
-              isDark={isDark}
-            />
-          </div>
+          </FormRow>
 
-          {/* Row 3: Razón Social / Proveedor */}
-          {showProveedorSelector && (
+          {/* ── Grupo: Proveedor (hidden on efectivo) ── */}
+          {gasto.formaPago !== 'efectivo' && showProveedorSelector && (
             <div className="space-y-2">
               <ProveedorSelector
                 value={{
@@ -281,94 +335,32 @@ export function GastoCard(props: GastoCardProps) {
             </div>
           )}
 
-          {/* Row 4: Forma de pago / Acuerdo de pago (or Neto if no formaPago) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {showFormaPago ? (
-              <>
-                <FormSelect
-                  label="Forma de pago"
-                  value={gasto.formaPago || ''}
-                  onChange={(v) => {
-                    onUpdate('formaPago', v);
-                    // Clear acuerdoPago if not cheque
-                    if (v !== 'cheque') {
-                      onUpdate('acuerdoPago', '');
-                    }
-                  }}
-                  options={formaPagoOptions}
-                  required
-                  disabled={isDisabled}
-                  error={errors.formaPago}
-                  isDark={isDark}
-                />
-                <FormSelect
-                  label="Acuerdo de pago"
-                  value={gasto.formaPago === 'cheque' ? gasto.acuerdoPago : ''}
-                  onChange={(v) => onUpdate('acuerdoPago', v)}
-                  options={acuerdoPagoOptions}
-                  required={gasto.formaPago === 'cheque'}
-                  disabled={isDisabled || gasto.formaPago !== 'cheque'}
-                  error={errors.acuerdoPago}
-                  isDark={isDark}
-                />
-              </>
-            ) : (
-              <>
-                <FormSelect
-                  label="Acuerdo de pago"
-                  value={gasto.acuerdoPago}
-                  onChange={(v) => onUpdate('acuerdoPago', v)}
-                  options={acuerdoPagoOptions}
-                  required
-                  disabled={isDisabled}
-                  error={errors.acuerdoPago}
-                  isDark={isDark}
-                />
-                <FormInput
-                  label="Neto"
-                  type="text"
-                  value={formatNumberWithSeparators(gasto.neto)}
-                  onChange={(v) => onUpdate('neto', parseFormattedNumber(v))}
-                  required
-                  disabled={isDisabled}
-                  placeholder="$0"
-                  error={errors.neto}
-                  isDark={isDark}
-                />
-              </>
-            )}
-          </div>
-
-          {/* Row 5: País / Neto (when showFormaPago is true) */}
-          {showFormaPago && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {showPais ? (
-                <FormSelect
-                  label="País"
-                  value={gasto.pais || ''}
-                  onChange={(v) => onUpdate('pais', v)}
-                  options={paisOptions}
-                  required
-                  disabled={isDisabled}
-                  error={errors.pais}
-                  isDark={isDark}
-                />
-              ) : (
-                <div /> // Empty for grid alignment
-              )}
-              <FormInput
-                label="Neto"
-                type="text"
-                value={formatNumberWithSeparators(gasto.neto)}
-                onChange={(v) => onUpdate('neto', parseFormattedNumber(v))}
+          {/* ── Grupo: Importes ── */}
+          <FormRow>
+            {showPais && (
+              <FormSelect
+                label="País"
+                value={gasto.pais || ''}
+                onChange={(v) => onUpdate('pais', v)}
+                options={paisOptions}
                 required
                 disabled={isDisabled}
-                placeholder="$0"
-                error={errors.neto}
+                error={errors.pais}
                 isDark={isDark}
               />
-            </div>
-          )}
+            )}
+            <FormInput
+              label="Neto"
+              type="text"
+              value={formatNumberWithSeparators(gasto.neto)}
+              onChange={(v) => onUpdate('neto', parseFormattedNumber(v))}
+              required
+              disabled={isDisabled}
+              placeholder="$0"
+              error={errors.neto}
+              isDark={isDark}
+            />
+          </FormRow>
 
           {/* Observaciones / Detalle de gasto */}
           {showObservaciones && (

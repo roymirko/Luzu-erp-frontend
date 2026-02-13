@@ -14,6 +14,8 @@ DROP VIEW IF EXISTS public.implementacion_gastos_full CASCADE;
 DROP VIEW IF EXISTS public.implementacion_comprobantes_full CASCADE;
 DROP VIEW IF EXISTS public.programacion_gastos_full CASCADE;
 DROP VIEW IF EXISTS public.programacion_comprobantes_full CASCADE;
+DROP VIEW IF EXISTS public.productora_gastos_full CASCADE;
+DROP VIEW IF EXISTS public.productora_comprobantes_full CASCADE;
 DROP VIEW IF EXISTS public.experience_gastos_full CASCADE;
 DROP VIEW IF EXISTS public.experience_comprobantes_full CASCADE;
 DROP VIEW IF EXISTS public.implementacion_gastos CASCADE;
@@ -24,6 +26,8 @@ DROP VIEW IF EXISTS public.proveedores CASCADE;
 
 DROP TABLE IF EXISTS public.items_gasto_implementacion CASCADE;
 DROP TABLE IF EXISTS public.gastos_implementacion CASCADE;
+DROP TABLE IF EXISTS public.productora_comprobantes CASCADE;
+DROP TABLE IF EXISTS public.productora_formularios CASCADE;
 DROP TABLE IF EXISTS public.experience_comprobantes CASCADE;
 DROP TABLE IF EXISTS public.experience_formularios CASCADE;
 DROP TABLE IF EXISTS public.programacion_comprobantes CASCADE;
@@ -357,6 +361,36 @@ CREATE TABLE public.experience_comprobantes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   comprobante_id UUID NOT NULL REFERENCES public.comprobantes(id) ON DELETE CASCADE,
   formulario_id UUID NOT NULL REFERENCES public.experience_formularios(id) ON DELETE CASCADE,
+  empresa TEXT,
+  empresa_programa TEXT,
+  fecha_comprobante DATE,
+  pais TEXT DEFAULT 'argentina',
+  rubro TEXT,
+  sub_rubro TEXT,
+  UNIQUE(comprobante_id)
+);
+
+-- PRODUCTORA_FORMULARIOS
+CREATE TABLE public.productora_formularios (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  mes_gestion VARCHAR(7),
+  unidad_negocio TEXT,
+  categoria_negocio TEXT,
+  rubro TEXT,
+  sub_rubro TEXT,
+  nombre_campana TEXT,
+  detalle_campana TEXT,
+  estado TEXT DEFAULT 'activo',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by TEXT
+);
+
+-- PRODUCTORA_COMPROBANTES
+CREATE TABLE public.productora_comprobantes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  comprobante_id UUID NOT NULL REFERENCES public.comprobantes(id) ON DELETE CASCADE,
+  formulario_id UUID NOT NULL REFERENCES public.productora_formularios(id) ON DELETE CASCADE,
   empresa TEXT,
   empresa_programa TEXT,
   fecha_comprobante DATE,
@@ -742,6 +776,62 @@ JOIN public.experience_formularios ef ON ec.formulario_id = ef.id;
 CREATE OR REPLACE VIEW public.experience_gastos_full AS
 SELECT * FROM public.experience_comprobantes_full;
 
+-- PRODUCTORA VIEWS
+CREATE OR REPLACE VIEW public.productora_comprobantes_full AS
+SELECT
+  c.id,
+  c.entidad_nombre AS proveedor,
+  c.entidad_nombre AS razon_social,
+  c.tipo_comprobante AS tipo_factura,
+  CASE
+    WHEN c.punto_venta IS NOT NULL AND c.numero_comprobante IS NOT NULL
+    THEN CONCAT(c.punto_venta, '-', c.numero_comprobante)
+    ELSE c.numero_comprobante
+  END AS numero_factura,
+  c.fecha_comprobante AS fecha_factura,
+  c.moneda,
+  c.neto,
+  c.iva_alicuota AS iva,
+  c.total AS importe_total,
+  c.empresa AS gasto_empresa,
+  c.concepto AS concepto_gasto,
+  c.observaciones,
+  c.estado,
+  c.estado_pago,
+  c.created_at,
+  c.updated_at,
+  c.created_by,
+  -- Consolidated from comprobantes
+  c.factura_emitida_a AS comprobante_factura_emitida_a,
+  c.acuerdo_pago AS comprobante_acuerdo_pago,
+  c.forma_pago AS comprobante_forma_pago,
+  -- Formulario fields
+  pf.id AS formulario_id,
+  pf.mes_gestion,
+  pf.unidad_negocio,
+  pf.categoria_negocio,
+  pf.rubro AS formulario_rubro,
+  pf.sub_rubro AS formulario_sub_rubro,
+  pf.nombre_campana,
+  pf.detalle_campana,
+  pf.estado AS formulario_estado,
+  pf.created_at AS formulario_created_at,
+  pf.created_by AS formulario_created_by,
+  -- Context fields
+  pc.id AS productora_gasto_id,
+  pc.empresa,
+  pc.empresa_programa,
+  pc.fecha_comprobante,
+  pc.pais,
+  pc.rubro AS context_rubro,
+  pc.sub_rubro AS context_sub_rubro
+FROM public.comprobantes c
+JOIN public.productora_comprobantes pc ON c.id = pc.comprobante_id
+JOIN public.productora_formularios pf ON pc.formulario_id = pf.id;
+
+CREATE OR REPLACE VIEW public.productora_gastos_full AS
+SELECT * FROM public.productora_comprobantes_full;
+
 -- Vista unificada comprobantes_full
 CREATE OR REPLACE VIEW public.comprobantes_full AS
 SELECT
@@ -751,6 +841,7 @@ SELECT
     WHEN tc.id IS NOT NULL THEN 'tecnica'
     WHEN pc.id IS NOT NULL THEN 'programacion'
     WHEN ec.id IS NOT NULL THEN 'experience'
+    WHEN prc.id IS NOT NULL THEN 'productora'
     ELSE 'directo'
   END as area_origen,
   -- Tecnica context
@@ -788,6 +879,15 @@ SELECT
   ef.mes_gestion as exp_mes_gestion,
   ec.rubro as exp_rubro,
   ec.sub_rubro as exp_sub_rubro,
+  -- Productora context
+  prc.id as productora_comprobante_id,
+  prc.formulario_id as productora_formulario_id,
+  prf.nombre_campana as prod_nombre_campana,
+  prf.mes_gestion as prod_mes_gestion,
+  prf.unidad_negocio as prod_unidad_negocio,
+  prf.categoria_negocio as prod_categoria_negocio,
+  prf.rubro as prod_rubro,
+  prf.sub_rubro as prod_sub_rubro,
   -- OP vinculada para ingresos
   opi.id as ingreso_op_id,
   opi.orden_publicidad as ingreso_op_numero,
@@ -812,6 +912,8 @@ LEFT JOIN programacion_comprobantes pc ON c.id = pc.comprobante_id
 LEFT JOIN programacion_formularios pf ON pc.formulario_id = pf.id
 LEFT JOIN experience_comprobantes ec ON c.id = ec.comprobante_id
 LEFT JOIN experience_formularios ef ON ec.formulario_id = ef.id
+LEFT JOIN productora_comprobantes prc ON c.id = prc.comprobante_id
+LEFT JOIN productora_formularios prf ON prc.formulario_id = prf.id
 LEFT JOIN ordenes_publicidad opi ON c.orden_publicidad_id_ingreso = opi.id;
 
 CREATE OR REPLACE VIEW public.gastos_full AS
@@ -894,6 +996,12 @@ CREATE INDEX idx_exp_formularios_created ON public.experience_formularios(create
 CREATE INDEX idx_exp_comprobantes_comprobante ON public.experience_comprobantes(comprobante_id);
 CREATE INDEX idx_exp_comprobantes_formulario ON public.experience_comprobantes(formulario_id);
 
+-- Productora
+CREATE INDEX idx_prod_formularios_estado ON public.productora_formularios(estado);
+CREATE INDEX idx_prod_formularios_created ON public.productora_formularios(created_at DESC);
+CREATE INDEX idx_prod_comprobantes_comprobante ON public.productora_comprobantes(comprobante_id);
+CREATE INDEX idx_prod_comprobantes_formulario ON public.productora_comprobantes(formulario_id);
+
 -- Legacy
 CREATE INDEX idx_gastos_impl_item ON public.gastos_implementacion(item_orden_publicidad_id);
 CREATE INDEX idx_items_gasto_gasto ON public.items_gasto_implementacion(gasto_id);
@@ -928,6 +1036,12 @@ CREATE TRIGGER trigger_programacion_formularios_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at();
 
+DROP TRIGGER IF EXISTS trigger_productora_formularios_updated_at ON public.productora_formularios;
+CREATE TRIGGER trigger_productora_formularios_updated_at
+  BEFORE UPDATE ON public.productora_formularios
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at();
+
 DROP TRIGGER IF EXISTS trigger_experience_formularios_updated_at ON public.experience_formularios;
 CREATE TRIGGER trigger_experience_formularios_updated_at
   BEFORE UPDATE ON public.experience_formularios
@@ -950,6 +1064,8 @@ ALTER TABLE public.comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.implementacion_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.programacion_formularios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.programacion_comprobantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.productora_formularios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.productora_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.experience_formularios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tecnica_comprobantes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.experience_comprobantes ENABLE ROW LEVEL SECURITY;
@@ -969,6 +1085,8 @@ DROP POLICY IF EXISTS "allow_all" ON public.implementacion_comprobantes;
 DROP POLICY IF EXISTS "allow_all" ON public.tecnica_comprobantes;
 DROP POLICY IF EXISTS "allow_all" ON public.programacion_formularios;
 DROP POLICY IF EXISTS "allow_all" ON public.programacion_comprobantes;
+DROP POLICY IF EXISTS "allow_all" ON public.productora_formularios;
+DROP POLICY IF EXISTS "allow_all" ON public.productora_comprobantes;
 DROP POLICY IF EXISTS "allow_all" ON public.experience_formularios;
 DROP POLICY IF EXISTS "allow_all" ON public.experience_comprobantes;
 DROP POLICY IF EXISTS "allow_all" ON public.gastos_implementacion;
@@ -989,6 +1107,8 @@ CREATE POLICY "allow_all" ON public.programacion_formularios FOR ALL USING (true
 CREATE POLICY "allow_all" ON public.programacion_comprobantes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.experience_formularios FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.experience_comprobantes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON public.productora_formularios FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON public.productora_comprobantes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.gastos_implementacion FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.items_gasto_implementacion FOR ALL USING (true) WITH CHECK (true);
 
@@ -1013,6 +1133,8 @@ GRANT SELECT ON programacion_comprobantes_full TO authenticated, anon;
 GRANT SELECT ON programacion_gastos_full TO authenticated, anon;
 GRANT SELECT ON experience_comprobantes_full TO authenticated, anon;
 GRANT SELECT ON experience_gastos_full TO authenticated, anon;
+GRANT SELECT ON productora_comprobantes_full TO authenticated, anon;
+GRANT SELECT ON productora_gastos_full TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION public.hash_password(TEXT) TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION public.verify_password(TEXT, TEXT) TO authenticated, anon;
 

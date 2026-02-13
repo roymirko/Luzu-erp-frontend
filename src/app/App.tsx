@@ -25,6 +25,7 @@ import {
   DollarSign,
   Building,
   Wrench,
+  Clapperboard,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 // Lazy-loaded heavy components
@@ -46,6 +47,9 @@ import { ProgramacionProvider } from "./contexts/ProgramacionContext";
 import { ExperienceProvider, useExperience } from "./contexts/ExperienceContext";
 import { Experience } from "./components/Experience";
 import { ExperienceForm } from "./components/experience/ExperienceForm";
+import { ProductoraProvider, useProductora } from "./contexts/ProductoraContext";
+import { Productora } from "./components/Productora";
+import { ProductoraForm } from "./components/productora/ProductoraForm";
 import { Finanzas } from "./components/finanzas/Finanzas";
 import { Administracion } from "./components/administracion/Administracion";
 import { Avatar, AvatarFallback } from "./components/ui/avatar";
@@ -95,6 +99,12 @@ const menuItems = [
     path: "/experience",
     label: "Experience",
     icon: <Sparkles className="h-5 w-5" />,
+  },
+  {
+    id: "productora",
+    path: "/productora",
+    label: "Productora",
+    icon: <Clapperboard className="h-5 w-5" />,
   },
   {
     id: "finanzas",
@@ -252,6 +262,26 @@ function AppContent() {
       return [
         { label: "Inicio", path: null },
         { label: "Experience", path: "/experience" },
+        { label: "Editar formulario", path: null },
+      ];
+    }
+    if (path === "/productora") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Productora", path: null },
+      ];
+    }
+    if (path === "/productora/nuevo") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Productora", path: "/productora" },
+        { label: "Nuevo formulario", path: null },
+      ];
+    }
+    if (path.startsWith("/productora/editar/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Productora", path: "/productora" },
         { label: "Editar formulario", path: null },
       ];
     }
@@ -477,6 +507,9 @@ function AppContent() {
               <Route path="/experience" element={<ExperiencePage />} />
               <Route path="/experience/nuevo" element={<ExperienceNuevoPage />} />
               <Route path="/experience/editar/:id" element={<ExperienceEditarPage />} />
+              <Route path="/productora" element={<ProductoraPage />} />
+              <Route path="/productora/nuevo" element={<ProductoraNuevoPage />} />
+              <Route path="/productora/editar/:id" element={<ProductoraEditarPage />} />
               <Route path="/finanzas" element={<FinanzasPage />} />
               <Route path="/administracion" element={<AdministracionPage />} />
               <Route path="/backoffice" element={<Suspense fallback={<LoadingFallback />}><FormBuilder /></Suspense>} />
@@ -693,6 +726,58 @@ function ExperienceEditarPage() {
   );
 }
 
+function ProductoraPage() {
+  const navigate = useNavigate();
+  return (
+    <Productora
+      onNew={() => navigate("/productora/nuevo")}
+      onOpen={(id) => navigate(`/productora/editar/${id}`)}
+    />
+  );
+}
+
+function ProductoraNuevoPage() {
+  const navigate = useNavigate();
+  return (
+    <ProductoraForm
+      onCancel={() => navigate("/productora")}
+      onSave={() => navigate("/productora")}
+    />
+  );
+}
+
+function ProductoraEditarPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { getGastoById } = useProductora();
+  const { users } = useData();
+
+  const existingGasto = id ? getGastoById(id) : undefined;
+
+  const getResponsableName = (createdById: string | undefined) => {
+    if (!createdById) return '-';
+    const user = users.find(u => u.id === createdById);
+    return user ? `${user.firstName} ${user.lastName}` : '-';
+  };
+
+  const existingFormulario = existingGasto
+    ? {
+        responsable: getResponsableName(existingGasto.formularioCreatedBy || existingGasto.createdBy),
+        fechaRegistro: existingGasto.formularioCreatedAt?.toISOString() || existingGasto.createdAt?.toISOString(),
+        formularioEstado: existingGasto.formularioEstado as 'abierto' | 'cerrado' | 'anulado' | undefined,
+      }
+    : undefined;
+
+  return (
+    <ProductoraForm
+      gastoId={id}
+      existingFormulario={existingFormulario}
+      onCancel={() => navigate("/productora")}
+      onSave={() => navigate("/productora")}
+    />
+  );
+}
+
 function FinanzasPage() {
   return <Finanzas />;
 }
@@ -713,8 +798,10 @@ export default function App() {
                   <TecnicaProvider>
                     <ProgramacionProvider>
                       <ExperienceProvider>
-                        <AppContent />
-                        <Toaster richColors position="top-right" />
+                        <ProductoraProvider>
+                          <AppContent />
+                          <Toaster richColors position="top-right" />
+                        </ProductoraProvider>
                       </ExperienceProvider>
                     </ProgramacionProvider>
                   </TecnicaProvider>

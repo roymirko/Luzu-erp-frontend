@@ -49,6 +49,7 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
     proveedor: gasto.proveedor,
     razonSocial: gasto.razonSocial,
     condicionPago: gasto.condicionPago || '30',
+    numeroComprobante: gasto.numeroFactura || '',
     formaPago: gasto.formaPago || '',
     neto: String(gasto.neto),
     observaciones: gasto.observaciones || '',
@@ -84,6 +85,7 @@ function bloqueToCreateInput(
     subRubro: shared.subRubro,
     condicionPago: bloque.condicionPago,
     formaPago: bloque.formaPago,
+    numeroFactura: bloque.numeroComprobante || undefined,
   };
 }
 
@@ -200,6 +202,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         proveedor: '',
         razonSocial: '',
         condicionPago: '30',
+        numeroComprobante: '',
         formaPago: '',
         neto: '',
         observaciones: '',
@@ -331,6 +334,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       proveedor: '',
       razonSocial: '',
       condicionPago: '30',
+      numeroComprobante: '',
       formaPago: '',
       neto: '',
       observaciones: '',
@@ -390,6 +394,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           sector: importe.empresaPgm,
           condicionPago: importe.condicionPago,
           formaPago: importe.formaPago,
+          numeroFactura: importe.numeroComprobante || undefined,
           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
         });
 
@@ -487,6 +492,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           sector: importe.empresaPgm,
           condicionPago: importe.condicionPago,
           formaPago: importe.formaPago,
+          numeroFactura: importe.numeroComprobante || undefined,
           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
         });
         if (success) {

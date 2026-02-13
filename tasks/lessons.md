@@ -33,3 +33,16 @@ return user ? `${user.firstName} ${user.lastName}` : createdById;
 - `FormularioProgramacion.tsx` - responsableName
 
 **Rule**: Never display UUIDs directly. Always look up entity names from context.
+
+## 2026-02-12: Field name casing mismatch kills data persistence
+
+**Problem**: Experience `subrubro` field appeared empty after save + re-open. Data was in DB but never reached the UI.
+
+**Root cause**: `mapFromDB()` returned field as `subRubro` (camelCase) but form/context read `subrubro` (lowercase). JS object property access is case-sensitive, so `obj.subrubro !== obj.subRubro`.
+
+**Also**: The TypeScript interfaces (`GastoExperience`, `CreateMultipleGastosExperienceInput`, etc.) never declared the `subrubro` field — it was silently passed through as an extra property.
+
+**Rule**:
+1. When adding a new field, declare it in the TypeScript interface FIRST
+2. Use consistent casing across mapper → type → form. Pick one (e.g., `subrubro`) and stick with it
+3. If the build passes but a field doesn't work at runtime, check for casing mismatches in JS objects

@@ -1,32 +1,23 @@
-# Extract shared form components
+# Agregar Nro Comprobante + Reordenar Acuerdo de Pago
 
 ## Completed
 
-- [x] Step 1: `formatCurrency` → `src/app/utils/format.ts`
-  - Created unified function (handles string|number, optional moneda, NaN fallback)
-  - Replaced 8 local definitions across 11 files
-  - Removed `formatCurrency` prop from CampaignInfoCard, ResumenPresupuestario, ExperienceResumen
-- [x] Step 2: formStyles → `src/app/components/shared/formStyles.ts`
-  - `formStyles(isDark)` — form group (h-32, 5 classes: label, input, selectTrigger, disabledSelect, textarea)
-  - `dialogFormStyles(isDark)` — dialog group (h-9, 2 classes: label, input)
-  - Replaced in 8 files: Prog, Exp, GastoCard, DialogAdmin, DialogIngreso, DialogNuevo, DialogDetalle, ProveedorSelector
-- [x] Step 3: FormHeader + FormFooter → `src/app/components/shared/`
-  - FormHeader: configurable badge (gray/colored), warning (red/yellow), estadoLabel
-  - FormFooter: configurable hideSave/disableSave when cerrado, cancelLabelCerrado, paddingTop
-  - Replaced in 4 formularios: Impl, Tec, Prog, Exp
-
-## New files
-- `src/app/utils/format.ts`
-- `src/app/components/shared/formStyles.ts`
-- `src/app/components/shared/FormHeader.tsx`
-- `src/app/components/shared/FormFooter.tsx`
+- [x] Step 1: Add `numeroComprobante` to GastoData + GastoCardErrors interfaces
+- [x] Step 2: Reorder GastoCard layout — acuerdo pago + nro comprobante first, then factura/empresa, then programa/fecha, then proveedor, then forma pago/pais, then neto
+- [x] Step 3: Add `numeroComprobante` to BloqueImporte (impl/tec shared)
+- [x] Step 4: Map in CargaImportesSection (toGastoData)
+- [x] Step 5: Map in gastoToBloqueImporte (load from DB) — impl + tec
+- [x] Step 6: Map in bloqueToCreateInput (save to DB) — impl + tec
+- [x] Step 7: Map in handleSaveGasto update path — impl + tec (individual + bulk)
+- [x] Step 8: Add `numeroComprobante` to programacion GastoItem + all mappings (load, save individual, save bulk)
+- [x] Step 9: Add `numeroComprobante` to experience GastoItem + all mappings (load, save individual, save bulk)
+- [x] Build: `npm run build` — zero TS errors
 
 ## Files modified
-- FormularioImplementacion, FormularioTecnica, FormularioProgramacion, ExperienceForm
-- TablaImplementacion, TablaComprobantes
-- DialogAdminComprobante, DialogIngresoAdmin, DialogNuevoComprobante, DialogDetalleComprobante
-- CampaignInfoCard, ResumenPresupuestario, ExperienceResumen
-- GastoCard, ProveedorSelector
-
-## Build
-`npm run build` — zero TS errors, bundle ~940KB (down from ~944KB)
+- `src/app/components/shared/GastoCard.tsx` — interface + layout reorder
+- `src/app/components/implementacion/index.ts` — BloqueImporte interface
+- `src/app/components/implementacion/CargaImportesSection.tsx` — toGastoData mapping
+- `src/app/components/FormularioImplementacion.tsx` — load/save/create mappings
+- `src/app/components/FormularioTecnica.tsx` — load/save/create mappings
+- `src/app/components/programacion/FormularioProgramacion.tsx` — GastoItem + all mappings
+- `src/app/components/experience/ExperienceForm.tsx` — GastoItem + all mappings

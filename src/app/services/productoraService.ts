@@ -1,29 +1,25 @@
-import * as experienceRepo from '../repositories/experienceRepository';
+import * as productoraRepo from '../repositories/productoraRepository';
 import type {
-  ExperienceGastoFullRow,
+  ProductoraGastoFullRow,
   GastoInsert,
-  ExperienceFormularioInsert,
-  ExperienceGastoInsert,
+  ProductoraFormularioInsert,
+  ProductoraComprobanteInsert,
 } from '../repositories/types';
 import type {
-  GastoExperience,
-  CreateGastoExperienceInput,
-  UpdateGastoExperienceInput,
-  GastoExperienceValidationResult,
-  EstadoGastoExperience,
-  EstadoFormularioExperience,
-  CreateMultipleGastosExperienceInput,
-  GastoExperienceItemInput,
-} from '../types/experience';
+  GastoProductora,
+  CreateGastoProductoraInput,
+  UpdateGastoProductoraInput,
+  GastoProductoraValidationResult,
+  EstadoGastoProductora,
+  EstadoFormularioProductora,
+  CreateMultipleGastosProductoraInput,
+} from '../types/productora';
 import type { EstadoPago, Moneda } from '../types/gastos';
 
 const DEFAULT_IVA = 21;
 const DEFAULT_MONEDA: Moneda = 'ARS';
 
-/**
- * Mapea una fila de la vista a modelo de dominio
- */
-function mapFromDB(row: ExperienceGastoFullRow): GastoExperience {
+function mapFromDB(row: ProductoraGastoFullRow): GastoProductora {
   return {
     // Gasto base
     id: row.id,
@@ -39,7 +35,7 @@ function mapFromDB(row: ExperienceGastoFullRow): GastoExperience {
     empresa: row.gasto_empresa || undefined,
     conceptoGasto: row.concepto_gasto || undefined,
     observaciones: row.observaciones || undefined,
-    estado: (row.estado || 'pendiente') as EstadoGastoExperience,
+    estado: (row.estado || 'pendiente') as EstadoGastoProductora,
     estadoPago: (row.estado_pago || 'creado') as EstadoPago,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
@@ -47,87 +43,40 @@ function mapFromDB(row: ExperienceGastoFullRow): GastoExperience {
     // Formulario (header)
     formularioId: row.formulario_id,
     mesGestion: row.mes_gestion || '',
+    unidadNegocio: row.unidad_negocio || '',
+    categoriaNegocio: row.categoria_negocio || '',
+    formularioRubro: row.formulario_rubro || '',
+    formularioSubRubro: row.formulario_sub_rubro || '',
     nombreCampana: row.nombre_campana || '',
     detalleCampana: row.detalle_campana || undefined,
-    rubro: row.rubro || '',
-    subrubro: row.sub_rubro || '',
-    formularioEstado: (row.formulario_estado || 'activo') as EstadoFormularioExperience,
+    formularioEstado: (row.formulario_estado || 'activo') as EstadoFormularioProductora,
     formularioCreatedAt: row.formulario_created_at ? new Date(row.formulario_created_at) : undefined,
     formularioCreatedBy: row.formulario_created_by || undefined,
     // Context
-    experienceGastoId: row.experience_gasto_id,
-    facturaEmitidaA: row.factura_emitida_a || undefined,
+    productoraGastoId: row.productora_gasto_id,
+    facturaEmitidaA: row.comprobante_factura_emitida_a || undefined,
     empresaContext: row.empresa || undefined,
     empresaPrograma: row.empresa_programa || undefined,
     fechaComprobante: row.fecha_comprobante || undefined,
-    acuerdoPago: row.acuerdo_pago || undefined,
-    formaPago: row.forma_pago || undefined,
+    acuerdoPago: row.comprobante_acuerdo_pago || undefined,
+    formaPago: row.comprobante_forma_pago || undefined,
     pais: row.pais || 'argentina',
+    contextRubro: row.context_rubro || undefined,
+    contextSubRubro: row.context_sub_rubro || undefined,
   };
 }
 
-/**
- * Mapea input de creación a los formatos de las 3 tablas
- */
-function mapToDBInserts(input: CreateGastoExperienceInput): {
-  gasto: GastoInsert;
-  formulario: ExperienceFormularioInsert;
-  context: Omit<ExperienceGastoInsert, 'gasto_id' | 'formulario_id'>;
-} {
-  const neto = input.neto || 0;
-  const iva = input.iva ?? DEFAULT_IVA;
-  const importeTotal = neto * (1 + iva / 100);
-
-  return {
-    gasto: {
-      proveedor: input.proveedor,
-      razon_social: input.razonSocial || null,
-      tipo_factura: input.tipoFactura || null,
-      numero_factura: input.numeroFactura || null,
-      fecha_factura: input.fechaFactura?.toISOString().split('T')[0] || null,
-      moneda: input.moneda || DEFAULT_MONEDA,
-      neto,
-      iva,
-      importe_total: importeTotal,
-      empresa: input.empresa || null,
-      concepto_gasto: input.conceptoGasto || null,
-      observaciones: input.observaciones || null,
-      estado: 'pendiente',
-      estado_pago: 'creado',
-      created_by: input.createdBy || null,
-    },
-    formulario: {
-      mes_gestion: input.mesGestion || new Date().toISOString().slice(0, 7),
-      nombre_campana: input.nombreCampana || null,
-      detalle_campana: input.detalleCampana || null,
-      estado: 'activo',
-      created_by: input.createdBy || null,
-    },
-    context: {
-      factura_emitida_a: input.facturaEmitidaA || null,
-      empresa: input.empresaContext || null,
-      empresa_programa: input.empresaPrograma || null,
-      fecha_comprobante: input.fechaComprobante || null,
-      acuerdo_pago: input.acuerdoPago || null,
-      forma_pago: input.formaPago || null,
-      pais: input.pais || 'argentina',
-      rubro: 'Gastos de Evento',
-      sub_rubro: input.subrubro || null,
-    },
-  };
-}
-
-/**
- * Valida los campos requeridos para crear un gasto de Experience
- */
-export function validateCreate(input: CreateGastoExperienceInput): GastoExperienceValidationResult {
+export function validateCreate(input: CreateGastoProductoraInput): GastoProductoraValidationResult {
   const errors: { field: string; message: string }[] = [];
 
   if (!input.nombreCampana?.trim()) {
     errors.push({ field: 'nombreCampana', message: 'Debe ingresar un nombre de campaña' });
   }
-  if (!input.subrubro?.trim()) {
-    errors.push({ field: 'subrubro', message: 'Debe seleccionar un subrubro' });
+  if (!input.rubro?.trim()) {
+    errors.push({ field: 'rubro', message: 'Debe seleccionar un rubro' });
+  }
+  if (!input.subRubro?.trim()) {
+    errors.push({ field: 'subRubro', message: 'Debe seleccionar un subrubro' });
   }
   if (!input.proveedor?.trim()) {
     errors.push({ field: 'proveedor', message: 'Debe seleccionar un proveedor' });
@@ -142,72 +91,43 @@ export function validateCreate(input: CreateGastoExperienceInput): GastoExperien
   return { valid: errors.length === 0, errors };
 }
 
-/**
- * Obtiene todos los gastos de Experience
- */
-export async function getAll(): Promise<{ data: GastoExperience[]; error: string | null }> {
-  const result = await experienceRepo.findAll();
+export async function getAll(): Promise<{ data: GastoProductora[]; error: string | null }> {
+  const result = await productoraRepo.findAll();
 
   if (result.error) {
-    console.error('Error fetching gastos experience:', result.error);
+    console.error('Error fetching gastos productora:', result.error);
     return { data: [], error: result.error.message };
   }
 
   return { data: result.data.map(mapFromDB), error: null };
 }
 
-/**
- * Obtiene un gasto de Experience por ID
- */
-export async function getById(id: string): Promise<{ data: GastoExperience | null; error: string | null }> {
-  const result = await experienceRepo.findById(id);
+export async function getById(id: string): Promise<{ data: GastoProductora | null; error: string | null }> {
+  const result = await productoraRepo.findById(id);
 
   if (result.error) {
-    console.error('Error fetching gasto experience:', result.error);
+    console.error('Error fetching gasto productora:', result.error);
     return { data: null, error: result.error.message };
   }
 
   return { data: result.data ? mapFromDB(result.data) : null, error: null };
 }
 
-/**
- * Crea un nuevo gasto de Experience
- */
-export async function create(input: CreateGastoExperienceInput): Promise<{ data: GastoExperience | null; error: string | null }> {
-  const validation = validateCreate(input);
-  if (!validation.valid) {
-    return { data: null, error: validation.errors.map(e => e.message).join(', ') };
-  }
-
-  const dbInserts = mapToDBInserts(input);
-  const result = await experienceRepo.create(dbInserts);
-
-  if (result.error || !result.data) {
-    console.error('Error creating gasto experience:', result.error);
-    return { data: null, error: result.error?.message || 'Error al crear el gasto' };
-  }
-
-  return { data: mapFromDB(result.data), error: null };
-}
-
-/**
- * Crea múltiples gastos de Experience bajo un mismo formulario
- */
-export async function createMultiple(input: CreateMultipleGastosExperienceInput): Promise<{ data: GastoExperience[]; error: string | null }> {
-  // Validate at least one gasto
+export async function createMultiple(input: CreateMultipleGastosProductoraInput): Promise<{ data: GastoProductora[]; error: string | null }> {
   if (!input.gastos || input.gastos.length === 0) {
     return { data: [], error: 'Debe proporcionar al menos un gasto' };
   }
 
-  // Validate required fields
   if (!input.nombreCampana?.trim()) {
     return { data: [], error: 'Debe ingresar un nombre de campaña' };
   }
-  if (!input.subrubro?.trim()) {
+  if (!input.rubro?.trim()) {
+    return { data: [], error: 'Debe seleccionar un rubro' };
+  }
+  if (!input.subRubro?.trim()) {
     return { data: [], error: 'Debe seleccionar un subrubro' };
   }
 
-  // Validate each gasto
   for (let i = 0; i < input.gastos.length; i++) {
     const g = input.gastos[i];
     if (!g.proveedor?.trim()) {
@@ -236,16 +156,18 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
     }
   }
 
-  // Build formulario insert
-  const formulario: ExperienceFormularioInsert = {
+  const formulario: ProductoraFormularioInsert = {
     mes_gestion: input.mesGestion || new Date().toISOString().slice(0, 7),
+    unidad_negocio: input.unidadNegocio || null,
+    categoria_negocio: input.categoriaNegocio || null,
+    rubro: input.rubro || null,
+    sub_rubro: input.subRubro || null,
     nombre_campana: input.nombreCampana || null,
     detalle_campana: input.detalleCampana || null,
     estado: 'activo',
     created_by: input.createdBy || null,
   };
 
-  // Build gastos inserts
   const gastosData = input.gastos.map(g => {
     const neto = g.neto || 0;
     const iva = g.iva ?? DEFAULT_IVA;
@@ -277,13 +199,13 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
         acuerdo_pago: g.acuerdoPago || null,
         forma_pago: g.formaPago || null,
         pais: g.pais || 'argentina',
-        rubro: 'Gastos de Evento',
-        sub_rubro: input.subrubro || null,
+        rubro: input.rubro || null,
+        sub_rubro: input.subRubro || null,
       },
     };
   });
 
-  const result = await experienceRepo.createWithMultipleGastos({
+  const result = await productoraRepo.createWithMultipleGastos({
     formulario,
     gastos: gastosData,
   });
@@ -296,9 +218,6 @@ export async function createMultiple(input: CreateMultipleGastosExperienceInput)
   return { data: result.data.map(mapFromDB), error: null };
 }
 
-/**
- * Agrega un gasto a un formulario existente
- */
 export async function addGastoToFormulario(
   formularioId: string,
   input: {
@@ -316,13 +235,14 @@ export async function addGastoToFormulario(
     formaPago?: string;
     pais?: string;
     createdBy?: string;
+    numeroFactura?: string;
   }
-): Promise<{ data: GastoExperience | null; error: string | null }> {
+): Promise<{ data: GastoProductora | null; error: string | null }> {
   const neto = input.neto;
   const iva = input.iva ?? DEFAULT_IVA;
   const importeTotal = neto * (1 + iva / 100);
 
-  const result = await experienceRepo.addGastoToFormulario(formularioId, {
+  const result = await productoraRepo.addGastoToFormulario(formularioId, {
     gasto: {
       proveedor: input.proveedor,
       razon_social: input.razonSocial || null,
@@ -355,13 +275,9 @@ export async function addGastoToFormulario(
   return { data: mapFromDB(result.data), error: null };
 }
 
-/**
- * Actualiza un gasto de Experience
- */
-export async function update(input: UpdateGastoExperienceInput): Promise<{ data: GastoExperience | null; error: string | null }> {
+export async function update(input: UpdateGastoProductoraInput): Promise<{ data: GastoProductora | null; error: string | null }> {
   const { id, ...fields } = input;
 
-  // Separar campos por tabla
   const gastoUpdate: Record<string, unknown> = {};
   const formularioUpdate: Record<string, unknown> = {};
   const contextUpdate: Record<string, unknown> = {};
@@ -382,9 +298,9 @@ export async function update(input: UpdateGastoExperienceInput): Promise<{ data:
   if (fields.observaciones !== undefined) gastoUpdate.observaciones = fields.observaciones;
   if (fields.estado !== undefined) gastoUpdate.estado = fields.estado;
 
-  // Recalcular importe total si cambió neto o iva
+  // Recalculate total
   if (fields.neto !== undefined || fields.iva !== undefined) {
-    const currentResult = await experienceRepo.findById(id);
+    const currentResult = await productoraRepo.findById(id);
     if (currentResult.data) {
       const neto = fields.neto ?? currentResult.data.neto;
       const iva = fields.iva ?? currentResult.data.iva;
@@ -394,54 +310,45 @@ export async function update(input: UpdateGastoExperienceInput): Promise<{ data:
 
   // Formulario (header)
   if (fields.mesGestion !== undefined) formularioUpdate.mes_gestion = fields.mesGestion;
+  if (fields.unidadNegocio !== undefined) formularioUpdate.unidad_negocio = fields.unidadNegocio;
+  if (fields.categoriaNegocio !== undefined) formularioUpdate.categoria_negocio = fields.categoriaNegocio;
+  if (fields.rubro !== undefined) formularioUpdate.rubro = fields.rubro;
+  if (fields.subRubro !== undefined) formularioUpdate.sub_rubro = fields.subRubro;
   if (fields.nombreCampana !== undefined) formularioUpdate.nombre_campana = fields.nombreCampana;
   if (fields.detalleCampana !== undefined) formularioUpdate.detalle_campana = fields.detalleCampana;
 
-  // Consolidated fields → comprobante update (not context)
+  // Consolidated fields -> comprobante
   if (fields.facturaEmitidaA !== undefined) gastoUpdate.factura_emitida_a = fields.facturaEmitidaA;
   if (fields.acuerdoPago !== undefined) gastoUpdate.acuerdo_pago = fields.acuerdoPago;
   if (fields.formaPago !== undefined) gastoUpdate.forma_pago = fields.formaPago;
 
   // Context
-  if (fields.subrubro !== undefined) contextUpdate.sub_rubro = fields.subrubro;
   if (fields.empresaContext !== undefined) contextUpdate.empresa = fields.empresaContext;
   if (fields.empresaPrograma !== undefined) contextUpdate.empresa_programa = fields.empresaPrograma;
   if (fields.fechaComprobante !== undefined) contextUpdate.fecha_comprobante = fields.fechaComprobante;
   if (fields.pais !== undefined) contextUpdate.pais = fields.pais;
 
-  const result = await experienceRepo.update(id, {
+  const result = await productoraRepo.update(id, {
     gasto: Object.keys(gastoUpdate).length > 0 ? gastoUpdate : undefined,
     formulario: Object.keys(formularioUpdate).length > 0 ? formularioUpdate : undefined,
     context: Object.keys(contextUpdate).length > 0 ? contextUpdate : undefined,
   });
 
   if (result.error) {
-    console.error('Error updating gasto experience:', result.error);
+    console.error('Error updating gasto productora:', result.error);
     return { data: null, error: result.error.message };
   }
 
   return { data: result.data ? mapFromDB(result.data) : null, error: null };
 }
 
-/**
- * Elimina un gasto de Experience
- */
 export async function remove(id: string): Promise<{ success: boolean; error: string | null }> {
-  const result = await experienceRepo.remove(id);
+  const result = await productoraRepo.remove(id);
 
   if (result.error) {
-    console.error('Error deleting gasto experience:', result.error);
+    console.error('Error deleting gasto productora:', result.error);
     return { success: false, error: result.error.message };
   }
 
   return { success: true, error: null };
-}
-
-/**
- * Calcula el importe total a partir del neto e IVA
- */
-export function calculateTotalImporte(gasto: GastoExperience): number {
-  const neto = gasto.neto || 0;
-  const iva = gasto.iva || DEFAULT_IVA;
-  return neto * (1 + iva / 100);
 }

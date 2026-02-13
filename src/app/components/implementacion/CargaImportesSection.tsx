@@ -44,6 +44,7 @@ function toGastoData(importe: BloqueImporte): GastoData {
     razonSocial: importe.razonSocial,
     proveedor: importe.proveedor,
     acuerdoPago: importe.condicionPago,
+    numeroComprobante: importe.numeroComprobante,
     formaPago: importe.formaPago,
     neto: importe.neto,
     observaciones: importe.observaciones,

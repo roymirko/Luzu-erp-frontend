@@ -20,6 +20,7 @@ export interface BloqueImporte {
   proveedor: string;
   razonSocial: string;
   condicionPago: string;
+  numeroComprobante: string;
   formaPago: string;
   neto: string;
   observaciones: string;

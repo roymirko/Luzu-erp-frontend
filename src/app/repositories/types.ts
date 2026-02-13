@@ -628,10 +628,96 @@ export interface ExperienceComprobanteRow {
 export type ExperienceComprobanteInsert = Omit<ExperienceComprobanteRow, 'id'>;
 export type ExperienceComprobanteUpdate = Partial<Omit<ExperienceComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>;
 
+// ============================================
+// Productora Module Types
+// ============================================
+
+// Tabla productora_formularios (header)
+export interface ProductoraFormularioRow {
+  id: string;
+  mes_gestion: string | null;
+  unidad_negocio: string | null;
+  categoria_negocio: string | null;
+  rubro: string | null;
+  sub_rubro: string | null;
+  nombre_campana: string | null;
+  detalle_campana: string | null;
+  estado: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export type ProductoraFormularioInsert = Omit<ProductoraFormularioRow, 'id' | 'created_at' | 'updated_at'>;
+export type ProductoraFormularioUpdate = Partial<Omit<ProductoraFormularioRow, 'id' | 'created_at'>>;
+
+// Tabla productora_comprobantes (contexto)
+export interface ProductoraComprobanteRow {
+  id: string;
+  comprobante_id: string;
+  formulario_id: string;
+  empresa: string | null;
+  empresa_programa: string | null;
+  fecha_comprobante: string | null;
+  pais: string | null;
+  rubro: string | null;
+  sub_rubro: string | null;
+}
+
+export type ProductoraComprobanteInsert = Omit<ProductoraComprobanteRow, 'id'>;
+export type ProductoraComprobanteUpdate = Partial<Omit<ProductoraComprobanteRow, 'id' | 'comprobante_id' | 'formulario_id'>>;
+
+// Vista productora_gastos_full (para queries)
+export interface ProductoraGastoFullRow {
+  // Comprobante fields
+  id: string;
+  proveedor: string;
+  razon_social: string | null;
+  tipo_factura: string | null;
+  numero_factura: string | null;
+  fecha_factura: string | null;
+  moneda: string;
+  neto: number;
+  iva: number;
+  importe_total: number;
+  gasto_empresa: string | null;
+  concepto_gasto: string | null;
+  observaciones: string | null;
+  estado: string;
+  estado_pago: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  // Consolidated fields from comprobantes
+  comprobante_factura_emitida_a: string | null;
+  comprobante_acuerdo_pago: string | null;
+  comprobante_forma_pago: string | null;
+  // Formulario fields
+  formulario_id: string;
+  mes_gestion: string | null;
+  unidad_negocio: string | null;
+  categoria_negocio: string | null;
+  formulario_rubro: string | null;
+  formulario_sub_rubro: string | null;
+  nombre_campana: string | null;
+  detalle_campana: string | null;
+  formulario_estado: string | null;
+  formulario_created_at: string | null;
+  formulario_created_by: string | null;
+  // Context fields
+  productora_gasto_id: string;
+  empresa: string | null;
+  empresa_programa: string | null;
+  fecha_comprobante: string | null;
+  pais: string | null;
+  context_rubro: string | null;
+  context_sub_rubro: string | null;
+}
+
 // Vista comprobantes_full (para queries con contexto)
 // Note: ComprobanteFullRow inherits admin fields from ComprobanteRow
 export interface ComprobanteFullRow extends ComprobanteRow {
-  area_origen: 'implementacion' | 'programacion' | 'experience' | 'tecnica' | 'directo';
+  area_origen: 'implementacion' | 'programacion' | 'experience' | 'tecnica' | 'productora' | 'directo';
   // Implementacion context
   implementacion_comprobante_id: string | null;
   orden_publicidad_id: string | null;
@@ -667,6 +753,15 @@ export interface ComprobanteFullRow extends ComprobanteRow {
   exp_mes_gestion: string | null;
   exp_rubro: string | null;
   exp_sub_rubro: string | null;
+  // Productora context
+  productora_comprobante_id: string | null;
+  productora_formulario_id: string | null;
+  prod_nombre_campana: string | null;
+  prod_mes_gestion: string | null;
+  prod_unidad_negocio: string | null;
+  prod_categoria_negocio: string | null;
+  prod_rubro: string | null;
+  prod_sub_rubro: string | null;
   // OP vinculada para ingresos
   ingreso_op_id: string | null;
   ingreso_op_numero: string | null;

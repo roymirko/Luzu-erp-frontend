@@ -48,6 +48,7 @@ interface GastoItem {
   empresaPrograma: string;
   fechaComprobante: string;
   acuerdoPago: string;
+  numeroComprobante: string;
   formaPago: string;
   neto: number;
   observaciones: string;
@@ -106,6 +107,7 @@ export function FormularioProgramacion({
       empresaPrograma: "",
       fechaComprobante: new Date().toISOString().split("T")[0],
       acuerdoPago: "",
+      numeroComprobante: "",
       formaPago: "",
       neto: 0,
       observaciones: "",
@@ -162,6 +164,7 @@ export function FormularioProgramacion({
         empresaPrograma: g.categoria || "",
         fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
         acuerdoPago: g.acuerdoPago || "",
+        numeroComprobante: g.numeroFactura || "",
         formaPago: g.formaPago || "",
         neto: g.neto || 0,
         observaciones: g.observaciones || "",
@@ -262,6 +265,7 @@ export function FormularioProgramacion({
         empresaPrograma: "",
         fechaComprobante: new Date().toISOString().split("T")[0],
         acuerdoPago: "",
+        numeroComprobante: "",
         formaPago: "",
         neto: 0,
         observaciones: "",
@@ -324,6 +328,7 @@ export function FormularioProgramacion({
           categoria: gasto.empresaPrograma,
           acuerdoPago: gasto.acuerdoPago,
           formaPago: gasto.formaPago,
+          numeroFactura: gasto.numeroComprobante || undefined,
           fechaFactura: gasto.fechaComprobante ? new Date(gasto.fechaComprobante) : undefined,
         });
 
@@ -352,6 +357,7 @@ export function FormularioProgramacion({
           categoria: gasto.empresaPrograma,
           acuerdoPago: gasto.acuerdoPago,
           formaPago: gasto.formaPago,
+          numeroFactura: gasto.numeroComprobante || undefined,
           fechaFactura: gasto.fechaComprobante ? new Date(gasto.fechaComprobante) : undefined,
           createdBy: currentUser?.id,
         });
@@ -451,6 +457,7 @@ export function FormularioProgramacion({
             empresa: g.empresa,
             acuerdoPago: g.acuerdoPago,
             formaPago: g.formaPago,
+            numeroFactura: g.numeroComprobante || undefined,
             neto: g.neto,
             observaciones: g.observaciones,
             facturaEmitidaA: g.facturaEmitidaA,
@@ -480,6 +487,7 @@ export function FormularioProgramacion({
               categoria: g.empresaPrograma,
               acuerdoPago: g.acuerdoPago,
               formaPago: g.formaPago,
+              numeroFactura: g.numeroComprobante || undefined,
               fechaFactura: g.fechaComprobante ? new Date(g.fechaComprobante) : undefined,
               createdBy: currentUser?.id,
             });
@@ -518,6 +526,7 @@ export function FormularioProgramacion({
           facturaEmitidaA: g.facturaEmitidaA,
           acuerdoPago: g.acuerdoPago,
           formaPago: g.formaPago,
+          numeroFactura: g.numeroComprobante || undefined,
           categoria: g.empresaPrograma,
           fechaFactura: g.fechaComprobante ? new Date(g.fechaComprobante) : undefined,
         }));
@@ -774,6 +783,7 @@ export function FormularioProgramacion({
                 razonSocial: "",
                 proveedor: "",
                 acuerdoPago: gasto.acuerdoPago,
+                numeroComprobante: gasto.numeroComprobante,
                 formaPago: gasto.formaPago,
                 neto: String(gasto.neto || 0),
                 observaciones: gasto.observaciones,
