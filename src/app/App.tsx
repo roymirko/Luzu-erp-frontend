@@ -750,20 +750,11 @@ function ProductoraEditarPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { getGastoById } = useProductora();
-  const { users } = useData();
 
   const existingGasto = id ? getGastoById(id) : undefined;
 
-  const getResponsableName = (createdById: string | undefined) => {
-    if (!createdById) return '-';
-    const user = users.find(u => u.id === createdById);
-    return user ? `${user.firstName} ${user.lastName}` : '-';
-  };
-
   const existingFormulario = existingGasto
     ? {
-        responsable: getResponsableName(existingGasto.formularioCreatedBy || existingGasto.createdBy),
-        fechaRegistro: existingGasto.formularioCreatedAt?.toISOString() || existingGasto.createdAt?.toISOString(),
         formularioEstado: existingGasto.formularioEstado as 'abierto' | 'cerrado' | 'anulado' | undefined,
       }
     : undefined;

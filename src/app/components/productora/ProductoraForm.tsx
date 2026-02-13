@@ -2,11 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { useData } from '@/app/contexts/DataContext';
 import { useProductora } from '@/app/contexts/ProductoraContext';
-import { Input } from '@/app/components/ui/input';
-import { Label } from '@/app/components/ui/label';
 import { Button } from '@/app/components/ui/button';
 import { cn } from '@/app/components/ui/utils';
-import { formStyles } from '@/app/components/shared/formStyles';
 import { FormHeader } from '@/app/components/shared/FormHeader';
 import { FormFooter } from '@/app/components/shared/FormFooter';
 import { GastoCard, type GastoData } from '@/app/components/shared';
@@ -38,8 +35,6 @@ interface GastoItem {
 }
 
 interface ExistingFormulario {
-  responsable?: string;
-  fechaRegistro?: string;
   formularioEstado?: 'abierto' | 'cerrado' | 'anulado';
 }
 
@@ -68,12 +63,6 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
     return gastos
       .filter((g) => g.id !== excludeId && g.empresaPrograma)
       .map((g) => g.empresaPrograma);
-  };
-
-  const formatDateDisplay = (dateStr?: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   // Section 1: Header fields
@@ -432,8 +421,6 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
     }
   };
 
-  const { disabledSelect: disabledSelectClass } = formStyles(isDark);
-
   if (isEditing && (loadingData || contextLoading)) {
     return (
       <div className={cn('min-h-screen py-4 sm:py-6 flex items-center justify-center', isDark ? 'bg-transparent' : 'bg-white')}>
@@ -460,33 +447,6 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
             badgeVariant="colored"
             warningVariant="yellow"
           />
-
-          {isEditing && (
-            <div className="grid grid-cols-3 gap-5">
-              <div className="space-y-1">
-                <Label className={cn('text-sm font-medium', isDark ? 'text-gray-300' : 'text-[#344054]')}>Responsable</Label>
-                <Input
-                  type="text"
-                  value={existingFormulario?.responsable || (currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '')}
-                  disabled
-                  className={disabledSelectClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className={cn('text-sm font-medium', isDark ? 'text-gray-300' : 'text-[#344054]')}>Fecha de Registro</Label>
-                <Input
-                  type="text"
-                  value={formatDateDisplay(existingFormulario?.fechaRegistro)}
-                  disabled
-                  className={disabledSelectClass}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className={cn('text-sm font-medium', isDark ? 'text-gray-300' : 'text-[#344054]')}>Sector</Label>
-                <Input type="text" value="Productora" disabled className={disabledSelectClass} />
-              </div>
-            </div>
-          )}
 
           <ProductoraCargaDatosSection
             isDark={isDark}
