@@ -68,7 +68,7 @@ const MAX_OBSERVACIONES_LENGTH = 250;
 export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }: ExperienceFormProps) {
   const { isDark } = useTheme();
   const { currentUser, users } = useData();
-  const { gastos: contextGastos, loading: contextLoading, addMultipleGastos, addGastoToFormulario, updateGasto, getGastosByFormularioId, getGastoById } = useExperience();
+  const { gastos: contextGastos, loading: contextLoading, addMultipleGastos, addGastoToFormulario, updateGasto, deleteGasto, getGastosByFormularioId, getGastoById } = useExperience();
 
   // Form-level state
   const isEditing = !!gastoId;
@@ -276,6 +276,62 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       return;
     }
     setGastos((prev) => prev.filter((g) => g.id !== id));
+  };
+
+  const resetGastoItem = (id: string) => {
+    setGastos((prev) =>
+      prev.map((g) =>
+        g.id === id
+          ? {
+              ...g,
+              facturaEmitidaA: '',
+              empresa: '',
+              empresaPrograma: '',
+              fechaComprobante: new Date().toISOString().split('T')[0],
+              razonSocial: '',
+              proveedor: '',
+              acuerdoPago: '',
+              numeroComprobante: '',
+              formaPago: '',
+              pais: 'argentina',
+              neto: 0,
+              observaciones: '',
+            }
+          : g
+      )
+    );
+  };
+
+  const handleDeleteSavedGasto = async (id: string): Promise<boolean> => {
+    const success = await deleteGasto(id);
+    if (success) {
+      loadedGastoIdsRef.current.delete(id);
+      if (gastos.length > 1) {
+        setGastos((prev) => prev.filter((g) => g.id !== id));
+      } else {
+        const newId = crypto.randomUUID();
+        setGastos([{
+          id: newId,
+          facturaEmitidaA: '',
+          empresa: '',
+          empresaPrograma: '',
+          fechaComprobante: new Date().toISOString().split('T')[0],
+          razonSocial: '',
+          proveedor: '',
+          acuerdoPago: '',
+          numeroComprobante: '',
+          formaPago: '',
+          pais: 'argentina',
+          neto: 0,
+          observaciones: '',
+          estado: 'pendiente-pago',
+        }]);
+      }
+      toast.success('Gasto eliminado');
+      return true;
+    }
+    toast.error('Error al eliminar gasto');
+    return false;
   };
 
   const updateGastoItem = (id: string, field: keyof GastoItem, value: string | number) => {
@@ -677,13 +733,15 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                 (opt) => opt.value === gasto.empresaPrograma || !selectedPrograms.includes(opt.value)
               );
 
+              const isGastoNew = !loadedGastoIdsRef.current.has(gasto.id);
+
               return (
                 <GastoCard
                   key={gasto.id}
                   isDark={isDark}
                   gasto={gastoData}
                   index={index}
-                  isNew={false}
+                  isNew={isGastoNew}
                   isDisabled={isDisabled}
                   estado={gasto.estado}
                   isCollapsed={isCollapsed}
@@ -696,10 +754,15 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                     }
                   }}
                   onCancel={() => {
-                    if (gastos.length > 1) {
-                      removeGastoItem(gasto.id);
+                    if (isGastoNew) {
+                      if (gastos.length > 1) {
+                        removeGastoItem(gasto.id);
+                      } else {
+                        resetGastoItem(gasto.id);
+                      }
                     }
                   }}
+                  onDeleteSaved={!isGastoNew ? async () => handleDeleteSavedGasto(gasto.id) : undefined}
                   onSave={async () => {
                     const error = validateSingleGasto(gasto, index);
                     if (error) {

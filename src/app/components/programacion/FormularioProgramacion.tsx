@@ -87,6 +87,7 @@ export function FormularioProgramacion({
     addMultipleGastos,
     addGastoToFormulario,
     updateGasto,
+    deleteGasto,
     getGastoById,
     getGastosByFormularioId,
   } = useProgramacion();
@@ -285,6 +286,57 @@ export function FormularioProgramacion({
       return;
     }
     setGastos((prev) => prev.filter((g) => g.id !== id));
+  };
+
+  const resetGastoItem = (id: string) => {
+    setGastos((prev) =>
+      prev.map((g) =>
+        g.id === id
+          ? {
+              ...g,
+              facturaEmitidaA: '',
+              empresa: '',
+              empresaPrograma: '',
+              fechaComprobante: new Date().toISOString().split('T')[0],
+              acuerdoPago: '',
+              numeroComprobante: '',
+              formaPago: '',
+              neto: 0,
+              observaciones: '',
+            }
+          : g
+      )
+    );
+  };
+
+  const handleDeleteSavedGasto = async (id: string): Promise<boolean> => {
+    const success = await deleteGasto(id);
+    if (success) {
+      loadedGastoIdsRef.current.delete(id);
+      if (gastos.length > 1) {
+        setGastos((prev) => prev.filter((g) => g.id !== id));
+      } else {
+        // Last gasto: replace with empty
+        const newId = crypto.randomUUID();
+        setGastos([{
+          id: newId,
+          facturaEmitidaA: '',
+          empresa: '',
+          empresaPrograma: '',
+          fechaComprobante: new Date().toISOString().split('T')[0],
+          acuerdoPago: '',
+          numeroComprobante: '',
+          formaPago: '',
+          neto: 0,
+          observaciones: '',
+          estado: 'pendiente-pago',
+        }]);
+      }
+      toast.success('Gasto eliminado');
+      return true;
+    }
+    toast.error('Error al eliminar gasto');
+    return false;
   };
 
   const updateGastoItem = (
@@ -801,13 +853,15 @@ export function FormularioProgramacion({
                   !selectedPrograms.includes(opt.value)
               );
 
+              const isGastoNew = !loadedGastoIdsRef.current.has(gasto.id);
+
               return (
                 <GastoCard
                   key={gasto.id}
                   isDark={isDark}
                   gasto={gastoData}
                   index={index}
-                  isNew={false}
+                  isNew={isGastoNew}
                   isDisabled={isDisabled}
                   estado={gasto.estado}
                   isCollapsed={isCollapsed}
@@ -820,10 +874,15 @@ export function FormularioProgramacion({
                     }
                   }}
                   onCancel={() => {
-                    if (gastos.length > 1) {
-                      removeGastoItem(gasto.id);
+                    if (isGastoNew) {
+                      if (gastos.length > 1) {
+                        removeGastoItem(gasto.id);
+                      } else {
+                        resetGastoItem(gasto.id);
+                      }
                     }
                   }}
+                  onDeleteSaved={!isGastoNew ? async () => handleDeleteSavedGasto(gasto.id) : undefined}
                   onSave={async () => {
                     const error = validateSingleGasto(gasto, index);
                     if (error) {

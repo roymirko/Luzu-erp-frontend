@@ -6,6 +6,16 @@ import { FormDatePicker } from '@/app/components/ui/form-date-picker';
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Button } from '@/app/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/app/components/ui/alert-dialog';
 import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import { cn } from '@/app/components/ui/utils';
 import { formStyles } from '@/app/components/shared/formStyles';
@@ -86,6 +96,7 @@ interface GastoCardProps {
   onRemove?: () => void;
   onSave?: () => void;
   onCancel?: () => void;
+  onDeleteSaved?: () => Promise<boolean>;
   errors?: GastoCardErrors;
   isNew?: boolean;
   isDisabled?: boolean;
@@ -137,6 +148,7 @@ export function GastoCard(props: GastoCardProps) {
     onRemove,
     onSave,
     onCancel,
+    onDeleteSaved,
     errors = {},
     isNew = true,
     isDisabled = false,
@@ -170,6 +182,9 @@ export function GastoCard(props: GastoCardProps) {
     showButtonsBorder = false,
   } = props;
 
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Internal collapse state for uncontrolled mode
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(
     defaultCollapsed ?? !isNew
@@ -187,7 +202,7 @@ export function GastoCard(props: GastoCardProps) {
 
   const { label: labelClass, textarea: textareaClass } = formStyles(isDark);
 
-  const showButtons = !isDisabled && (onSave || onCancel);
+  const showButtons = !isDisabled && (onSave || onCancel || onDeleteSaved);
 
   return (
     <div
@@ -405,15 +420,16 @@ export function GastoCard(props: GastoCardProps) {
               'flex justify-end gap-2 pt-2',
               showButtonsBorder && 'border-t border-gray-200 dark:border-gray-700'
             )}>
-              {onCancel && (
+              {(onCancel || onDeleteSaved) && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={onCancel}
+                  onClick={() => setShowCancelDialog(true)}
+                  disabled={isDeleting}
                   className="text-[#0070ff] hover:text-[#0060dd] text-xs"
                 >
-                  Cancelar
+                  {isDeleting ? 'Eliminando...' : 'Cancelar'}
                 </Button>
               )}
               {onSave && (
@@ -430,6 +446,34 @@ export function GastoCard(props: GastoCardProps) {
               )}
             </div>
           )}
+
+          {/* Cancel confirmation dialog */}
+          <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar cancelación</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Si continúa, los datos cargados se perderán. ¿Desea continuar?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    if (!isNew && onDeleteSaved) {
+                      setIsDeleting(true);
+                      await onDeleteSaved();
+                      setIsDeleting(false);
+                    } else {
+                      onCancel?.();
+                    }
+                  }}
+                >
+                  Continuar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>

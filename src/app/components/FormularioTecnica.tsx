@@ -107,6 +107,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
     addGasto,
     addMultipleGastos,
     updateGasto,
+    deleteGasto,
     getGastoById,
     getGastosByItemOrdenId,
     getGastosByOrdenId,
@@ -375,6 +376,62 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       return;
     }
     setImportes((prev) => prev.filter((imp) => imp.id !== id));
+  };
+
+  const resetImporte = (id: string) => {
+    setImportes((prev) =>
+      prev.map((imp) =>
+        imp.id === id
+          ? {
+              ...imp,
+              facturaEmitidaA: '',
+              empresa: '',
+              empresaPgm: '',
+              fechaComprobante: new Date().toISOString().split('T')[0],
+              proveedor: '',
+              razonSocial: '',
+              condicionPago: '30',
+              numeroComprobante: '',
+              formaPago: '',
+              neto: '',
+              observaciones: '',
+            }
+          : imp
+      )
+    );
+  };
+
+  const handleDeleteSavedGasto = async (id: string): Promise<boolean> => {
+    const success = await deleteGasto(id);
+    if (success) {
+      loadedGastoIdsRef.current.delete(id);
+      if (importes.length > 1) {
+        setImportes((prev) => prev.filter((imp) => imp.id !== id));
+      } else {
+        const newId = crypto.randomUUID();
+        setImportes([{
+          id: newId,
+          programa: '',
+          empresaPgm: '',
+          itemOrdenPublicidadId: itemId,
+          facturaEmitidaA: '',
+          empresa: '',
+          fechaComprobante: new Date().toISOString().split('T')[0],
+          proveedor: '',
+          razonSocial: '',
+          condicionPago: '30',
+          numeroComprobante: '',
+          formaPago: '',
+          neto: '',
+          observaciones: '',
+          estadoPgm: 'pendiente',
+        }]);
+      }
+      toast.success('Gasto eliminado');
+      return true;
+    }
+    toast.error('Error al eliminar gasto');
+    return false;
   };
 
   const updateImporte = (id: string, field: keyof BloqueImporte, value: string) => {
@@ -667,7 +724,9 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
             onUpdateImporte={updateImporte}
             onAddImporte={addImporte}
             onRemoveImporte={removeImporte}
+            onResetImporte={resetImporte}
             onSaveGasto={handleSaveGasto}
+            onDeleteSavedGasto={handleDeleteSavedGasto}
             errors={errors.importes}
             isNewGasto={isNewGasto}
             existingGastoIds={existingGastoIds}

@@ -31,8 +31,8 @@ export function ResumenPresupuestario(props: ResumenPresupuestarioProps) {
     },
     {
       label: 'Disponible',
-      value: formatCurrency(Math.abs(disponible)),
-      percentage: calcPercentage(disponible),
+      value: formatCurrency(disponible),
+      percentage: calcPercentage(Math.abs(disponible)),
       percentageColor: excedido ? 'text-red-500' : 'text-[#2b7fff]',
     },
   ];

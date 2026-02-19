@@ -25,7 +25,9 @@ interface CargaImportesSectionProps {
   onUpdateImporte: (id: string, field: keyof BloqueImporte, value: string) => void;
   onAddImporte: () => void;
   onRemoveImporte: (id: string) => void;
+  onResetImporte: (id: string) => void;
   onSaveGasto: (importe: BloqueImporte, index: number) => Promise<boolean>;
+  onDeleteSavedGasto?: (id: string) => Promise<boolean>;
   errors?: ImportesErrors;
   // Status props
   isNewGasto?: boolean;
@@ -69,7 +71,9 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     onUpdateImporte,
     onAddImporte,
     onRemoveImporte,
+    onResetImporte,
     onSaveGasto,
+    onDeleteSavedGasto,
     errors = {},
     // Status props with defaults
     isNewGasto = true,
@@ -172,10 +176,18 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
               onRemove={importes.length > 1 && isImporteNew ? () => onRemoveImporte(imp.id) : undefined}
               onSave={async () => { await handleGastoSave(imp, idx); }}
               onCancel={() => {
-                if (importes.length > 1 && isImporteNew) {
-                  onRemoveImporte(imp.id);
+                if (isImporteNew) {
+                  if (importes.length > 1) {
+                    onRemoveImporte(imp.id);
+                  } else {
+                    onResetImporte(imp.id);
+                  }
                 }
               }}
+              onDeleteSaved={!isImporteNew && onDeleteSavedGasto ? async () => {
+                const success = await onDeleteSavedGasto(imp.id);
+                return success;
+              } : undefined}
               errors={errors[imp.id]}
               showFormaPago
               programOptions={programasConPresupuesto}
