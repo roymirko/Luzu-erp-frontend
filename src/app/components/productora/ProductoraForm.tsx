@@ -66,7 +66,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
   };
 
   // Section 1: Header fields
-  const [unidadNegocio, setUnidadNegocio] = useState('');
+  const [unidadNegocio, setUnidadNegocio] = useState('Productora');
   const [categoriaNegocio, setCategoriaNegocio] = useState('');
   const [rubro, setRubro] = useState('');
   const [subRubro, setSubRubro] = useState('');
@@ -113,7 +113,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
     const existingGasto = contextGastos.find(g => g.id === gastoId);
 
     if (existingGasto) {
-      setUnidadNegocio(existingGasto.unidadNegocio || '');
+      setUnidadNegocio(existingGasto.unidadNegocio || 'Productora');
       setCategoriaNegocio(existingGasto.categoriaNegocio || '');
       setRubro(existingGasto.formularioRubro || '');
       setSubRubro(existingGasto.formularioSubRubro || '');
@@ -153,9 +153,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
   const validateForm = (): ProductoraCargaDatosSectionErrors => {
     const newErrors: ProductoraCargaDatosSectionErrors = {};
     if (!unidadNegocio?.trim()) newErrors.unidadNegocio = 'Requerido';
-    if (!categoriaNegocio?.trim()) newErrors.categoriaNegocio = 'Requerido';
     if (!rubro?.trim()) newErrors.rubro = 'Requerido';
-    if (!subRubro?.trim()) newErrors.subRubro = 'Requerido';
     if (!nombreCampana?.trim()) newErrors.nombreCampana = 'Requerido';
     return newErrors;
   };
@@ -434,7 +432,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
 
   return (
     <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
-      <div className="max-w-[660px] mx-auto px-6 sm:px-8 lg:px-0">
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="space-y-6 sm:space-y-8">
           <FormHeader
             isDark={isDark}
@@ -513,7 +511,6 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
                   }}
                   isSaving={savingGastos.has(gasto.id)}
                   showFormaPago
-                  showPais
                   showCharacterCount
                   showButtonsBorder
                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}

@@ -584,7 +584,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
 
   return (
     <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
-      <div className="max-w-[620px] mx-auto px-6 sm:px-8 lg:px-0">
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="space-y-6 sm:space-y-8">
           <FormHeader
             isDark={isDark}

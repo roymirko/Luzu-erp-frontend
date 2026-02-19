@@ -51,7 +51,7 @@ function mapFromDB(row: ProgramacionGastoFullRow): GastoProgramacion {
     programa: row.programa || '',
     ejecutivo: row.ejecutivo || '',
     rubro: row.rubro || '',
-    subRubro: row.sub_rubro || '',
+    subRubroEmpresa: row.sub_rubro || '',
     detalleCampana: row.detalle_campana || undefined,
     formularioEstado: row.formulario_estado || undefined,
     formularioCreatedAt: row.formulario_created_at ? new Date(row.formulario_created_at) : undefined,

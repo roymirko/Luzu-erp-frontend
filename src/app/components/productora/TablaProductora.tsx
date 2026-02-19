@@ -40,7 +40,7 @@ const CAMPANA_COLUMNS = [
 
 const FILTER_OPTIONS = [
   { value: 'programa', label: 'Programa' },
-  { value: 'campana', label: 'Campaña' },
+  { value: 'campana', label: 'Gasto' },
 ];
 
 export function TablaProductora({ onOpen, onNew }: TablaProductoraProps) {

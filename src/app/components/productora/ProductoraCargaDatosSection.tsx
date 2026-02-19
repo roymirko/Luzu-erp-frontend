@@ -72,7 +72,6 @@ export function ProductoraCargaDatosSection(props: ProductoraCargaDatosSectionPr
           value={categoriaNegocio}
           onChange={setCategoriaNegocio}
           options={CATEGORIAS_NEGOCIO_PRODUCTORA_OPTIONS}
-          required
           error={errors.categoriaNegocio}
           isDark={isDark}
           disabled={disabled}
@@ -96,7 +95,6 @@ export function ProductoraCargaDatosSection(props: ProductoraCargaDatosSectionPr
           value={subRubro}
           onChange={setSubRubro}
           options={SUBRUBROS_PRODUCTORA_OPTIONS}
-          required
           error={errors.subRubro}
           isDark={isDark}
           disabled={disabled}
@@ -105,11 +103,11 @@ export function ProductoraCargaDatosSection(props: ProductoraCargaDatosSectionPr
 
       <div className="grid grid-cols-1 gap-6">
         <FormInput
-          label="Nombre de Campaña"
+          label="Evento"
           value={nombreCampana}
           onChange={setNombreCampana}
           required
-          placeholder="Buscar campaña..."
+          placeholder="Buscar evento..."
           error={errors.nombreCampana}
           isDark={isDark}
           disabled={disabled}

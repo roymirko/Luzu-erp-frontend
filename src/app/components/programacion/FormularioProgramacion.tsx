@@ -18,6 +18,7 @@ import { ProveedorSelector } from "../ProveedorSelector";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
 import { cn } from "../ui/utils";
+import type { FormSelectOption } from '../ui/form-select';
 import { formatCurrency } from "@/app/utils/format";
 import { formStyles } from "@/app/components/shared/formStyles";
 import { FormHeader } from "@/app/components/shared/FormHeader";
@@ -57,13 +58,17 @@ interface GastoItem {
 
 import {
   FACTURAS_OPTIONS,
-  EMPRESAS_OPTIONS,
   ACUERDOS_PAGO_EXPERIENCE_OPTIONS,
   FORMAS_PAGO_EXPERIENCE_OPTIONS,
   PROGRAMAS_LUZU_OPTIONS,
 } from '../../utils/implementacionConstants';
 
 const MAX_OBSERVACIONES_LENGTH = 250;
+
+const EMPRESAS_PROGRAMACION_OPTIONS: FormSelectOption[] = [
+  { value: 'Luzu TV', label: 'Luzu TV' },
+  { value: 'Luzu SA', label: 'Luzu SA' },
+];
 
 // Use shared options from implementacionConstants
 const ACUERDOS_PAGO_OPTIONS = ACUERDOS_PAGO_EXPERIENCE_OPTIONS;
@@ -584,7 +589,7 @@ export function FormularioProgramacion({
         isDark ? "bg-transparent" : "bg-white",
       )}
     >
-      <div className="max-w-[660px] mx-auto px-6 sm:px-8 lg:px-0">
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="space-y-6 sm:space-y-8">
           <FormHeader
             isDark={isDark}
@@ -837,7 +842,7 @@ export function FormularioProgramacion({
                   observacionesLabel="Detalle de gasto"
                   programOptions={availableProgramOptions}
                   facturaOptions={FACTURA_EMITIDA_A_OPTIONS}
-                  empresaOptions={EMPRESAS_OPTIONS}
+                  empresaOptions={EMPRESAS_PROGRAMACION_OPTIONS}
                   acuerdoPagoOptions={ACUERDOS_PAGO_OPTIONS}
                   formaPagoOptions={FORMAS_PAGO_OPTIONS}
                 />

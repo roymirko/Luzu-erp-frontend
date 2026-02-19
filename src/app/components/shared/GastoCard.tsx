@@ -225,7 +225,7 @@ export function GastoCard(props: GastoCardProps) {
                 isDark={isDark}
               />
             )}
-            {(!showFormaPago || gasto.formaPago === 'cheque') && (
+            {(!showFormaPago || gasto.formaPago === 'cheque' || gasto.formaPago === 'transferencia') && (
               <FormSelect
                 label="Acuerdo de pago"
                 value={gasto.acuerdoPago}
@@ -313,8 +313,8 @@ export function GastoCard(props: GastoCardProps) {
             )}
           </FormRow>
 
-          {/* ── Grupo: Proveedor (hidden on efectivo) ── */}
-          {gasto.formaPago !== 'efectivo' && showProveedorSelector && (
+          {/* ── Grupo: Proveedor ── */}
+          {showProveedorSelector && (
             <div className="space-y-2">
               <ProveedorSelector
                 value={{

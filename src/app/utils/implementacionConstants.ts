@@ -148,11 +148,8 @@ export const CATEGORIAS_NEGOCIO_PRODUCTORA_OPTIONS: FormSelectOption[] = [
 ];
 
 export const RUBROS_PRODUCTORA_OPTIONS: FormSelectOption[] = [
-  { value: 'Gasto de Evento', label: 'Gasto de Evento' },
   { value: 'Gasto de Venta', label: 'Gasto de Venta' },
-  { value: 'Gasto de Programación', label: 'Gasto de Programación' },
-  { value: 'Gasto de MKT', label: 'Gasto de MKT' },
-  { value: 'Gasto de Campaña', label: 'Gasto de Campaña' },
+  { value: 'Gasto de Evento', label: 'Gasto de Evento' },
 ];
 
 export const SUBRUBROS_PRODUCTORA_OPTIONS: FormSelectOption[] = [
