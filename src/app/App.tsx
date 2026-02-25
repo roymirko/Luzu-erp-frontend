@@ -14,6 +14,7 @@ import { LogProvider } from "./contexts/LogContext";
 import { DataProvider, useData } from "./contexts/DataContext";
 import { ImplementacionProvider } from "./contexts/ImplementacionContext";
 import { TecnicaProvider } from "./contexts/TecnicaContext";
+import { TalentosProvider } from "./contexts/TalentosContext";
 import {
   Menu,
   Briefcase,
@@ -26,6 +27,7 @@ import {
   Building,
   Wrench,
   Clapperboard,
+  Star,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 // Lazy-loaded heavy components
@@ -41,6 +43,8 @@ import { Implementaciones } from "./components/Implementaciones";
 import { FormularioImplementacion } from "./components/FormularioImplementacion";
 import { Tecnica } from "./components/Tecnica";
 import { FormularioTecnica } from "./components/FormularioTecnica";
+import { Talentos } from "./components/Talentos";
+import { FormularioTalentos } from "./components/FormularioTalentos";
 import { Programacion } from "./components/Programacion";
 import { FormularioProgramacion } from "./components/programacion/FormularioProgramacion";
 import { ProgramacionProvider } from "./contexts/ProgramacionContext";
@@ -87,6 +91,12 @@ const menuItems = [
     path: "/tecnica",
     label: "Técnica",
     icon: <Wrench className="h-5 w-5" />,
+  },
+  {
+    id: "talentos",
+    path: "/talentos",
+    label: "Talentos",
+    icon: <Star className="h-5 w-5" />,
   },
   {
     id: "programacion",
@@ -222,6 +232,19 @@ function AppContent() {
       return [
         { label: "Inicio", path: null },
         { label: "Técnica", path: "/tecnica" },
+        { label: "Gasto", path: null },
+      ];
+    }
+    if (path === "/talentos") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Talentos", path: null },
+      ];
+    }
+    if (path.startsWith("/talentos/gasto/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Talentos", path: "/talentos" },
         { label: "Gasto", path: null },
       ];
     }
@@ -496,6 +519,9 @@ function AppContent() {
               <Route path="/implementacion" element={<ImplementacionPage />} />
               <Route path="/implementacion/gasto/:formId" element={<GastoImplementacionPage />} />
               <Route path="/implementacion/gasto/:formId/:itemId" element={<GastoImplementacionPage />} />
+              <Route path="/talentos" element={<TalentosPage />} />
+              <Route path="/talentos/gasto/:formId" element={<GastoTalentosPage />} />
+              <Route path="/talentos/gasto/:formId/:itemId" element={<GastoTalentosPage />} />
               <Route path="/tecnica" element={<TecnicaPage />} />
               <Route path="/tecnica/nuevo" element={<NuevoGastoTecnicaPage />} />
               <Route path="/tecnica/editar/:gastoId" element={<EditarGastoTecnicaPage />} />
@@ -594,6 +620,33 @@ function GastoImplementacionPage() {
       formId={formId}
       itemId={itemId}
       onClose={() => navigate("/implementacion")}
+    />
+  );
+}
+
+function TalentosPage() {
+  const navigate = useNavigate();
+  return (
+    <Talentos
+      onOpen={(formId, itemId) => {
+        if (itemId) {
+          navigate(`/talentos/gasto/${formId}/${itemId}`);
+        } else {
+          navigate(`/talentos/gasto/${formId}`);
+        }
+      }}
+    />
+  );
+}
+
+function GastoTalentosPage() {
+  const navigate = useNavigate();
+  const { formId, itemId } = useParams();
+  return (
+    <FormularioTalentos
+      formId={formId}
+      itemId={itemId}
+      onClose={() => navigate("/talentos")}
     />
   );
 }
@@ -786,6 +839,7 @@ export default function App() {
             <FormulariosProvider>
               <FormFieldsProvider>
                 <ImplementacionProvider>
+                  <TalentosProvider>
                   <TecnicaProvider>
                     <ProgramacionProvider>
                       <ExperienceProvider>
@@ -796,6 +850,7 @@ export default function App() {
                       </ExperienceProvider>
                     </ProgramacionProvider>
                   </TecnicaProvider>
+                  </TalentosProvider>
                 </ImplementacionProvider>
               </FormFieldsProvider>
             </FormulariosProvider>

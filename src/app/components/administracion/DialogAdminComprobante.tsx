@@ -103,10 +103,13 @@ export function DialogAdminComprobante({
         // FormularioProgramacion expects the comprobante/gasto ID, not formulario ID
         return `/programacion/editar/${comprobante.id}`;
       case 'tecnica':
-        if (comprobante.tecOrdenPublicidadId) {
-          return `/tecnica/gasto/${comprobante.tecOrdenPublicidadId}`;
-        }
-        return null;
+        if (!comprobante.ordenPublicidadId) return null;
+        return `/tecnica/gasto/${comprobante.ordenPublicidadId}`;
+      case 'talentos':
+        if (!comprobante.ordenPublicidadId) return null;
+        return comprobante.itemOrdenPublicidadId
+          ? `/talentos/gasto/${comprobante.ordenPublicidadId}/${comprobante.itemOrdenPublicidadId}`
+          : `/talentos/gasto/${comprobante.ordenPublicidadId}`;
       case 'experience':
         // ExperienceForm expects the comprobante/gasto ID, not formulario ID
         return `/experience/editar/${comprobante.id}`;
@@ -407,82 +410,83 @@ export function DialogAdminComprobante({
                   Contexto del Área
                 </h4>
                 <div className="grid grid-cols-3 gap-2 text-sm">
-                  {comprobante.areaOrigen === 'implementacion' && (
+                  {/* OP-linked areas: impl/tec/talentos — unified fields */}
+                  {['implementacion', 'tecnica', 'talentos'].includes(comprobante.areaOrigen || '') && (
                     <>
-                      {comprobante.implOrdenPublicidad && (
-                        <div><span className="text-blue-600 dark:text-blue-400">OP:</span> {comprobante.implOrdenPublicidad}</div>
+                      {comprobante.opNumeroOrden && (
+                        <div><span className="text-blue-600 dark:text-blue-400">OP:</span> {comprobante.opNumeroOrden}</div>
                       )}
-                      {comprobante.implNombreCampana && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.implNombreCampana}</div>
+                      {(comprobante.opNombreCampana || comprobante.nombreCampana) && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.opNombreCampana || comprobante.nombreCampana}</div>
+                      )}
+                      {(comprobante.opUnidadNegocio || comprobante.unidadNegocio) && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.opUnidadNegocio || comprobante.unidadNegocio}</div>
+                      )}
+                      {(comprobante.opCategoriaNegocio || comprobante.categoriaNegocio) && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Categoría:</span> {comprobante.opCategoriaNegocio || comprobante.categoriaNegocio}</div>
                       )}
                       {comprobante.sector && (
                         <div><span className="text-blue-600 dark:text-blue-400">Sector:</span> {comprobante.sector}</div>
                       )}
-                      {comprobante.rubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.rubro}</div>
+                      {comprobante.rubroContexto && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.rubroContexto}</div>
                       )}
-                      {comprobante.subRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.subRubro}</div>
+                      {comprobante.subRubroContexto && (
+                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.subRubroContexto}</div>
                       )}
                     </>
                   )}
+                  {/* Programacion — context joined fields */}
                   {comprobante.areaOrigen === 'programacion' && (
                     <>
-                      {comprobante.progPrograma && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Programa:</span> {comprobante.progPrograma}</div>
+                      {comprobante.ctxPrograma && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Programa:</span> {comprobante.ctxPrograma}</div>
                       )}
-                      {comprobante.progMesGestion && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {comprobante.progMesGestion}</div>
+                      {comprobante.ctxMesGestion && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {comprobante.ctxMesGestion}</div>
                       )}
-                      {comprobante.progUnidadNegocio && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.progUnidadNegocio}</div>
+                      {comprobante.ctxUnidadNegocio && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.ctxUnidadNegocio}</div>
                       )}
-                      {comprobante.progRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.progRubro}</div>
+                      {comprobante.rubroContexto && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.rubroContexto}</div>
                       )}
-                      {comprobante.progSubRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.progSubRubro}</div>
-                      )}
-                    </>
-                  )}
-                  {comprobante.areaOrigen === 'tecnica' && (
-                    <>
-                      {comprobante.tecOrdenPublicidad && (
-                        <div><span className="text-blue-600 dark:text-blue-400">OP:</span> {comprobante.tecOrdenPublicidad}</div>
-                      )}
-                      {comprobante.tecNombreCampana && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.tecNombreCampana}</div>
-                      )}
-                      {comprobante.tecUnidadNegocio && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.tecUnidadNegocio}</div>
-                      )}
-                      {comprobante.tecCategoriaNegocio && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Categoría:</span> {comprobante.tecCategoriaNegocio}</div>
-                      )}
-                      {comprobante.tecSector && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Sector:</span> {comprobante.tecSector}</div>
-                      )}
-                      {comprobante.tecRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.tecRubro}</div>
-                      )}
-                      {comprobante.tecSubRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.tecSubRubro}</div>
+                      {comprobante.subRubroContexto && (
+                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.subRubroContexto}</div>
                       )}
                     </>
                   )}
+                  {/* Experience — context joined fields */}
                   {comprobante.areaOrigen === 'experience' && (
                     <>
-                      {comprobante.expNombreCampana && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.expNombreCampana}</div>
+                      {comprobante.ctxNombreCampana && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.ctxNombreCampana}</div>
                       )}
-                      {comprobante.expMesGestion && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {comprobante.expMesGestion}</div>
+                      {comprobante.ctxMesGestion && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Mes:</span> {comprobante.ctxMesGestion}</div>
                       )}
-                      {comprobante.expRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.expRubro}</div>
+                      {comprobante.ctxRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.ctxRubro}</div>
                       )}
-                      {comprobante.expSubRubro && (
-                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.expSubRubro}</div>
+                      {comprobante.ctxSubRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.ctxSubRubro}</div>
+                      )}
+                    </>
+                  )}
+                  {/* Productora — context joined fields */}
+                  {comprobante.areaOrigen === 'productora' && (
+                    <>
+                      {comprobante.ctxNombreCampana && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Campaña:</span> {comprobante.ctxNombreCampana}</div>
+                      )}
+                      {comprobante.ctxUnidadNegocio && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Unidad:</span> {comprobante.ctxUnidadNegocio}</div>
+                      )}
+                      {comprobante.ctxRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">Rubro:</span> {comprobante.ctxRubro}</div>
+                      )}
+                      {comprobante.ctxSubRubro && (
+                        <div><span className="text-blue-600 dark:text-blue-400">SubRubro:</span> {comprobante.ctxSubRubro}</div>
                       )}
                     </>
                   )}

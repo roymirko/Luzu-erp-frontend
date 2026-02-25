@@ -1,8 +1,8 @@
 // Re-export from unified gastos types
 export type {
-  Gasto as GastoTecnica,
-  CreateGastoInput as CreateGastoTecnicaInput,
-  UpdateGastoInput as UpdateGastoTecnicaInput,
+  Gasto as GastoTalentos,
+  CreateGastoInput as CreateGastoTalentosInput,
+  UpdateGastoInput as UpdateGastoTalentosInput,
   EstadoGasto,
   EstadoPago,
   GastoValidationError,

@@ -2,13 +2,13 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import * as gastosService from '../services/gastosService';
 import type { Gasto, CreateGastoInput, UpdateGastoInput, EstadoGasto, EstadoPago } from '../types/gastos';
 
-export type GastoTecnica = Gasto;
-export type CreateGastoTecnicaInput = CreateGastoInput;
+export type GastoTalentos = Gasto;
+export type CreateGastoTalentosInput = CreateGastoInput;
 export type { EstadoGasto, EstadoPago };
 
-const AREA = 'tecnica' as const;
+const AREA = 'talentos' as const;
 
-interface TecnicaContextType {
+interface TalentosContextType {
   gastos: Gasto[];
   loading: boolean;
   addGasto: (input: CreateGastoInput) => Promise<Gasto | null>;
@@ -26,9 +26,9 @@ interface TecnicaContextType {
   getTotalEjecutadoByItem: (itemId: string) => number;
 }
 
-const TecnicaContext = createContext<TecnicaContextType | undefined>(undefined);
+const TalentosContext = createContext<TalentosContextType | undefined>(undefined);
 
-export function TecnicaProvider({ children }: { children: ReactNode }) {
+export function TalentosProvider({ children }: { children: ReactNode }) {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,9 +36,9 @@ export function TecnicaProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const result = await gastosService.getByArea(AREA);
-      if (result.error) { console.error('[TecnicaContext] Error:', result.error); return; }
+      if (result.error) { console.error('[TalentosContext] Error:', result.error); return; }
       setGastos(result.data);
-    } catch (err) { console.error('[TecnicaContext] Error:', err); }
+    } catch (err) { console.error('[TalentosContext] Error:', err); }
     finally { setLoading(false); }
   }, []);
 
@@ -100,7 +100,7 @@ export function TecnicaProvider({ children }: { children: ReactNode }) {
   const getTotalEjecutadoByItem = (itemId: string) => gastosService.calculateTotalEjecutado(getGastosByItemOrdenId(itemId));
 
   return (
-    <TecnicaContext.Provider value={{
+    <TalentosContext.Provider value={{
       gastos, loading,
       addGasto, addMultipleGastos, updateGasto, deleteGasto,
       getGastoById, getGastosByOrdenId, getGastosByItemOrdenId,
@@ -109,12 +109,12 @@ export function TecnicaProvider({ children }: { children: ReactNode }) {
       getTotalEjecutadoByOrden, getTotalEjecutadoByItem,
     }}>
       {children}
-    </TecnicaContext.Provider>
+    </TalentosContext.Provider>
   );
 }
 
-export function useTecnica() {
-  const context = useContext(TecnicaContext);
-  if (context === undefined) throw new Error('useTecnica must be used within a TecnicaProvider');
+export function useTalentos() {
+  const context = useContext(TalentosContext);
+  if (context === undefined) throw new Error('useTalentos must be used within a TalentosProvider');
   return context;
 }

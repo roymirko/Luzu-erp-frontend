@@ -184,24 +184,22 @@ CREATE TABLE entidades (
 ## Comprobantes (Ingresos + Egresos)
 
 ### comprobantes
-Central table for all financial documents (invoices, receipts, etc.).
+Central table for ALL financial documents. Context columns are flattened directly on this table (no separate context tables). `area_origen` discriminates which context fields apply.
 ```sql
 CREATE TABLE comprobantes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  -- Direccion del movimiento
   tipo_movimiento TEXT DEFAULT 'egreso' CHECK (tipo_movimiento IN ('ingreso', 'egreso')),
-  -- Entidad (denormalizado para historico)
+  -- Entidad
   entidad_id UUID REFERENCES entidades(id),
   entidad_nombre TEXT NOT NULL,
   entidad_cuit TEXT,
   -- Factura argentina
   tipo_comprobante TEXT CHECK (tipo_comprobante IN (
-    'FA', 'FB', 'FC', 'FE', 'NCA', 'NCB', 'NCC', 'NDA', 'NDB', 'NDC', 'REC', 'TKT', 'OTR'
+    'FA','FB','FC','FE','NCA','NCB','NCC','NDA','NDB','NDC','REC','TKT','OTR'
   )),
   punto_venta TEXT,
   numero_comprobante TEXT,
   fecha_comprobante DATE,
-  -- AFIP manual
   cae TEXT,
   fecha_vencimiento_cae DATE,
   -- Montos
@@ -211,27 +209,26 @@ CREATE TABLE comprobantes (
   iva_monto DECIMAL(15,2) DEFAULT 0,
   percepciones DECIMAL(15,2) DEFAULT 0,
   total DECIMAL(15,2) NOT NULL DEFAULT 0,
-  -- Concepto
   empresa TEXT,
   concepto TEXT,
   observaciones TEXT,
   -- Estado
   estado TEXT DEFAULT 'pendiente',
-  estado_pago TEXT DEFAULT 'creado' CHECK (estado_pago IN ('creado', 'aprobado', 'requiere_info', 'rechazado', 'pagado')),
-  -- Payment/Collection fields
+  estado_pago TEXT DEFAULT 'creado' CHECK (estado_pago IN ('creado','aprobado','requiere_info','rechazado','pagado')),
+  -- Payment
   forma_pago TEXT,
   cotizacion DECIMAL(15,4),
   banco TEXT,
   numero_operacion TEXT,
   fecha_pago DATE,
-  -- Admin fields
+  -- Admin
   condicion_iva TEXT,
   comprobante_pago TEXT,
   ingresos_brutos DECIMAL(15,2) DEFAULT 0,
   retencion_ganancias DECIMAL(15,2) DEFAULT 0,
   fecha_estimada_pago DATE,
   nota_admin TEXT,
-  -- Ingreso-specific fields
+  -- Ingreso-specific
   retencion_iva DECIMAL(15,2) DEFAULT 0,
   retencion_suss DECIMAL(15,2) DEFAULT 0,
   fecha_vencimiento DATE,
@@ -241,9 +238,31 @@ CREATE TABLE comprobantes (
   contacto TEXT,
   fecha_envio DATE,
   orden_publicidad_id_ingreso UUID REFERENCES ordenes_publicidad(id),
-  -- Consolidated context fields
+  -- Consolidated egreso fields
   factura_emitida_a TEXT,
   acuerdo_pago TEXT,
+  -- === FLATTENED CONTEXT COLUMNS (replaces 6 old context tables) ===
+  area_origen TEXT CHECK (area_origen IN (
+    'implementacion','tecnica','talentos','programacion','experience','productora','directo'
+  )),
+  contexto_comprobante_id UUID REFERENCES contexto_comprobante(id),
+  orden_publicidad_id UUID REFERENCES ordenes_publicidad(id),
+  item_orden_publicidad_id UUID REFERENCES items_orden_publicidad(id),
+  sector TEXT,
+  rubro_contexto TEXT,
+  sub_rubro_contexto TEXT,
+  condicion_pago TEXT,
+  adjuntos JSONB,
+  nombre_campana TEXT,
+  unidad_negocio TEXT,
+  categoria_negocio TEXT,
+  categoria TEXT,
+  cliente TEXT,
+  monto_prog DECIMAL(15,2),
+  valor_imponible DECIMAL(15,2),
+  bonificacion DECIMAL(15,2) DEFAULT 0,
+  empresa_programa TEXT,
+  pais TEXT DEFAULT 'argentina',
   -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -251,214 +270,88 @@ CREATE TABLE comprobantes (
 );
 ```
 
-**Backward Compatibility**: Vista `gastos` filtra comprobantes tipo 'egreso'.
+**Area usage of context columns:**
+- **impl/tec/talentos** (OP-linked): `orden_publicidad_id`, `item_orden_publicidad_id`, `sector`, `rubro_contexto`, `sub_rubro_contexto`, `condicion_pago`, `adjuntos`, `nombre_campana`, `unidad_negocio`, `categoria_negocio`
+- **programacion**: `contexto_comprobante_id`, `categoria`, `cliente`, `monto_prog`, `valor_imponible`, `bonificacion`, `rubro_contexto`, `sub_rubro_contexto`
+- **experience/productora**: `contexto_comprobante_id`, `empresa_programa`, `pais`
+- **directo**: No context columns
 
-## Implementation Module (Implementacion)
-
-### implementacion_comprobantes
-Context table linking comprobantes to advertising orders.
+### contexto_comprobante
+Unified header for prog/exp/prod areas (replaces old `*_formularios` tables).
 ```sql
-CREATE TABLE implementacion_comprobantes (
+CREATE TABLE contexto_comprobante (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
-  orden_publicidad_id UUID REFERENCES ordenes_publicidad(id),
-  item_orden_publicidad_id UUID REFERENCES items_orden_publicidad(id),
-  sector TEXT,
-  rubro TEXT,
-  sub_rubro TEXT,
-  condicion_pago TEXT,
-  adjuntos JSONB,
-  UNIQUE(comprobante_id)
-);
-```
-
-**Backward Compatibility**: Vista `implementacion_gastos` mapea a esta tabla.
-
-## Tecnica Module
-
-### tecnica_comprobantes
-Context table linking comprobantes to advertising orders (standalone or OP-linked).
-```sql
-CREATE TABLE tecnica_comprobantes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
-  orden_publicidad_id UUID REFERENCES ordenes_publicidad(id),
-  item_orden_publicidad_id UUID REFERENCES items_orden_publicidad(id),
-  sector TEXT,
-  rubro TEXT,
-  sub_rubro TEXT,
-  condicion_pago TEXT,
-  adjuntos JSONB,
-  unidad_negocio TEXT,
-  categoria_negocio TEXT,
-  nombre_campana TEXT,
-  UNIQUE(comprobante_id)
-);
-```
-
-**Backward Compatibility**: Vista `tecnica_gastos` mapea a esta tabla.
-
-## Programming Module (Programacion)
-
-### programacion_formularios
-Header table grouping programming expenses.
-```sql
-CREATE TABLE programacion_formularios (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  area_origen TEXT NOT NULL CHECK (area_origen IN ('programacion','experience','productora')),
   mes_gestion VARCHAR(7),
-  mes_venta VARCHAR(7),
-  mes_inicio VARCHAR(7),
-  unidad_negocio TEXT,
-  categoria_negocio TEXT,
-  programa TEXT,
-  ejecutivo TEXT,
-  detalle_campana TEXT,
-  estado TEXT DEFAULT 'pendiente',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by TEXT
-);
-```
-
-### programacion_comprobantes
-Context table linking comprobantes to programming formularios.
-```sql
-CREATE TABLE programacion_comprobantes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
-  formulario_id UUID NOT NULL REFERENCES programacion_formularios(id) ON DELETE CASCADE,
-  categoria TEXT,
-  cliente TEXT,
-  monto DECIMAL(15,2),
-  valor_imponible DECIMAL(15,2),
-  bonificacion DECIMAL(15,2) DEFAULT 0,
-  rubro TEXT,
-  sub_rubro TEXT,
-  UNIQUE(comprobante_id)
-);
-```
-
-**Backward Compatibility**: Vista `programacion_gastos` mapea a esta tabla.
-
-## Experience Module
-
-### experience_formularios
-Header table grouping Experience expenses.
-```sql
-CREATE TABLE experience_formularios (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  mes_gestion VARCHAR(7),
-  nombre_campana TEXT,
   detalle_campana TEXT,
   estado TEXT DEFAULT 'activo',
+  nombre_campana TEXT,
+  unidad_negocio TEXT,
+  categoria_negocio TEXT,
+  -- Programacion-specific
+  mes_venta VARCHAR(7),
+  mes_inicio VARCHAR(7),
+  programa TEXT,
+  ejecutivo TEXT,
+  -- Productora-specific
+  rubro TEXT,
+  sub_rubro TEXT,
+  -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   created_by TEXT
 );
 ```
 
-### experience_comprobantes
-Context table linking comprobantes to Experience formularios.
+## Views
+
+### comprobantes_full
+Main view joining comprobantes with context + OP data. Only 4 LEFT JOINs.
 ```sql
-CREATE TABLE experience_comprobantes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
-  formulario_id UUID NOT NULL REFERENCES experience_formularios(id) ON DELETE CASCADE,
-  empresa TEXT,
-  empresa_programa TEXT,
-  fecha_comprobante DATE,
-  pais TEXT DEFAULT 'argentina',
-  rubro TEXT,
-  sub_rubro TEXT,
-  UNIQUE(comprobante_id)
-);
+CREATE OR REPLACE VIEW comprobantes_full AS
+SELECT c.*,
+  -- contexto_comprobante
+  cc.mes_gestion AS ctx_mes_gestion,
+  cc.detalle_campana AS ctx_detalle_campana,
+  cc.programa AS ctx_programa,
+  cc.ejecutivo AS ctx_ejecutivo,
+  cc.mes_venta AS ctx_mes_venta,
+  cc.mes_inicio AS ctx_mes_inicio,
+  cc.nombre_campana AS ctx_nombre_campana,
+  cc.unidad_negocio AS ctx_unidad_negocio,
+  cc.categoria_negocio AS ctx_categoria_negocio,
+  cc.rubro AS ctx_rubro,
+  cc.sub_rubro AS ctx_sub_rubro,
+  cc.estado AS ctx_estado,
+  cc.created_at AS ctx_created_at,
+  cc.created_by AS ctx_created_by,
+  -- ordenes_publicidad (egresos)
+  op.orden_publicidad AS op_numero_orden,
+  op.responsable AS op_responsable,
+  op.unidad_negocio AS op_unidad_negocio,
+  op.categoria_negocio AS op_categoria_negocio,
+  op.nombre_campana AS op_nombre_campana,
+  op.razon_social AS op_razon_social,
+  op.marca AS op_marca,
+  op.mes_servicio AS op_mes_servicio,
+  op.acuerdo_pago AS op_acuerdo_pago,
+  -- ordenes_publicidad (ingresos)
+  op_ing.id AS ingreso_op_id,
+  op_ing.orden_publicidad AS ingreso_op_numero,
+  ...
+  -- entidades
+  e.cuit AS entidad_cuit_efectivo,
+  e.condicion_iva AS entidad_condicion_iva
+FROM comprobantes c
+LEFT JOIN contexto_comprobante cc ON c.contexto_comprobante_id = cc.id
+LEFT JOIN ordenes_publicidad op ON c.orden_publicidad_id = op.id
+LEFT JOIN ordenes_publicidad op_ing ON c.orden_publicidad_id_ingreso = op_ing.id
+LEFT JOIN entidades e ON c.entidad_id = e.id;
 ```
 
-**Backward Compatibility**: Vista `experience_gastos` mapea a esta tabla.
-
-## Legacy Tables
-
-### gastos_implementacion
-Legacy expense header (kept for backward compatibility).
-```sql
-CREATE TABLE gastos_implementacion (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
-  fecha_actualizacion TIMESTAMPTZ DEFAULT NOW(),
-  fecha_registro DATE NOT NULL,
-  orden_publicidad TEXT NOT NULL,
-  responsable TEXT NOT NULL,
-  unidad_negocio TEXT NOT NULL,
-  categoria_negocio TEXT,
-  nombre_campana TEXT NOT NULL,
-  anio INTEGER NOT NULL,
-  mes INTEGER NOT NULL,
-  id_formulario_comercial UUID,
-  estado TEXT DEFAULT 'pendiente',
-  item_orden_publicidad_id UUID,
-  acuerdo_pago TEXT,
-  presupuesto DECIMAL(15,2),
-  cantidad_programas INTEGER,
-  programas_disponibles JSONB DEFAULT '[]'::jsonb,
-  sector TEXT,
-  rubro_gasto TEXT,
-  sub_rubro TEXT,
-  factura_emitida_a TEXT,
-  empresa TEXT,
-  concepto_gasto TEXT,
-  observaciones TEXT,
-  creado_por TEXT,
-  actualizado_por TEXT
-);
-```
-
-### items_gasto_implementacion
-Legacy expense line items.
-```sql
-CREATE TABLE items_gasto_implementacion (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  gasto_id UUID REFERENCES gastos_implementacion(id) ON DELETE CASCADE,
-  fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
-  tipo_proveedor TEXT NOT NULL,
-  proveedor TEXT NOT NULL,
-  razon_social TEXT,
-  descripcion TEXT,
-  rubro_gasto TEXT NOT NULL,
-  sub_rubro TEXT,
-  sector TEXT NOT NULL,
-  moneda TEXT DEFAULT 'ARS',
-  neto DECIMAL(15,2) NOT NULL DEFAULT 0,
-  iva DECIMAL(5,2) DEFAULT 21,
-  importe_total DECIMAL(15,2) NOT NULL DEFAULT 0,
-  tipo_factura TEXT,
-  numero_factura TEXT,
-  fecha_factura DATE,
-  condicion_pago TEXT,
-  fecha_pago DATE,
-  estado_pago TEXT DEFAULT 'pendiente',
-  adjuntos JSONB
-);
-```
-
-## Backward Compatibility Views
-
-Legacy code can continue using old table names via these views:
-
-| Legacy Name | New Table | Filter |
-|-------------|-----------|--------|
-| `proveedores` | `entidades` | `tipo_entidad IN ('proveedor', 'ambos')` |
-| `gastos` | `comprobantes` | `tipo_movimiento = 'egreso'` |
-| `implementacion_gastos` | `implementacion_comprobantes` | - |
-| `tecnica_gastos` | `tecnica_comprobantes` | - |
-| `programacion_gastos` | `programacion_comprobantes` | - |
-| `experience_gastos` | `experience_comprobantes` | - |
-
-Full views for UI:
-- `implementacion_comprobantes_full` / `implementacion_gastos_full`
-- `tecnica_comprobantes_full` / `tecnica_gastos_full`
-- `programacion_comprobantes_full` / `programacion_gastos_full`
-- `experience_comprobantes_full` / `experience_gastos_full`
-- `comprobantes_full` / `gastos_full`
+### Backward compat views
+- `gastos` — `SELECT * FROM comprobantes WHERE tipo_movimiento = 'egreso'`
+- `proveedores` — `SELECT * FROM entidades WHERE tipo_entidad IN ('proveedor','ambos')`
 
 ## Estado Values
 
@@ -510,59 +403,18 @@ Full views for UI:
 
 ## Standard Patterns
 
-### Creating a New Expense Module
+### Adding a New Expense Area
 
-When creating a new expense module, follow this pattern:
+No new tables needed. Just:
+1. Add new value to `comprobantes.area_origen` CHECK constraint
+2. If formulario-linked (like prog/exp/prod): add `area_origen` value to `contexto_comprobante` CHECK
+3. Add nullable columns to `comprobantes` if area needs unique fields
+4. Update `comprobantes_full` view if new columns need joining
+5. In app: add new `AREA` const in a new context, use unified `gastosService`
 
-1. **Header table** (if grouping comprobantes):
-```sql
-CREATE TABLE {module}_formularios (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  -- Module-specific header fields
-  estado TEXT DEFAULT 'activo',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by TEXT  -- Use TEXT, not UUID REFERENCES
-);
-```
-
-2. **Context table** (links comprobantes to headers):
-```sql
-CREATE TABLE {module}_comprobantes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  comprobante_id UUID NOT NULL REFERENCES comprobantes(id) ON DELETE CASCADE,
-  formulario_id UUID NOT NULL REFERENCES {module}_formularios(id) ON DELETE CASCADE,
-  -- Module-specific context fields
-  UNIQUE(comprobante_id)
-);
-```
-
-3. **Full view** (for UI queries):
-```sql
-CREATE OR REPLACE VIEW {module}_comprobantes_full AS
-SELECT
-  c.*,
-  f.id AS formulario_id,
-  -- Header fields
-  ctx.id AS {module}_comprobante_id
-  -- Context fields
-FROM comprobantes c
-JOIN {module}_comprobantes ctx ON c.id = ctx.comprobante_id
-JOIN {module}_formularios f ON ctx.formulario_id = f.id;
-```
-
-4. **Enable RLS**:
-```sql
-ALTER TABLE {module}_formularios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {module}_comprobantes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "allow_all" ON {module}_formularios FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON {module}_comprobantes FOR ALL USING (true) WITH CHECK (true);
-```
-
-5. **Indexes**:
-```sql
-CREATE INDEX idx_{module}_formularios_estado ON {module}_formularios(estado);
-CREATE INDEX idx_{module}_formularios_created ON {module}_formularios(created_at DESC);
-CREATE INDEX idx_{module}_comprobantes_formulario ON {module}_comprobantes(formulario_id);
-CREATE INDEX idx_{module}_comprobantes_comprobante ON {module}_comprobantes(comprobante_id);
-```
+### Architecture Summary
+- **2 tables** for all gastos: `comprobantes` (data) + `contexto_comprobante` (headers for prog/exp/prod)
+- **OP-linked areas** (impl/tec/talentos): single INSERT into `comprobantes` with `orden_publicidad_id`
+- **Formulario-linked areas** (prog/exp/prod): INSERT into `contexto_comprobante` + INSERT into `comprobantes` with `contexto_comprobante_id`
+- **Direct areas** (admin/finanzas): single INSERT into `comprobantes` with `area_origen = 'directo'`
+- All areas share one view: `comprobantes_full` (4 LEFT JOINs)

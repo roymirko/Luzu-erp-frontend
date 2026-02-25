@@ -160,6 +160,18 @@ export const SUBRUBROS_PRODUCTORA_OPTIONS: FormSelectOption[] = [
 
 export const PROGRAMAS_PRODUCTORA_OPTIONS: FormSelectOption[] = PROGRAMAS_EXPERIENCE_OPTIONS;
 
+// ============================================
+// Talentos Module Constants
+// ============================================
+
+export const TALENTOS_DEFAULTS = {
+  sector: 'Talentos',
+  rubro: 'Gasto de venta',
+  subRubro: 'Talentos',
+  moneda: 'ARS',
+  ivaDefault: 21,
+} as const;
+
 export const FIELD_MAX_LENGTHS = {
   conceptoGasto: 250,
   observaciones: 500,

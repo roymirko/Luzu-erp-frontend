@@ -152,6 +152,7 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       tipoImporte: formulario.tipoImporte,
       observaciones: formulario.observaciones,
       items: formulario.importeRows.map(item => ({
+        id: item.id,
         programa: item.programa,
         monto: item.monto,
         ncPrograma: item.ncPrograma,

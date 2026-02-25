@@ -184,10 +184,10 @@ export function TablaComprobantes({
           c.entidadNombre?.toLowerCase().includes(term) ||
           c.concepto?.toLowerCase().includes(term) ||
           c.numeroComprobante?.toLowerCase().includes(term) ||
-          c.implNombreCampana?.toLowerCase().includes(term) ||
-          c.tecNombreCampana?.toLowerCase().includes(term) ||
-          c.progPrograma?.toLowerCase().includes(term) ||
-          c.expNombreCampana?.toLowerCase().includes(term)
+          c.opNombreCampana?.toLowerCase().includes(term) ||
+          c.ctxNombreCampana?.toLowerCase().includes(term) ||
+          c.ctxPrograma?.toLowerCase().includes(term) ||
+          c.nombreCampana?.toLowerCase().includes(term)
         );
       });
     }

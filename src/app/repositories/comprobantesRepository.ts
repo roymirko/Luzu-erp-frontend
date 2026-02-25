@@ -198,7 +198,7 @@ export async function searchWithContext(term: string, tipoMovimiento?: 'ingreso'
   let query = supabase
     .from(VIEW_NAME)
     .select('*')
-    .or(`entidad_nombre.ilike.%${term}%,concepto.ilike.%${term}%,numero_comprobante.ilike.%${term}%,impl_nombre_campana.ilike.%${term}%,prog_programa.ilike.%${term}%,exp_nombre_campana.ilike.%${term}%`)
+    .or(`entidad_nombre.ilike.%${term}%,concepto.ilike.%${term}%,numero_comprobante.ilike.%${term}%,nombre_campana.ilike.%${term}%,ctx_programa.ilike.%${term}%,op_nombre_campana.ilike.%${term}%`)
     .order('created_at', { ascending: false })
     .limit(100);
 

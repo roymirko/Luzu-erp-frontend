@@ -308,18 +308,19 @@ export function DialogDetalleComprobante({
                   Información de Contexto
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {comprobante.areaOrigen === 'implementacion' && (
+                  {/* OP-linked: impl/tec/talentos */}
+                  {['implementacion', 'tecnica', 'talentos'].includes(comprobante.areaOrigen || '') && (
                     <>
-                      {comprobante.implOrdenPublicidad && (
+                      {comprobante.opNumeroOrden && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Orden:</span>{' '}
-                          <span className="font-medium">{comprobante.implOrdenPublicidad}</span>
+                          <span className="font-medium">{comprobante.opNumeroOrden}</span>
                         </div>
                       )}
-                      {comprobante.implNombreCampana && (
+                      {(comprobante.opNombreCampana || comprobante.nombreCampana) && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Campaña:</span>{' '}
-                          <span className="font-medium">{comprobante.implNombreCampana}</span>
+                          <span className="font-medium">{comprobante.opNombreCampana || comprobante.nombreCampana}</span>
                         </div>
                       )}
                       {comprobante.sector && (
@@ -328,48 +329,50 @@ export function DialogDetalleComprobante({
                           <span className="font-medium">{comprobante.sector}</span>
                         </div>
                       )}
-                      {comprobante.rubro && (
+                      {comprobante.rubroContexto && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Rubro:</span>{' '}
-                          <span className="font-medium">{comprobante.rubro}</span>
+                          <span className="font-medium">{comprobante.rubroContexto}</span>
                         </div>
                       )}
                     </>
                   )}
+                  {/* Programacion */}
                   {comprobante.areaOrigen === 'programacion' && (
                     <>
-                      {comprobante.progPrograma && (
+                      {comprobante.ctxPrograma && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Programa:</span>{' '}
-                          <span className="font-medium">{comprobante.progPrograma}</span>
+                          <span className="font-medium">{comprobante.ctxPrograma}</span>
                         </div>
                       )}
-                      {comprobante.progMesGestion && (
+                      {comprobante.ctxMesGestion && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Mes Gestión:</span>{' '}
-                          <span className="font-medium">{comprobante.progMesGestion}</span>
+                          <span className="font-medium">{comprobante.ctxMesGestion}</span>
                         </div>
                       )}
-                      {comprobante.progUnidadNegocio && (
+                      {comprobante.ctxUnidadNegocio && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Unidad:</span>{' '}
-                          <span className="font-medium">{comprobante.progUnidadNegocio}</span>
+                          <span className="font-medium">{comprobante.ctxUnidadNegocio}</span>
                         </div>
                       )}
                     </>
                   )}
-                  {comprobante.areaOrigen === 'experience' && (
+                  {/* Experience/Productora */}
+                  {['experience', 'productora'].includes(comprobante.areaOrigen || '') && (
                     <>
-                      {comprobante.expNombreCampana && (
+                      {comprobante.ctxNombreCampana && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Campaña:</span>{' '}
-                          <span className="font-medium">{comprobante.expNombreCampana}</span>
+                          <span className="font-medium">{comprobante.ctxNombreCampana}</span>
                         </div>
                       )}
-                      {comprobante.expMesGestion && (
+                      {comprobante.ctxMesGestion && (
                         <div>
                           <span className="text-blue-600 dark:text-blue-400">Mes Gestión:</span>{' '}
-                          <span className="font-medium">{comprobante.expMesGestion}</span>
+                          <span className="font-medium">{comprobante.ctxMesGestion}</span>
                         </div>
                       )}
                     </>

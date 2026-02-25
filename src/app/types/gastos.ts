@@ -1,190 +1,225 @@
 /**
- * LEGACY - Re-exports from comprobantes for backward compatibility
- * New code should import from './comprobantes' directly
- *
- * gastos = comprobantes where tipo_movimiento = 'egreso'
+ * Unified Gasto type — all areas use the same structure.
+ * Context columns are nullable; area_origen discriminates which fields apply.
  */
 
-import type {
-  Comprobante,
-  ComprobanteFull,
-  CreateComprobanteInput,
-  UpdateComprobanteInput,
-  ComprobanteValidationError,
-  ComprobanteValidationResult,
-  EstadoPago as ComprobanteEstadoPago,
-  EstadoComprobante,
-  Moneda as ComprobanteMoneda,
-  TipoGasto as ComprobanteTipoGasto,
-} from './comprobantes';
+export type AreaOrigenGasto = 'implementacion' | 'tecnica' | 'talentos' | 'programacion' | 'experience' | 'productora' | 'directo';
+export type EstadoGasto = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
+export type EstadoPago = 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
 
-// Re-export types with legacy names
-export type EstadoGasto = EstadoComprobante;
-export type EstadoPago = ComprobanteEstadoPago;
-export type TipoGasto = ComprobanteTipoGasto;
-export type Moneda = ComprobanteMoneda;
-
-/**
- * Gasto base - legacy interface mapping to Comprobante
- * Maps old field names to new Comprobante structure
- */
 export interface Gasto {
   id: string;
-  // Proveedor/Factura (legacy names)
+  areaOrigen: AreaOrigenGasto;
+  // Core comprobante fields
   proveedor: string;
-  razonSocial?: string;
+  razonSocial: string;
   tipoFactura?: string;
   numeroFactura?: string;
-  fechaFactura?: Date;
-  // Importes
-  moneda: Moneda;
+  fechaFactura?: string;
+  moneda: string;
   neto: number;
   iva: number;
   importeTotal: number;
-  // Concepto
-  empresa?: string;
-  conceptoGasto?: string;
-  observaciones?: string;
-  // Estado
+  empresa: string;
+  conceptoGasto: string;
+  observaciones: string;
   estado: EstadoGasto;
   estadoPago: EstadoPago;
-  // Audit
   createdAt: Date;
   updatedAt: Date;
   createdBy?: string;
+  // Consolidated fields (on comprobantes)
+  facturaEmitidaA?: string;
+  acuerdoPago?: string;
+  formaPago?: string;
+  fechaPago?: string;
+  // OP-linked context (impl/tec/talentos)
+  ordenPublicidadId?: string;
+  itemOrdenPublicidadId?: string;
+  sector?: string;
+  rubro?: string;
+  subRubro?: string;
+  condicionPago?: string;
+  adjuntos?: unknown;
+  nombreCampana?: string;
+  unidadNegocio?: string;
+  categoriaNegocio?: string;
+  // Formulario-linked context (prog/exp/prod)
+  contextoComprobanteId?: string;
+  categoria?: string;
+  cliente?: string;
+  montoProg?: number;
+  valorImponible?: number;
+  bonificacion?: number;
+  empresaPrograma?: string;
+  pais?: string;
+  // Joined from OP (read-only, from view)
+  opNumeroOrden?: string;
+  opResponsable?: string;
+  opUnidadNegocio?: string;
+  opCategoriaNegocio?: string;
+  opNombreCampana?: string;
+  opRazonSocial?: string;
+  opMarca?: string;
+  opMesServicio?: string;
+  opAcuerdoPago?: string;
+  // Joined from contexto_comprobante (read-only, from view)
+  ctxMesGestion?: string;
+  ctxDetalleCampana?: string;
+  ctxPrograma?: string;
+  ctxEjecutivo?: string;
+  ctxMesVenta?: string;
+  ctxMesInicio?: string;
+  ctxNombreCampana?: string;
+  ctxUnidadNegocio?: string;
+  ctxCategoriaNegocio?: string;
+  ctxRubro?: string;
+  ctxSubRubro?: string;
+  ctxEstado?: string;
+  // Backward compat: unprefixed OP field aliases (used by form components)
+  ordenPublicidad?: string;
+  responsable?: string;
+  marca?: string;
+  mesServicio?: string;
+  // Backward compat: unprefixed formulario field aliases (used by prog/exp/prod components)
+  formularioId?: string;
+  programa?: string;
+  ejecutivo?: string;
+  mesGestion?: string;
+  mesVenta?: string;
+  mesInicio?: string;
+  detalleCampana?: string;
+  formularioEstado?: string;
+  formularioCreatedAt?: Date;
+  formularioCreatedBy?: string;
+  subrubro?: string;
+  subRubroEmpresa?: string;
+  empresaContext?: string;
+  formularioRubro?: string;
+  formularioSubRubro?: string;
 }
 
-/**
- * Input para crear un gasto base (legacy)
- */
 export interface CreateGastoInput {
+  areaOrigen: AreaOrigenGasto;
+  // Core
   proveedor: string;
   razonSocial?: string;
   tipoFactura?: string;
   numeroFactura?: string;
-  fechaFactura?: Date;
-  moneda?: Moneda;
+  fechaFactura?: string;
+  moneda?: string;
   neto: number;
   iva?: number;
-  importeTotal?: number;
-  empresa?: string;
-  conceptoGasto?: string;
+  empresa: string;
+  conceptoGasto: string;
   observaciones?: string;
   createdBy?: string;
+  // Consolidated
+  facturaEmitidaA?: string;
+  acuerdoPago?: string;
+  formaPago?: string;
+  fechaPago?: string;
+  // OP-linked context
+  ordenPublicidadId?: string;
+  itemOrdenPublicidadId?: string;
+  sector?: string;
+  rubro?: string;
+  subRubro?: string;
+  condicionPago?: string;
+  adjuntos?: unknown;
+  nombreCampana?: string;
+  unidadNegocio?: string;
+  categoriaNegocio?: string;
+  // Formulario-linked context
+  contextoComprobanteId?: string;
+  categoria?: string;
+  cliente?: string;
+  montoProg?: number;
+  valorImponible?: number;
+  bonificacion?: number;
+  empresaPrograma?: string;
+  pais?: string;
 }
 
-/**
- * Input para actualizar un gasto base (legacy)
- */
 export interface UpdateGastoInput extends Partial<CreateGastoInput> {
   id: string;
   estado?: EstadoGasto;
   estadoPago?: EstadoPago;
 }
 
+export interface GastoValidationError {
+  field: string;
+  message: string;
+}
+
+export interface GastoValidationResult {
+  valid: boolean;
+  errors: GastoValidationError[];
+}
+
 /**
- * Vista unificada de gastos (legacy)
+ * Contexto comprobante — unified header for prog/exp/prod
  */
-export interface GastoFull extends Gasto {
-  tipoGasto: TipoGasto;
-  // Implementación fields
-  ordenPublicidadId?: string;
-  facturaEmitidaA?: string;
-  sector?: string;
+export interface ContextoComprobante {
+  id: string;
+  areaOrigen: 'programacion' | 'experience' | 'productora';
+  mesGestion?: string;
+  detalleCampana?: string;
+  estado: string;
+  nombreCampana?: string;
+  unidadNegocio?: string;
+  categoriaNegocio?: string;
+  // Prog-specific
+  mesVenta?: string;
+  mesInicio?: string;
+  programa?: string;
+  ejecutivo?: string;
+  // Productora-specific
   rubro?: string;
   subRubro?: string;
-  // Programación fields
+  // Audit
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy?: string;
+}
+
+export interface CreateContextoComprobanteInput {
+  areaOrigen: 'programacion' | 'experience' | 'productora';
   mesGestion?: string;
-  programa?: string;
-  formularioProgramacionId?: string;
-  // Common derived
+  detalleCampana?: string;
   nombreCampana?: string;
-  unidadNegocioEfectiva?: string;
-  categoriaNegocioEfectiva?: string;
+  unidadNegocio?: string;
+  categoriaNegocio?: string;
+  mesVenta?: string;
+  mesInicio?: string;
+  programa?: string;
+  ejecutivo?: string;
+  rubro?: string;
+  subRubro?: string;
+  createdBy?: string;
 }
 
-export type GastoValidationError = ComprobanteValidationError;
-export type GastoValidationResult = ComprobanteValidationResult;
-
-/**
- * Convert Comprobante to legacy Gasto format
- */
-export function comprobanteToGasto(comprobante: Comprobante): Gasto {
-  return {
-    id: comprobante.id,
-    proveedor: comprobante.entidadNombre,
-    razonSocial: comprobante.entidadNombre,
-    tipoFactura: comprobante.tipoComprobante,
-    numeroFactura: comprobante.puntoVenta && comprobante.numeroComprobante
-      ? `${comprobante.puntoVenta}-${comprobante.numeroComprobante}`
-      : comprobante.numeroComprobante,
-    fechaFactura: comprobante.fechaComprobante,
-    moneda: comprobante.moneda,
-    neto: comprobante.neto,
-    iva: comprobante.ivaAlicuota,
-    importeTotal: comprobante.total,
-    empresa: comprobante.empresa,
-    conceptoGasto: comprobante.concepto,
-    observaciones: comprobante.observaciones,
-    estado: comprobante.estado,
-    estadoPago: comprobante.estadoPago,
-    createdAt: comprobante.createdAt,
-    updatedAt: comprobante.updatedAt,
-    createdBy: comprobante.createdBy,
-  };
+export interface UpdateContextoComprobanteInput extends Partial<CreateContextoComprobanteInput> {
+  id: string;
+  estado?: string;
 }
 
-/**
- * Convert legacy CreateGastoInput to CreateComprobanteInput
- */
-export function gastoInputToComprobanteInput(input: CreateGastoInput): CreateComprobanteInput {
-  // Parse numero_factura if it contains punto_venta
-  let puntoVenta: string | undefined;
-  let numeroComprobante: string | undefined;
-  if (input.numeroFactura?.includes('-')) {
-    const parts = input.numeroFactura.split('-');
-    puntoVenta = parts[0];
-    numeroComprobante = parts[1];
-  } else {
-    numeroComprobante = input.numeroFactura;
-  }
-
-  return {
-    tipoMovimiento: 'egreso',
-    entidadNombre: input.proveedor,
-    tipoComprobante: input.tipoFactura as any,
-    puntoVenta,
-    numeroComprobante,
-    fechaComprobante: input.fechaFactura,
-    moneda: input.moneda,
-    neto: input.neto,
-    ivaAlicuota: input.iva,
-    empresa: input.empresa,
-    concepto: input.conceptoGasto,
-    observaciones: input.observaciones,
-    createdBy: input.createdBy,
-  };
-}
-
-/**
- * Calcula el importe total a partir del neto e IVA
- */
-export function calcularImporteTotal(neto: number, iva: number = 21): number {
-  return neto * (1 + iva / 100);
-}
-
-/**
- * Valida los campos base de un gasto
- */
-export function validateGastoBase(input: CreateGastoInput): GastoValidationResult {
-  const errors: GastoValidationError[] = [];
-
-  if (!input.proveedor?.trim()) {
-    errors.push({ field: 'proveedor', message: 'Debe seleccionar un proveedor' });
-  }
-  if (!input.neto || input.neto <= 0) {
-    errors.push({ field: 'neto', message: 'Debe ingresar un importe neto válido' });
-  }
-
-  return { valid: errors.length === 0, errors };
-}
+// Backward-compat aliases
+export type GastoImplementacion = Gasto;
+export type GastoTecnica = Gasto;
+export type GastoTalentos = Gasto;
+export type GastoProgramacion = Gasto;
+export type GastoExperience = Gasto;
+export type GastoProductora = Gasto;
+export type CreateGastoImplementacionInput = CreateGastoInput;
+export type UpdateGastoImplementacionInput = UpdateGastoInput;
+export type CreateGastoTecnicaInput = CreateGastoInput;
+export type UpdateGastoTecnicaInput = UpdateGastoInput;
+export type CreateGastoTalentosInput = CreateGastoInput;
+export type UpdateGastoTalentosInput = UpdateGastoInput;
+export type CreateGastoProgramacionInput = CreateGastoInput;
+export type UpdateGastoProgramacionInput = UpdateGastoInput;
+export type CreateGastoExperienceInput = CreateGastoInput;
+export type UpdateGastoExperienceInput = UpdateGastoInput;
+export type CreateGastoProductoraInput = CreateGastoInput;
+export type UpdateGastoProductoraInput = UpdateGastoInput;

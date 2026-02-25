@@ -56,15 +56,12 @@ export function ProductoraCargaDatosSection(props: ProductoraCargaDatosSectionPr
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormSelect
+        <FormInput
           label="Unidad de Negocio"
           value={unidadNegocio}
-          onChange={setUnidadNegocio}
-          options={UNIDADES_NEGOCIO_PRODUCTORA_OPTIONS}
-          required
-          error={errors.unidadNegocio}
+          onChange={() => {}}
+          disabled
           isDark={isDark}
-          disabled={disabled}
         />
 
         <FormSelect

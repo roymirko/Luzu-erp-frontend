@@ -95,6 +95,21 @@ function mapItemToDBInsert(item: CreateItemOrdenPublicidadInput, ordenId: string
   };
 }
 
+function mapItemToDBUpdate(item: CreateItemOrdenPublicidadInput): Partial<ItemOrdenPublicidadRow> {
+  return {
+    programa: item.programa,
+    monto: item.monto,
+    nc_programa: item.ncPrograma || null,
+    nc_porcentaje: item.ncPorcentaje || null,
+    proveedor_fee: item.proveedorFee || null,
+    fee_programa: item.feePrograma || null,
+    fee_porcentaje: item.feePorcentaje || null,
+    implementacion: item.implementacion || null,
+    talentos: item.talentos || null,
+    tecnica: item.tecnica || null,
+  };
+}
+
 export function validateCreate(input: CreateOrdenPublicidadInput): OrdenPublicidadValidationResult {
   const errors: { field: string; message: string }[] = [];
 
@@ -205,14 +220,28 @@ export async function update(input: UpdateOrdenPublicidadInput): Promise<{ data:
   }
 
   if (items !== undefined) {
-    await ordenesRepo.deleteItemsByOrdenId(id);
+    const existingResult = await ordenesRepo.getItemsByOrdenId(id);
+    const existingItems = existingResult.data || [];
+    const existingIds = new Set(existingItems.map(i => i.id));
+    const incomingIds = new Set(items.filter(i => i.id).map(i => i.id!));
 
-    if (items.length > 0) {
-      const itemsInsert = items.map(item => mapItemToDBInsert(item, id));
-      const itemsResult = await ordenesRepo.createItems(itemsInsert);
+    // Update existing items or create new ones
+    for (const item of items) {
+      if (item.id && existingIds.has(item.id)) {
+        await ordenesRepo.updateItem(item.id, mapItemToDBUpdate(item));
+      } else {
+        const itemsResult = await ordenesRepo.createItems([mapItemToDBInsert(item, id)]);
+        if (itemsResult.error) console.error('Error creating item:', itemsResult.error);
+      }
+    }
 
-      if (itemsResult.error) {
-        console.error('Error creating items:', itemsResult.error);
+    // Delete removed items (not in incoming set)
+    for (const existing of existingItems) {
+      if (!incomingIds.has(existing.id)) {
+        const delResult = await ordenesRepo.deleteItemById(existing.id);
+        if (delResult.error) {
+          console.warn('Could not delete item (may have gastos):', existing.id);
+        }
       }
     }
   }

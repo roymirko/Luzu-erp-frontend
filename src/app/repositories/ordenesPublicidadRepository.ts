@@ -135,6 +135,33 @@ export async function deleteItemsByOrdenId(ordenId: string): Promise<RepositoryR
   return { data: null, error: null };
 }
 
+export async function getItemsByOrdenId(ordenId: string): Promise<RepositoryListResult<ItemOrdenPublicidadRow>> {
+  const { data, error } = await supabase
+    .from(ITEMS_TABLE_NAME)
+    .select('*')
+    .eq('orden_publicidad_id', ordenId);
+
+  return { data: (data || []) as ItemOrdenPublicidadRow[], error: error ? mapSupabaseError(error) : null };
+}
+
+export async function updateItem(id: string, data: Partial<ItemOrdenPublicidadRow>): Promise<RepositoryResult<null>> {
+  const { error } = await supabase
+    .from(ITEMS_TABLE_NAME)
+    .update(data)
+    .eq('id', id);
+
+  return { data: null, error: error ? mapSupabaseError(error) : null };
+}
+
+export async function deleteItemById(id: string): Promise<RepositoryResult<null>> {
+  const { error } = await supabase
+    .from(ITEMS_TABLE_NAME)
+    .delete()
+    .eq('id', id);
+
+  return { data: null, error: error ? mapSupabaseError(error) : null };
+}
+
 export async function findItemById(itemId: string): Promise<RepositoryResult<ItemOrdenPublicidadRow>> {
   const { data, error } = await supabase
     .from(ITEMS_TABLE_NAME)

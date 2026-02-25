@@ -57,6 +57,7 @@ export interface CreateOrdenPublicidadInput {
 }
 
 export interface CreateItemOrdenPublicidadInput {
+  id?: string;
   programa: string;
   monto: string;
   ncPrograma?: string;
