@@ -1,7 +1,7 @@
 # LUZU ERP - Product Requirements Document (PRD)
 
-> **Version:** 1.1.0
-> **Last Updated:** January 2026
+> **Version:** 2.0.0
+> **Last Updated:** February 2026
 > **Status:** Active Development (MVP Phase)
 
 This document serves as the authoritative source of truth for the Luzu ERP project. It provides strategic context, product vision, and comprehensive requirements that guide all development decisions.
@@ -10,7 +10,7 @@ This document serves as the authoritative source of truth for the Luzu ERP proje
 
 ## 1. Executive Summary
 
-**Luzu ERP** is an Enterprise Resource Planning system built specifically for **Luzu TV**, an Argentine media and broadcasting company. The system centralizes management of advertising orders, implementation expenses, programming schedules, and administrative operations.
+**Luzu ERP** is an Enterprise Resource Planning system built specifically for **Luzu TV**, an Argentine media and broadcasting company. The system centralizes management of advertising orders, expense tracking across all business areas, and administrative operations.
 
 ### Key Business Units
 
@@ -67,17 +67,41 @@ A unified platform where:
 - **Pain Points:** Manual expense tracking, lost invoices
 - **Needs:** Expense entry with invoice attachments, payment status tracking
 
+#### Técnica Coordinator (Coordinador de Técnica)
+
+- **Goals:** Track technical production expenses linked to advertising orders
+- **Pain Points:** Same as Implementación — parallel expense tracking for technical costs
+- **Needs:** OP-linked expense forms, payment tracking
+
+#### Talentos Coordinator (Coordinador de Talentos)
+
+- **Goals:** Track talent/host fees linked to advertising orders
+- **Pain Points:** Managing talent costs per program item
+- **Needs:** OP + item-level expense forms, payment tracking
+
 #### Experience Coordinator (Coordinador de Experience)
 
 - **Goals:** Manage event/experiential marketing expenses by campaign
 - **Pain Points:** Multiple providers per event, tracking payments across campaigns
 - **Needs:** Campaign-based expense grouping, multi-gasto forms, provider search
 
+#### Productora Coordinator (Coordinador de Productora)
+
+- **Goals:** Manage production expenses by campaign with rubro/sub_rubro tracking
+- **Pain Points:** Multi-provider, multi-rubro expense management
+- **Needs:** Campaign-based forms with rubro categorization
+
+#### Programación Coordinator (Coordinador de Programación)
+
+- **Goals:** Track programming/production costs by program
+- **Pain Points:** Complex categorization, bonificaciones
+- **Needs:** Program-linked expense forms with category and client tracking
+
 #### Finance/Administration (Administración)
 
-- **Goals:** Verify transactions, manage clients, process payments
-- **Pain Points:** Reconciling data across sources
-- **Needs:** Comprehensive reporting, audit logs, client management
+- **Goals:** Verify transactions, manage clients, process payments across ALL areas
+- **Pain Points:** Reconciling data across sources, approval workflows
+- **Needs:** Unified comprobantes view, payment approval, estado_pago management
 
 #### System Administrator (Administrador)
 
@@ -100,8 +124,13 @@ A unified platform where:
 | Module             | Features                                                                      |
 | ------------------ | ----------------------------------------------------------------------------- |
 | **Comercial**      | Order creation, program assignments, financial calculations, client selection |
-| **Implementación** | Expense tracking, provider management, payment status, invoice attachments    |
-| **Experience**     | Event expense tracking, campaign management, multi-gasto forms, provider integration |
+| **Implementación** | OP-linked expense tracking, provider management, payment status              |
+| **Técnica**        | OP-linked technical expense tracking, same flow as Implementación            |
+| **Talentos**       | OP+item-linked talent expense tracking                                        |
+| **Experience**     | Campaign-based expense tracking, multi-gasto forms, formulario headers       |
+| **Productora**     | Campaign-based production expense tracking, rubro/sub_rubro categorization   |
+| **Programación**   | Program expense tracking, categoria/cliente, bonificaciones                  |
+| **Administración** | Unified comprobantes view, payment approval, estado_pago workflow, directo expenses |
 | **Backoffice**     | User CRUD, area management, role assignments, field options configuration     |
 | **Auditoría**      | Action logging, log viewer with filters                                       |
 | **Dashboard**      | KPI display (mock data for MVP), notifications                                |
@@ -158,129 +187,124 @@ Utilidad = Total Venta - (NC + Fee + Gastos Venta)
 - `Categoría` options depend on selected Unit
 - Dependent fields clear when parent changes
 
-### 5.2 Implementation Module (Módulo de Implementación)
+### 5.2 Expense Modules (Unified Architecture)
 
-#### FR-IMP-01: Expense Tracking
+All expense areas share a unified 2-table architecture. Area-specific behavior is discriminated by `area_origen`.
 
-- Create expenses linked to commercial orders
+#### 5.2.1 OP-Linked Areas: Implementación, Técnica, Talentos
+
+#### FR-OP-01: Expense Tracking
+
+- Create expenses linked to `ordenes_publicidad` via `orden_publicidad_id`
+- Impl/Tec: linked at OP level. Talentos: linked at OP + item level (`item_orden_publicidad_id`)
 - Track provider, amount, invoice details, payment status
 
-#### FR-IMP-02: Multi-Provider Support
+#### FR-OP-02: Context Fields
 
-- Single expense can have multiple line items for different providers
-- Each item has: Provider type, Net amount, IVA, Total, Invoice number
+- `sector`, `rubro_contexto` (auto: "Gasto de venta"), `sub_rubro_contexto`, `condicion_pago`
+- `nombre_campana`, `unidad_negocio`, `categoria_negocio` inherited from OP or standalone
 
-#### FR-IMP-03: Payment Status Workflow
+#### FR-OP-03: Payment Status Workflow
 
 ```
-pending-payment → paid
-pending-payment → cancelled
+creado → aprobado → pagado
+creado → requiere_info → creado (re-submit)
+creado → rechazado
 ```
 
-#### FR-IMP-04: Invoice Attachments
+#### 5.2.2 Formulario-Linked Areas: Experience, Productora, Programación
 
-- Support file uploads attached to expense items
-- Store references in database (JSONB array)
+#### FR-FORM-01: Formulario Headers (contexto_comprobante)
 
-### 5.3 Experience Module (Módulo de Experience)
+- Each formulario stored in `contexto_comprobante` with `area_origen` discriminator
+- Shared fields: `mes_gestion`, `detalle_campana`, `nombre_campana`, `estado`
+- Programación-specific: `mes_venta`, `mes_inicio`, `programa`, `ejecutivo`
+- Productora-specific: `rubro`, `sub_rubro`
 
-#### FR-EXP-01: Campaign-Based Expense Tracking
+#### FR-FORM-02: Multi-Gasto Forms
 
-- Create expense formularios grouped by campaign (nombre_campana)
-- Each formulario has: mes_gestion, nombre_campana, detalle_campana, subrubro
-- Formularios aggregate multiple gastos under a single campaign
-
-#### FR-EXP-02: Multi-Gasto Forms
-
-- Single formulario can contain multiple gasto line items
-- Each gasto has independent: factura_emitida_a, empresa, empresa_programa, neto, acuerdo_pago, forma_pago, pais
+- Single formulario can contain multiple gasto line items (comprobantes)
+- Each comprobante links to formulario via `contexto_comprobante_id`
 - Gastos can be added/removed dynamically before save
-- Collapsible gasto cards with inline editing
 
-#### FR-EXP-03: Unified Gastos Architecture
+#### FR-FORM-03: Experience-Specific
 
-- Experience uses the shared `gastos` table for base expense data
-- Context-specific fields stored in `experience_gastos` join table
-- Formulario header stored in `experience_formularios` table
-- Full view `experience_gastos_full` combines all three tables
+- Subrubros: Producción, Diseño, Edición, Técnica
+- Fields: `empresa_programa`, `pais`, `factura_emitida_a`, `acuerdo_pago`
 
-#### FR-EXP-04: Field Options
+#### FR-FORM-04: Productora-Specific
 
-| Field           | Options                                                |
-| --------------- | ------------------------------------------------------ |
-| Subrubro        | Producción, Diseño, Edición, Técnica                   |
-| Factura emitida a | Luzu TV, Luzu TV SA                                  |
-| Empresa         | Luzu TV, Luzu TV SA                                    |
-| Empresa/PGM     | FM Luzu, Antes Que Nadie, Nadie Dice Nada, etc. (13 programs) |
-| Acuerdo de pago | 5, 30, 45, 60, 90 días                                |
-| Forma de pago   | eCheque, Transferencia, Efectivo                       |
-| País            | Argentina, Uruguay, Chile, Brasil                      |
+- Rubro/sub_rubro on formulario header
+- Fields: `empresa_programa`, `pais`
 
-#### FR-EXP-05: Provider Integration
+#### FR-FORM-05: Programación-Specific
 
-- Shared provider selector with Implementación module
-- Search by razón social or CUIT
-- Auto-populate proveedor name from selection
-- Support creating new providers inline
+- Fields: `categoria`, `cliente`, `monto_prog`, `valor_imponible`, `bonificacion`
+- Rubro auto: "Gasto de programación"
 
-#### FR-EXP-06: Payment Status Workflow
+#### FR-FORM-06: Table Views (all formulario areas)
 
-```
-pendiente → pagado
-pendiente → anulado
-```
-
-- Individual gastos can have different payment statuses within same formulario
-- Paid gastos are locked from editing
-
-#### FR-EXP-07: Table Views
-
-- **Programa view**: Individual gastos with all fields displayed
+- **Programa view**: Individual gastos with all fields
 - **Campaña view**: Grouped by formulario with aggregated totals
 - Search and filter across both views
-- Click row to edit formulario with all its gastos
 
-### 5.4 Programación Module (Módulo de Programación)
+#### 5.2.3 Direct Expenses (Admin/Finanzas)
 
-#### FR-PRG-01: Program Expense Tracking
+#### FR-DIR-01: Direct Expense Entry
 
-- Create expense formularios for programming/production costs
-- Each formulario linked to: mes_gestion, unidad_negocio, programa, ejecutivo
-- Track sub_rubro_empresa and detalle_campana
+- `area_origen = 'directo'`, no OP or formulario link
+- Rubro: "Gastos de estructura"
+- Sub_rubros: Gastos de oficina, Gastos de representación, Honorarios profesionales, Gastos generales
 
-#### FR-PRG-02: Unified Gastos Architecture
+### 5.3 Administration Module (Módulo Administración)
 
-- Uses shared `gastos` table for base expense data
-- Context-specific fields in `programacion_gastos` join table
-- Formulario header in `programacion_formularios` table
-- Full view `programacion_gastos_full` combines all tables
+#### FR-ADM-01: Unified Comprobantes View
 
-#### FR-PRG-03: Category Tracking
+- View ALL comprobantes (ingresos + egresos) from ALL areas in single table
+- Filter by tipo_movimiento, area_origen, estado_pago
+- Search by entidad, concepto, campaña
 
-- Categorize expenses by: Producción, Talentos, Técnica, Post Producción, etc.
-- Track factura_emitida_a for invoice assignment
+#### FR-ADM-02: Estado Pago Workflow
 
-### 5.5 User Management
+```
+creado → aprobado → pagado
+creado → requiere_info (with nota_admin)
+creado → rechazado
+```
+
+- Admin can change estado_pago, add nota_admin, set fecha_estimada_pago
+- Locked states: aprobado, rechazado, pagado (no further area edits)
+
+#### FR-ADM-03: Payment Processing
+
+- Set forma_pago, banco, numero_operacion, fecha_pago
+- Track condicion_iva, ingresos_brutos, retencion_ganancias
+
+#### FR-ADM-04: Ingreso Management
+
+- Create ingresos linked to OPs (`orden_publicidad_id_ingreso`)
+- Fields: retencion_iva, retencion_suss, fecha_vencimiento, portal, contacto
+
+### 5.4 User Management
 
 #### FR-USR-01: User CRUD
 
 - Create users with email, name, area+role assignments
 - Edit all user fields except historical data
 - Toggle user active status
-- Delete users (with constraints)
 
 #### FR-USR-02: Role Assignment
 
 - Users assigned roles per area (N:N relationship)
 - Minimum one role assignment required per user
-- Support different roles in different areas
+- Roles: Administrador, Editor, Visualizador
 
 #### FR-USR-03: Delete Constraints
 
 - Cannot delete the last active Administrator
 - Deleting user removes all their assignments
 
-### 5.6 Area Management
+### 5.5 Area Management
 
 #### FR-AREA-01: Area CRUD
 
@@ -288,12 +312,7 @@ pendiente → anulado
 - Assign optional manager (user reference)
 - Toggle area active status
 
-#### FR-AREA-02: Cascade Behavior
-
-- Deleting area removes user assignments to that area
-- Users remain in system (may lose role if only assignment)
-
-### 5.7 Audit Logging
+### 5.6 Audit Logging
 
 #### FR-LOG-01: Automatic Logging
 
@@ -353,72 +372,102 @@ All critical actions logged with:
 
 ## 7. Data Model Overview
 
-### Core Entities
+### Architecture: 2-Table Gastos Model
+
+All expense tracking uses a consolidated 2-table architecture:
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  usuarios   │────<│usuario_area_│>────│    areas    │
 │             │     │   roles     │     │             │
 └─────────────┘     └──────┬──────┘     └─────────────┘
-                          │
-                    ┌─────┴─────┐
-                    │   roles   │
-                    └───────────┘
+                           │
+                     ┌─────┴─────┐
+                     │   roles   │
+                     └───────────┘
 
 ┌───────────────────┐     ┌───────────────────────┐
 │ordenes_publicidad │────<│items_orden_publicidad │
 │    (orders)       │     │     (programs)        │
-└───────────────────┘     └───────────────────────┘
+└────────┬──────────┘     └───────────┬───────────┘
+         │                            │
+         │  ┌─────────────────────────┘
+         │  │
+         ▼  ▼
+┌──────────────────────────────────────────────┐
+│              comprobantes                     │
+│  (ALL ingresos + egresos, flattened context) │
+│                                              │
+│  area_origen: impl│tec│tal│prog│exp│prod│dir │
+│  orden_publicidad_id ──→ OP (impl/tec/tal)   │
+│  contexto_comprobante_id ──→ header (below)  │
+└──────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────┐
+│          contexto_comprobante                 │
+│  (unified header for prog/exp/prod)          │
+│                                              │
+│  area_origen: programacion│experience│prod   │
+│  mes_gestion, nombre_campana, programa, etc. │
+└──────────────────────────────────────────────┘
 
-                    ┌─────────────────┐
-                    │     gastos      │ (unified base table)
-                    └────────┬────────┘
-           ┌─────────────────┼─────────────────┐
-           ▼                 ▼                 ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│implementacion_   │ │experience_       │ │programacion_     │
-│    gastos        │ │    gastos        │ │    gastos        │
-└────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│(links to orden)  │ │experience_       │ │programacion_     │
-│                  │ │  formularios     │ │  formularios     │
-└──────────────────┘ └──────────────────┘ └──────────────────┘
-
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ proveedores │     │ audit_logs  │     │   clientes  │
-└─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌───────────────────┐
+│  entidades  │     │registros_auditoria│
+│(prov+client)│     │   (audit logs)    │
+└─────────────┘     └───────────────────┘
 ```
 
-### Unified Gastos Architecture
+### Tables
 
-The system uses a unified architecture for expense tracking across modules:
+| Table                    | Purpose                                                  |
+| ------------------------ | -------------------------------------------------------- |
+| `comprobantes`           | ALL financial documents (ingresos + egresos), context columns flattened in, discriminated by `area_origen` |
+| `contexto_comprobante`   | Unified header/grouping for formulario-linked areas (prog/exp/prod) |
+| `ordenes_publicidad`     | Advertising orders (commercial module)                   |
+| `items_orden_publicidad` | Program line items per order                             |
+| `entidades`              | Unified providers + clients table                        |
+| `usuarios`               | User accounts                                            |
+| `areas`                  | Business areas/departments                               |
+| `roles`                  | User roles (Administrador, Editor, Visualizador)         |
+| `usuario_area_roles`     | User ↔ Area ↔ Role assignments (N:N)                    |
+| `registros_auditoria`    | Audit log for all actions                                |
 
-| Table                    | Purpose                                      |
-| ------------------------ | -------------------------------------------- |
-| `gastos`                 | Base expense data (proveedor, neto, iva, estado_pago) |
-| `implementacion_gastos`  | Context for Implementación (linked to orden) |
-| `experience_gastos`      | Context for Experience (empresa_programa, acuerdo_pago) |
-| `experience_formularios` | Header/grouping for Experience campaigns     |
-| `programacion_gastos`    | Context for Programación (categoria)         |
-| `programacion_formularios` | Header/grouping for Programación           |
+### Views
 
-Each module has a `*_gastos_full` view that JOINs all relevant tables.
+| View               | Purpose                                               |
+| ------------------ | ----------------------------------------------------- |
+| `comprobantes_full`| Main view: comprobantes + contexto_comprobante + OP + entidades (4 LEFT JOINs) |
+| `gastos_full`      | Egresos only: `WHERE tipo_movimiento = 'egreso'`      |
+| `gastos`           | Backward-compat: egresos with legacy column names      |
+| `proveedores`      | Backward-compat: entidades filtered to proveedores     |
+
+### Area Discriminator Pattern
+
+| `area_origen` value | OP-linked? | Formulario-linked? | Key context columns |
+| ------------------- | ---------- | ------------------- | ------------------- |
+| `implementacion`    | Yes        | No                  | sector, rubro_contexto, condicion_pago |
+| `tecnica`           | Yes        | No                  | sector, rubro_contexto, condicion_pago |
+| `talentos`          | Yes        | No                  | sector, rubro_contexto, item_orden_publicidad_id |
+| `programacion`      | No         | Yes                 | categoria, cliente, monto_prog, bonificacion |
+| `experience`        | No         | Yes                 | empresa_programa, pais |
+| `productora`        | No         | Yes                 | empresa_programa, pais |
+| `directo`           | No         | No                  | (none — standalone) |
 
 ### Key Relationships
 
-- **User ↔ Area**: Many-to-many through `user_area_roles`
-- **Form ↔ FormItem**: One-to-many (order has programs)
-- **ImplementationExpense ↔ Items**: One-to-many
-- **Form ↔ ImplementationExpense**: One-to-one or one-to-many
+- **User ↔ Area**: Many-to-many through `usuario_area_roles`
+- **Order ↔ Programs**: One-to-many (`ordenes_publicidad` → `items_orden_publicidad`)
+- **Comprobante → OP**: Optional FK for OP-linked areas
+- **Comprobante → Contexto**: Optional FK for formulario-linked areas
+- **Comprobante → Entidad**: Optional FK for provider/client reference
 
 ### Reference Data
 
 | Entity         | Source                                | Mutability     |
 | -------------- | ------------------------------------- | -------------- |
 | Roles          | Fixed enum                            | Immutable      |
-| Programs       | Hardcoded list (11 shows)             | Rarely changes |
+| Programs       | Hardcoded list (13 shows)             | Rarely changes |
 | Business Units | Fixed (Media, Experience, Productora) | Immutable      |
 | Currencies     | ARS (default)                         | Extensible     |
 
@@ -437,6 +486,25 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 | BIZ-FIN-03 | NC% and Fee% auto-calculate amounts                 |
 | BIZ-FIN-04 | Utility calculated as Total - (NC + Fee + Expenses) |
 
+### Rubro Rules
+
+| Rule ID    | Description                                         |
+| ---------- | --------------------------------------------------- |
+| BIZ-RUB-01 | Solo egresos tienen rubro/sub_rubro                 |
+| BIZ-RUB-02 | Impl/Tec/Talentos: rubro = "Gasto de venta"        |
+| BIZ-RUB-03 | Programación: rubro = "Gasto de programación"       |
+| BIZ-RUB-04 | Experience: rubro = "Gastos de Evento"              |
+| BIZ-RUB-05 | Directo: rubro = "Gastos de estructura"             |
+
+### Estado Pago Rules
+
+| Rule ID    | Description                                         |
+| ---------- | --------------------------------------------------- |
+| BIZ-PAG-01 | creado → aprobado/requiere_info/rechazado (admin)   |
+| BIZ-PAG-02 | aprobado → pagado (admin only)                      |
+| BIZ-PAG-03 | Locked states prevent area-level edits              |
+| BIZ-PAG-04 | requiere_info allows area to re-edit and re-submit  |
+
 ### User Rules
 
 | Rule ID    | Description                                 |
@@ -444,15 +512,6 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 | BIZ-USR-01 | Email must be unique across all users       |
 | BIZ-USR-02 | Cannot delete last active Administrator     |
 | BIZ-USR-03 | User must have at least one role assignment |
-| BIZ-USR-04 | Inactive users cannot authenticate          |
-
-### Area Rules
-
-| Rule ID     | Description                                  |
-| ----------- | -------------------------------------------- |
-| BIZ-AREA-01 | Code must be unique (2-10 uppercase chars)   |
-| BIZ-AREA-02 | Deleting area removes assignments, not users |
-| BIZ-AREA-03 | Inactive areas hidden from selectors         |
 
 ---
 
@@ -480,10 +539,24 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 
 ### Key Patterns
 
-- **Mapper Functions**: Convert between DB (snake_case) and App (camelCase)
+- **Mapper Functions**: Convert between DB (snake_case) and App (camelCase) in service layer
+- **Unified gastosService**: Single service for all expense areas, discriminated by `area_origen`
 - **Validation Functions**: Pure functions in `businessRules.ts`
-- **Context Providers**: Global state per domain (Data, Forms, Logs)
+- **Context Providers**: Per-area contexts (ImplementacionContext, ExperienceContext, etc.) all backed by unified gastosService
 - **Component Composition**: shadcn/ui primitives + custom components
+
+### Key Files
+
+| File | Purpose |
+| ---- | ------- |
+| `references/db.md` | Database schema reference (authoritative) |
+| `src/app/services/gastosService.ts` | Unified expense service (all areas) |
+| `src/app/repositories/gastosRepository.ts` | Unified expense data access |
+| `src/app/repositories/contextoComprobanteRepository.ts` | Formulario header CRUD |
+| `src/app/types/gastos.ts` | Unified `Gasto` type + area-specific interfaces |
+| `src/app/types/comprobantes.ts` | `ComprobanteWithContext` type |
+| `src/app/services/comprobantesService.ts` | Admin comprobantes service |
+| `supabase/migrations/001_schema_completo.sql` | Single consolidated migration |
 
 ---
 
@@ -491,10 +564,11 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 
 ### MVP Launch Criteria
 
-- [ ] All CRUD operations functional for Users, Areas, Forms
+- [ ] All CRUD operations functional for Users, Areas, Orders
+- [ ] All 7 expense areas operational (impl, tec, tal, prog, exp, prod, directo)
 - [ ] Financial calculations accurate and validated
 - [ ] Audit logging capturing all critical actions
-- [ ] Core workflows (order creation, expense tracking) complete
+- [ ] Admin comprobantes view with estado_pago workflow
 - [ ] No P0 bugs in production
 
 ### Post-Launch KPIs
@@ -525,7 +599,9 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 ### Phase 1: MVP (Current)
 
 - Core commercial module
-- Basic implementation tracking
+- All 7 expense area modules
+- Unified admin comprobantes view with payment workflow
+- Entidades management (proveedores + clientes)
 - User/area management
 - Audit logging
 - Mock dashboard data
@@ -540,7 +616,6 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 ### Phase 3: Expansion
 
 - Real-time notifications
-- Programming module completion
 - API integrations (billing, accounting systems)
 - Mobile application
 
@@ -550,35 +625,42 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 
 | Term                     | Definition                                    |
 | ------------------------ | --------------------------------------------- |
-| **Orden de Publicidad**  | Advertising order ID                          |
-| **Razón Social**         | Business entity name (legal name)             |
+| **Orden de Publicidad**  | Advertising order                             |
+| **Razón Social**         | Business entity legal name                    |
 | **NC (Nota de Crédito)** | Credit note - discount/adjustment             |
 | **Fee**                  | Agency fee/commission                         |
 | **Canje**                | Barter transaction (non-cash)                 |
-| **Factura**              | Invoice                                       |
+| **Comprobante**          | Financial document (invoice, receipt, etc.)   |
+| **Gasto**                | Expense (egreso comprobante)                  |
+| **Ingreso**              | Income comprobante                            |
 | **Implementación**       | Campaign execution costs                      |
 | **Talentos**             | Talent/host fees                              |
 | **Técnica**              | Technical production costs                    |
-| **Mes de Servicio**      | Service month (when campaign runs)            |
-| **Experience**           | Event/experiential marketing business unit    |
-| **Formulario**           | Form/header grouping multiple gastos          |
-| **Gasto**                | Individual expense record                     |
+| **Productora**           | Content production unit                       |
+| **Experience**           | Event/experiential marketing unit             |
+| **Formulario**           | Header grouping multiple gastos (contexto_comprobante) |
 | **Empresa/PGM**          | Program associated with expense               |
 | **Acuerdo de Pago**      | Payment agreement terms (5, 30, 45, 60, 90 días) |
-| **Forma de Pago**        | Payment method (eCheque, Transferencia, Efectivo) |
-| **Subrubro**             | Expense subcategory (Producción, Diseño, etc) |
+| **Forma de Pago**        | Payment method (transferencia, cheque, efectivo, tarjeta) |
+| **Rubro**                | Expense category                              |
+| **Sub_rubro**            | Expense subcategory                           |
+| **Estado Pago**          | Payment status (creado, aprobado, requiere_info, rechazado, pagado) |
+| **Area Origen**          | Discriminator for which area owns a comprobante |
+| **Entidad**              | Unified provider/client entity                |
+| **Contexto Comprobante** | Unified formulario header (prog/exp/prod)     |
 
 ---
 
 ## 14. Document References
 
-| Document                         | Purpose                                       |
-| -------------------------------- | --------------------------------------------- |
-| `AGENTS.md`                      | Technical coding guidelines for AI assistants |
-| `MVP_REQUIREMENTS.md`            | Detailed business rules and validations       |
-| `supabase/schema.sql`            | Database schema definition                    |
-| `src/app/types/business.ts`      | TypeScript type definitions                   |
-| `src/app/utils/businessRules.ts` | Validation logic implementation               |
+| Document                                | Purpose                                       |
+| --------------------------------------- | --------------------------------------------- |
+| `references/db.md`                      | Database schema reference (authoritative)     |
+| `MVP_REQUIREMENTS.md`                   | Detailed business rules and validations       |
+| `supabase/migrations/001_schema_completo.sql` | Consolidated database migration         |
+| `src/app/types/gastos.ts`               | Unified expense type definitions              |
+| `src/app/types/comprobantes.ts`         | Comprobante type definitions                  |
+| `src/app/utils/businessRules.ts`        | Validation logic implementation               |
 
 ---
 
@@ -586,14 +668,15 @@ Each module has a `*_gastos_full` view that JOINs all relevant tables.
 
 | Version | Date     | Author  | Changes                                              |
 | ------- | -------- | ------- | ---------------------------------------------------- |
-| 1.1.0   | Jan 2026 | Claude  | Added Experience module (FR-EXP-01 to FR-EXP-07), Programación module (FR-PRG-01 to FR-PRG-03), unified gastos architecture |
+| 2.0.0   | Feb 2026 | Claude  | Major rewrite: 2-table gastos architecture (comprobantes + contexto_comprobante), all 7 expense areas documented, added Técnica/Talentos/Productora/Admin modules, updated data model diagram, added rubro + estado_pago business rules, updated glossary + file references |
+| 1.1.0   | Jan 2026 | Claude  | Added Experience module, Programación module, unified gastos architecture |
 | 1.0.0   | Jan 2026 | Initial | Document creation                                    |
 
 ---
 
 ## 16. Appendix: Luzu TV Programs
 
-The system supports the following programs (used in Experience module Empresa/PGM field):
+The system supports the following programs:
 
 1. FM Luzu
 2. Antes Que Nadie
