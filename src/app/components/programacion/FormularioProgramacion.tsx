@@ -157,7 +157,7 @@ export function FormularioProgramacion({
       // Use data from the first gasto for shared fields
       const firstGasto = formularioGastos[0];
       setCategoriaNegocio(firstGasto.categoriaNegocio || "");
-      setSubrubro(firstGasto.subRubroEmpresa || "");
+      setSubrubro(firstGasto.formularioSubRubro || firstGasto.subRubroEmpresa || firstGasto.ctxSubRubro || "");
       setNombreCampana(firstGasto.programa || "");
       setRazonSocial(firstGasto.razonSocial || "");
       setProveedor(firstGasto.proveedor || "");

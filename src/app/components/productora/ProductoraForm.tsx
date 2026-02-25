@@ -113,7 +113,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
     const existingGasto = contextGastos.find(g => g.id === gastoId);
 
     if (existingGasto) {
-      setUnidadNegocio(existingGasto.unidadNegocio || 'Productora');
+      setUnidadNegocio('Productora');
       setCategoriaNegocio(existingGasto.categoriaNegocio || '');
       setRubro(existingGasto.formularioRubro || '');
       setSubRubro(existingGasto.formularioSubRubro || '');

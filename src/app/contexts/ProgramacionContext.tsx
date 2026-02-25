@@ -28,7 +28,14 @@ export interface FormularioAgrupado {
 }
 
 export interface CreateMultipleGastosInput {
-  formulario: CreateContextoComprobanteInput;
+  mesGestion?: string;
+  unidadNegocio?: string;
+  categoriaNegocio?: string;
+  programa?: string;
+  ejecutivo?: string;
+  subRubroEmpresa?: string;
+  detalleCampana?: string;
+  createdBy?: string;
   gastos: Omit<CreateGastoInput, 'areaOrigen' | 'contextoComprobanteId'>[];
 }
 
@@ -75,19 +82,19 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
     // 1. Create contexto_comprobante (header)
     const ctxResult = await ctxRepo.create({
       area_origen: AREA,
-      mes_gestion: input.formulario.mesGestion || null,
-      detalle_campana: input.formulario.detalleCampana || null,
-      nombre_campana: input.formulario.nombreCampana || null,
-      unidad_negocio: input.formulario.unidadNegocio || null,
-      categoria_negocio: input.formulario.categoriaNegocio || null,
-      mes_venta: input.formulario.mesVenta || null,
-      mes_inicio: input.formulario.mesInicio || null,
-      programa: input.formulario.programa || null,
-      ejecutivo: input.formulario.ejecutivo || null,
-      rubro: null,
-      sub_rubro: null,
+      mes_gestion: input.mesGestion || null,
+      detalle_campana: input.detalleCampana || null,
+      nombre_campana: input.programa || null,
+      unidad_negocio: input.unidadNegocio || null,
+      categoria_negocio: input.categoriaNegocio || null,
+      mes_venta: null,
+      mes_inicio: null,
+      programa: input.programa || null,
+      ejecutivo: input.ejecutivo || null,
+      rubro: 'Gasto de programación',
+      sub_rubro: input.subRubroEmpresa || null,
       estado: 'activo',
-      created_by: input.formulario.createdBy || null,
+      created_by: input.createdBy || null,
     });
 
     if (ctxResult.error || !ctxResult.data) {
@@ -123,10 +130,24 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
     return result.data;
   };
 
-  const updateGasto = async (input: UpdateGastoInput): Promise<boolean> => {
+  const updateGasto = async (input: UpdateGastoInput & { subRubroEmpresa?: string }): Promise<boolean> => {
+    // If formulario-level fields are passed, update the contexto_comprobante too
+    const gasto = gastos.find(g => g.id === input.id);
+    if (gasto?.contextoComprobanteId && (input.unidadNegocio || input.categoriaNegocio || input.subRubroEmpresa || input.nombreCampana)) {
+      const ctxUpdate: Record<string, unknown> = {};
+      if (input.unidadNegocio !== undefined) ctxUpdate.unidad_negocio = input.unidadNegocio;
+      if (input.categoriaNegocio !== undefined) ctxUpdate.categoria_negocio = input.categoriaNegocio;
+      if (input.subRubroEmpresa !== undefined) ctxUpdate.sub_rubro = input.subRubroEmpresa;
+      if (input.nombreCampana !== undefined) ctxUpdate.programa = input.nombreCampana;
+      if (Object.keys(ctxUpdate).length > 0) {
+        await ctxRepo.update(gasto.contextoComprobanteId, ctxUpdate);
+      }
+    }
+
     const result = await gastosService.update(input);
     if (result.error || !result.data) return false;
-    setGastos(prev => prev.map(g => g.id === input.id ? result.data! : g));
+    // Refetch to get fresh joined data (ctx fields updated)
+    await fetchGastos();
     return true;
   };
 
@@ -162,7 +183,7 @@ export function ProgramacionProvider({ children }: { children: ReactNode }) {
         facturaEmitidaA: first.facturaEmitidaA,
         empresa: first.empresa,
         unidadNegocio: first.ctxUnidadNegocio || '',
-        subRubroEmpresa: first.subRubro,
+        subRubroEmpresa: first.formularioSubRubro || first.ctxSubRubro || first.subRubro,
         detalleCampana: first.ctxDetalleCampana,
         proveedor: first.proveedor,
         razonSocial: first.razonSocial,

@@ -49,7 +49,7 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
 
 
 
-  const getEstadoPagoVariant = (estadoPago: string) => {
+  const getEstadoPagoVariant = (estadoPago: string, hasFormulario: boolean) => {
     switch (estadoPago) {
       case 'pendiente':
       case 'pendiente-pago':
@@ -59,12 +59,14 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
         return 'success';
       case 'anulado':
         return 'error';
+      case 'creado':
+        return hasFormulario ? 'info' : 'neutral';
       default:
         return 'neutral';
     }
   };
 
-  const getEstadoPagoLabel = (estadoPago: string) => {
+  const getEstadoPagoLabel = (estadoPago: string, hasFormulario: boolean) => {
     switch (estadoPago) {
       case 'pendiente':
       case 'pendiente-pago':
@@ -74,12 +76,15 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
         return 'Pagado';
       case 'anulado':
         return 'Anulado';
+      case 'creado':
+        return hasFormulario ? 'A Facturar' : 'Pendiente de carga';
       default:
         return 'Pendiente de carga';
     }
   };
 
-  const getEstadoFormularioVariant = (estado: string) => {
+  const getEstadoFormularioVariant = (estado: string, gastosCount: number) => {
+    if ((estado === 'activo' || estado === 'abierto') && gastosCount > 0) return 'info';
     switch (estado) {
       case 'activo':
       case 'abierto':
@@ -88,14 +93,13 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
         return 'neutral';
       case 'anulado':
         return 'error';
-      case 'pendiente':
-        return 'neutral';
       default:
         return 'neutral';
     }
   };
 
-  const getEstadoFormularioLabel = (estado: string) => {
+  const getEstadoFormularioLabel = (estado: string, gastosCount: number) => {
+    if ((estado === 'activo' || estado === 'abierto') && gastosCount > 0) return 'A Facturar';
     switch (estado) {
       case 'activo':
       case 'abierto':
@@ -104,8 +108,6 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
         return 'Cerrado';
       case 'anulado':
         return 'Anulado';
-      case 'pendiente':
-        return 'Pendiente de carga';
       default:
         return 'Pendiente de carga';
     }
@@ -225,7 +227,7 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
             (currentRows as GastoProgramacion[]).map((gasto) => (
               <DataTableRow key={gasto.id} onClick={() => handleRowClick(gasto)}>
                 <DataTableCell>
-                  <StatusBadge label={getEstadoPagoLabel(gasto.estadoPago)} variant={getEstadoPagoVariant(gasto.estadoPago)} />
+                  <StatusBadge label={getEstadoPagoLabel(gasto.estadoPago, !!gasto.formularioId)} variant={getEstadoPagoVariant(gasto.estadoPago, !!gasto.formularioId)} />
                 </DataTableCell>
                 <DataTableCell>{gasto.categoria || '-'}</DataTableCell>
                 <DataTableCell>{gasto.programa || '-'}</DataTableCell>
@@ -256,7 +258,7 @@ export function TablaProgramacion({ onOpen, onNew }: TablaProgramacionProps) {
             (currentRows as FormularioAgrupado[]).map((formulario) => (
               <DataTableRow key={formulario.id} onClick={() => handleRowClick(formulario)}>
                 <DataTableCell>
-                  <StatusBadge label={getEstadoFormularioLabel(formulario.estado)} variant={getEstadoFormularioVariant(formulario.estado)} />
+                  <StatusBadge label={getEstadoFormularioLabel(formulario.estado, formulario.gastosCount)} variant={getEstadoFormularioVariant(formulario.estado, formulario.gastosCount)} />
                 </DataTableCell>
                 <DataTableCell>{formulario.programa || '-'}</DataTableCell>
                 <DataTableCell>{formatDateDDMMYYYY(formulario.createdAt)}</DataTableCell>
