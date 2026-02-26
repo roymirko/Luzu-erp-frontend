@@ -225,19 +225,56 @@ export async function update(input: UpdateOrdenPublicidadInput): Promise<{ data:
     const existingIds = new Set(existingItems.map(i => i.id));
     const incomingIds = new Set(items.filter(i => i.id).map(i => i.id!));
 
+    // Crear mapa de programas existentes para lookup rápido (prevenir duplicación)
+    const programaToIdMap = new Map(
+      existingItems.map(item => [item.programa, item.id])
+    );
+
+    // Validar no duplicados en items entrantes
+    const programasEntrantes = items.map(i => i.programa);
+    const programasDuplicados = programasEntrantes.filter(
+      (prog, idx) => programasEntrantes.indexOf(prog) !== idx
+    );
+    
+    if (programasDuplicados.length > 0) {
+      return {
+        data: null,
+        error: `Programas duplicados detectados: ${programasDuplicados.join(', ')}`
+      };
+    }
+
     // Update existing items or create new ones
     for (const item of items) {
-      if (item.id && existingIds.has(item.id)) {
-        await ordenesRepo.updateItem(item.id, mapItemToDBUpdate(item));
+      let itemId = item.id;
+      
+      // Si NO tiene ID pero el programa ya existe → reutilizar ID existente
+      if (!itemId && programaToIdMap.has(item.programa)) {
+        itemId = programaToIdMap.get(item.programa)!;
+        console.log(`[OrdenesPublicidadService] Reutilizando ID existente para programa: ${item.programa}`);
+      }
+      
+      if (itemId && existingIds.has(itemId)) {
+        // UPDATE item existente
+        await ordenesRepo.updateItem(itemId, mapItemToDBUpdate(item));
       } else {
+        // Validación adicional: NO permitir INSERT si el programa ya existe
+        const existePrograma = existingItems.some(e => e.programa === item.programa);
+        if (existePrograma) {
+          console.error(`[OrdenesPublicidadService] Intento de duplicar programa: ${item.programa}. Operación bloqueada.`);
+          continue; // Skip este item
+        }
+        
+        // CREATE nuevo item
         const itemsResult = await ordenesRepo.createItems([mapItemToDBInsert(item, id)]);
         if (itemsResult.error) console.error('Error creating item:', itemsResult.error);
       }
     }
 
-    // Delete removed items (not in incoming set)
+    // Delete removed items (not in incoming set and not in incoming programs)
     for (const existing of existingItems) {
-      if (!incomingIds.has(existing.id)) {
+      const programasEntrantes = items.map(i => i.programa);
+      // Solo eliminar si NO está en el set de IDs entrantes Y NO está en programas entrantes
+      if (!incomingIds.has(existing.id) && !programasEntrantes.includes(existing.programa)) {
         const delResult = await ordenesRepo.deleteItemById(existing.id);
         if (delResult.error) {
           console.warn('Could not delete item (may have gastos):', existing.id);
