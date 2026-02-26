@@ -269,6 +269,9 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
 
   // Agregar nueva fila
   const addImporteRow = () => {
+    const firstProgram = importeRows.length > 0 ? importeRows[0] : null;
+    const ncPorcentajeDefault = firstProgram?.ncPorcentaje || '';
+
     setImporteRows([
       ...importeRows,
       {
@@ -276,7 +279,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
         programa: '',
         monto: '',
         ncPrograma: '',
-        ncPorcentaje: '',
+        ncPorcentaje: ncPorcentajeDefault,
         proveedorFee: '',
         feePrograma: '',
         feePorcentaje: '',

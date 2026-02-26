@@ -47,15 +47,25 @@ export function ProgramaCard({
   };
 
   const handleNcPorcentajeChange = (rowId: string, porcentaje: string) => {
-    setImporteRows(rows => rows.map(r => {
-      if (r.id === rowId) {
+    setImporteRows(rows => {
+      const isFirstProgram = rows.findIndex(r => r.id === rowId) === 0;
+      
+      return rows.map(r => {
         const monto = parseFloat(r.monto.replace(/[^0-9.-]/g, '')) || 0;
         const pct = parseFloat(porcentaje) || 0;
         const ncPrograma = (monto * pct / 100).toString();
-        return { ...r, ncPorcentaje: porcentaje, ncPrograma };
-      }
-      return r;
-    }));
+
+        if (r.id === rowId) {
+          return { ...r, ncPorcentaje: porcentaje, ncPrograma };
+        }
+
+        if (isFirstProgram) {
+          return { ...r, ncPorcentaje: porcentaje, ncPrograma };
+        }
+
+        return r;
+      });
+    });
   };
 
   const handleNcProgramaChange = (rowId: string, ncPrograma: string) => {
