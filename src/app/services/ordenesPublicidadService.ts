@@ -138,6 +138,11 @@ export function validateCreate(input: CreateOrdenPublicidadInput): OrdenPublicid
   return { valid: errors.length === 0, errors };
 }
 
+export async function checkOrdenExists(ordenPublicidad: string): Promise<boolean> {
+  const result = await ordenesRepo.findByOrdenPublicidad(ordenPublicidad);
+  return result.data !== null;
+}
+
 export async function getAll(): Promise<{ data: OrdenPublicidad[]; error: string | null }> {
   const result = await ordenesRepo.findAll();
 

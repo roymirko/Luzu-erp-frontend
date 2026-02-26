@@ -19,6 +19,7 @@ import { useData } from '../contexts/DataContext';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabase';
 import { mapClientFromDB, mapClientToDB } from '../utils/supabaseMappers';
+import { checkOrdenExists } from '../services/ordenesPublicidadService';
 import type { Client } from '../types/business';
 import { ProveedorSelector } from './ProveedorSelector';
 import { AcuerdoPagoSelect } from './comercial/AcuerdoPagoSelect';
@@ -64,6 +65,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   const [mesServicioMes, setMesServicioMes] = useState('');
   const [mesServicioAnio, setMesServicioAnio] = useState('');
   const [ordenPublicidad, setOrdenPublicidad] = useState('');
+  const [ordenPublicidadError, setOrdenPublicidadError] = useState(false);
   const [totalVenta, setTotalVenta] = useState('');
   const [unidadNegocio, setUnidadNegocio] = useState('');
   const [categoriaNegocio, setCategoriaNegocio] = useState('');
@@ -122,6 +124,16 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
     return true;
   };
 
+  const handleOrdenPublicidadBlur = async () => {
+    if (!ordenPublicidad.trim() || isEditMode) {
+      setOrdenPublicidadError(false);
+      return;
+    }
+
+    const exists = await checkOrdenExists(ordenPublicidad);
+    setOrdenPublicidadError(exists);
+  };
+
   useEffect(() => {
     const fetchClients = async () => {
       const { data, error } = await supabase
@@ -130,14 +142,14 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
         .eq('activo', true)
         .order('razon_social');
 
-        if (error) {
+         if (error) {
           console.error('Error fetching clients:', error);
           return;
-        }
+         }
 
-      if (data) {
-        setClients(data.map(mapClientFromDB));
-      }
+       if (data) {
+         setClients(data.map(mapClientFromDB));
+       }
     };
 
     fetchClients();
@@ -419,23 +431,25 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
           </div>
 
             <div className="space-y-6">
-              <DatosBasicosSection
-                isDark={isDark}
-                isEditMode={isEditMode}
-                ordenPublicidad={ordenPublicidad}
-                setOrdenPublicidad={setOrdenPublicidad}
-                totalVenta={totalVenta}
-                setTotalVenta={setTotalVenta}
-                mesServicioMes={mesServicioMes}
-                setMesServicioMes={setMesServicioMes}
-                mesServicioAnio={mesServicioAnio}
-                setMesServicioAnio={setMesServicioAnio}
-                aniosDisponibles={ANIOS_DISPONIBLES}
-                meses={MESES}
-                mesesDisponibles={MESES_DISPONIBLES}
-                formatPesosInput={formatPesosInput}
-                getNumericValue={getNumericValue}
-              />
+               <DatosBasicosSection
+                 isDark={isDark}
+                 isEditMode={isEditMode}
+                 ordenPublicidad={ordenPublicidad}
+                 setOrdenPublicidad={setOrdenPublicidad}
+                 totalVenta={totalVenta}
+                 setTotalVenta={setTotalVenta}
+                 mesServicioMes={mesServicioMes}
+                 setMesServicioMes={setMesServicioMes}
+                 mesServicioAnio={mesServicioAnio}
+                 setMesServicioAnio={setMesServicioAnio}
+                 aniosDisponibles={ANIOS_DISPONIBLES}
+                 meses={MESES}
+                 mesesDisponibles={MESES_DISPONIBLES}
+                 formatPesosInput={formatPesosInput}
+                 getNumericValue={getNumericValue}
+                 ordenPublicidadError={ordenPublicidadError}
+                 onOrdenBlur={handleOrdenPublicidadBlur}
+               />
 
               <DetallesSoloLectura
                 isDark={isDark}
@@ -743,8 +757,8 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   setIsSubmitting(false);
                 }
               }}
-              disabled={!formularioValido || isSubmitting}
-              className={`${!formularioValido || isSubmitting
+              disabled={!formularioValido || isSubmitting || ordenPublicidadError}
+              className={`${!formularioValido || isSubmitting || ordenPublicidadError
                 ? 'bg-gray-400 cursor-not-allowed opacity-50'
                 : 'bg-[#0070ff] hover:bg-[#0060dd]'
                 } text-white`}
