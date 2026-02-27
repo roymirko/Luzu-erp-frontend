@@ -14,6 +14,11 @@ export interface OrdenPublicidad {
   marca: string;
   nombreCampana: string;
   acuerdoPago: string;
+  formaPago?: string;
+  numeroComprobante?: string;
+  fechaComprobante?: string;
+  facturaEmitidaA?: string;
+  empresa?: string;
   tipoImporte: 'canje' | 'factura';
   observaciones: string;
   estadoOp: 'pendiente' | 'aprobado' | 'rechazado';
@@ -51,6 +56,11 @@ export interface CreateOrdenPublicidadInput {
   marca: string;
   nombreCampana: string;
   acuerdoPago: string;
+  formaPago?: string;
+  numeroComprobante?: string;
+  fechaComprobante?: string;
+  facturaEmitidaA?: string;
+  empresa?: string;
   tipoImporte: 'canje' | 'factura';
   observaciones?: string;
   items: CreateItemOrdenPublicidadInput[];

@@ -27,9 +27,10 @@ import { DatosBasicosSection } from './comercial/DatosBasicosSection';
 import { DetallesSoloLectura } from './comercial/DetallesSoloLectura';
 import { ConfiguracionSection } from './comercial/ConfiguracionSection';
 import { MarcaCategoriaSection } from './comercial/MarcaCategoriaSection';
+import { PagoSection } from './comercial/PagoSection';
 import { formatPesos, formatPesosInput, formatPorcentaje, getNumericValue } from '@/app/utils/formatters';
 import { ProgramasList } from './comercial/ProgramasList';
-import { PROGRAMAS_LUZU } from '@/app/utils/implementacionConstants';
+import { PROGRAMAS_LUZU, FORMAS_PAGO_COMERCIAL_OPTIONS } from '@/app/utils/implementacionConstants';
 
 interface OrdenesPublicidadFormProps {
   onFormularioGuardado?: () => void;
@@ -76,6 +77,11 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   const [marca, setMarca] = useState('');
   const [nombreCampana, setNombreCampana] = useState('');
   const [acuerdoPago, setAcuerdoPago] = useState('');
+  const [formaPago, setFormaPago] = useState('');
+  const [numeroComprobante, setNumeroComprobante] = useState('');
+  const [fechaComprobante, setFechaComprobante] = useState('');
+  const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
+  const [empresa, setEmpresa] = useState('');
   const [tipoImporte, setTipoImporte] = useState<'canje' | 'factura'>('factura');
   const [observaciones, setObservaciones] = useState('');
   const [showAddRazonSocial, setShowAddRazonSocial] = useState(false);
@@ -174,6 +180,11 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
       setMarca(formularioExistente.marca || '');
       setNombreCampana(formularioExistente.nombreCampana || '');
       setAcuerdoPago(formularioExistente.acuerdoPago || '');
+      setFormaPago(formularioExistente.formaPago || '');
+      setNumeroComprobante(formularioExistente.numeroComprobante || '');
+      setFechaComprobante(formularioExistente.fechaComprobante || '');
+      setFacturaEmitidaA(formularioExistente.facturaEmitidaA || '');
+      setEmpresa(formularioExistente.empresa || '');
       setTipoImporte(formularioExistente.tipoImporte || 'factura');
       setObservaciones(formularioExistente.observaciones || '');
       setImporteRows(formularioExistente.importeRows || []);
@@ -407,7 +418,8 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
     // Solo validar proyecto si no está deshabilitado
     if (!isProyectoDisabled() && !proyecto) camposFaltantes.push('Proyecto');
 
-    if (!razonSocial) camposFaltantes.push('Razón Social');
+    // Razón Social y Proveedor: solo obligatorios si forma de pago NO es "Efectivo"
+    if (formaPago !== 'Efectivo (Contado)' && !razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');
     if (!marca.trim()) camposFaltantes.push('Marca');
 
@@ -477,6 +489,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   setRazonSocial(next.razonSocial);
                   setEmpresaAgencia(next.proveedor);
                 }}
+                formaPago={formaPago}
               />
 
               <MarcaCategoriaSection
@@ -501,17 +514,26 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
             </h2>
 
             <div className="space-y-6">
-              {/* Acuerdo de Pago */}
-                <AcuerdoPagoSelect
-                  isDark={isDark}
-                  acuerdosPago={ACUERDOS_PAGO}
-                  value={acuerdoPago}
-                  onChange={setAcuerdoPago}
-                />
+              {/* Forma de Pago y Acuerdo de Pago */}
+              <PagoSection
+                isDark={isDark}
+                formaPago={formaPago}
+                setFormaPago={setFormaPago}
+                numeroComprobante={numeroComprobante}
+                setNumeroComprobante={setNumeroComprobante}
+                fechaComprobante={fechaComprobante}
+                setFechaComprobante={setFechaComprobante}
+                facturaEmitidaA={facturaEmitidaA}
+                setFacturaEmitidaA={setFacturaEmitidaA}
+                empresa={empresa}
+                setEmpresa={setEmpresa}
+                formasPagoOptions={FORMAS_PAGO_COMERCIAL_OPTIONS}
+                acuerdoPago={acuerdoPago}
+                setAcuerdoPago={setAcuerdoPago}
+                acuerdoPagoOptions={ACUERDOS_PAGO}
+              />
 
-
-
-               {/* Programas */}
+              {/* Programas */}
                 <ProgramasList
                   isDark={isDark}
                   importeRows={importeRows}
@@ -725,6 +747,11 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   marca,
                   nombreCampana,
                   acuerdoPago,
+                  formaPago,
+                  numeroComprobante,
+                  fechaComprobante,
+                  facturaEmitidaA,
+                  empresa,
                   tipoImporte,
                   observaciones,
                   importeRows,
