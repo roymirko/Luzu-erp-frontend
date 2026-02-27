@@ -31,6 +31,7 @@ import { PagoSection } from './comercial/PagoSection';
 import { formatPesos, formatPesosInput, formatPorcentaje, getNumericValue } from '@/app/utils/formatters';
 import { ProgramasList } from './comercial/ProgramasList';
 import { PROGRAMAS_LUZU, FORMAS_PAGO_COMERCIAL_OPTIONS } from '@/app/utils/implementacionConstants';
+import { isMonthBeforeAvailable } from '@/app/utils/businessDaysUtils';
 
 interface OrdenesPublicidadFormProps {
   onFormularioGuardado?: () => void;
@@ -458,25 +459,26 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
           </div>
 
             <div className="space-y-6">
-               <DatosBasicosSection
-                 isDark={isDark}
-                 isEditMode={isEditMode}
-                 ordenPublicidad={ordenPublicidad}
-                 setOrdenPublicidad={setOrdenPublicidad}
-                 totalVenta={totalVenta}
-                 setTotalVenta={setTotalVenta}
-                 mesServicioMes={mesServicioMes}
-                 setMesServicioMes={setMesServicioMes}
-                 mesServicioAnio={mesServicioAnio}
-                 setMesServicioAnio={setMesServicioAnio}
-                 aniosDisponibles={ANIOS_DISPONIBLES}
-                 meses={MESES}
-                 mesesDisponibles={MESES_DISPONIBLES}
-                 formatPesosInput={formatPesosInput}
-                 getNumericValue={getNumericValue}
-                 ordenPublicidadError={ordenPublicidadError}
-                 onOrdenBlur={handleOrdenPublicidadBlur}
-               />
+                <DatosBasicosSection
+                  isDark={isDark}
+                  isEditMode={isEditMode}
+                  ordenPublicidad={ordenPublicidad}
+                  setOrdenPublicidad={setOrdenPublicidad}
+                  totalVenta={totalVenta}
+                  setTotalVenta={setTotalVenta}
+                  mesServicioMes={mesServicioMes}
+                  setMesServicioMes={setMesServicioMes}
+                  mesServicioAnio={mesServicioAnio}
+                  setMesServicioAnio={setMesServicioAnio}
+                  aniosDisponibles={ANIOS_DISPONIBLES}
+                  meses={MESES}
+                  mesesDisponibles={MESES_DISPONIBLES}
+                  formatPesosInput={formatPesosInput}
+                  getNumericValue={getNumericValue}
+                  ordenPublicidadError={ordenPublicidadError}
+                  onOrdenBlur={handleOrdenPublicidadBlur}
+                  monthBeforeAvailable={isMonthBeforeAvailable(isEditMode)}
+                />
 
               <DetallesSoloLectura
                 isDark={isDark}
