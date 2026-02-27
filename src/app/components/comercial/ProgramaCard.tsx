@@ -47,15 +47,25 @@ export function ProgramaCard({
   };
 
   const handleNcPorcentajeChange = (rowId: string, porcentaje: string) => {
-    setImporteRows(rows => rows.map(r => {
-      if (r.id === rowId) {
+    setImporteRows(rows => {
+      const isFirstProgram = rows.findIndex(r => r.id === rowId) === 0;
+      
+      return rows.map(r => {
         const monto = parseFloat(r.monto.replace(/[^0-9.-]/g, '')) || 0;
         const pct = parseFloat(porcentaje) || 0;
         const ncPrograma = (monto * pct / 100).toString();
-        return { ...r, ncPorcentaje: porcentaje, ncPrograma };
-      }
-      return r;
-    }));
+
+        if (r.id === rowId) {
+          return { ...r, ncPorcentaje: porcentaje, ncPrograma };
+        }
+
+        if (isFirstProgram) {
+          return { ...r, ncPorcentaje: porcentaje, ncPrograma };
+        }
+
+        return r;
+      });
+    });
   };
 
   const handleNcProgramaChange = (rowId: string, ncPrograma: string) => {
@@ -70,11 +80,31 @@ export function ProgramaCard({
     }));
   };
 
+  const calculateFeePercentage = (montoValue: number, feeProgramaValue: number): string => {
+    // Validación: si monto es 0 o negativo, retornar '0'
+    if (montoValue <= 0) {
+      return '0';
+    }
+    // Validación: si feeProgramaValue es negativo, retornar '0'
+    if (feeProgramaValue < 0) {
+      return '0';
+    }
+    // Cálculo: (FEE Programa / Monto) * 100
+    const percentage = (feeProgramaValue / montoValue) * 100;
+    return percentage.toFixed(2);
+  };
+
   const handleFeePorcentajeChange = (rowId: string, porcentaje: string) => {
     setImporteRows(rows => rows.map(r => {
       if (r.id === rowId) {
         const monto = parseFloat(r.monto.replace(/[^0-9.-]/g, '')) || 0;
         const pct = parseFloat(porcentaje) || 0;
+        
+        // Validación: evitar monto <= 0 o porcentaje negativo
+        if (monto <= 0 || pct < 0) {
+          return r;
+        }
+        
         const feePrograma = (monto * pct / 100).toString();
         return { ...r, feePorcentaje: porcentaje, feePrograma };
       }
@@ -87,8 +117,20 @@ export function ProgramaCard({
       if (r.id === rowId) {
         const monto = parseFloat(r.monto.replace(/[^0-9.-]/g, '')) || 0;
         const fee = parseFloat(feePrograma.replace(/[^0-9.-]/g, '')) || 0;
-        const feePorcentaje = monto > 0 ? ((fee / monto) * 100).toFixed(2) : '0';
+        const feePorcentaje = calculateFeePercentage(monto, fee);
         return { ...r, feePrograma, feePorcentaje };
+      }
+      return r;
+    }));
+  };
+
+  const handleMontoChange = (rowId: string, montoValue: string) => {
+    setImporteRows(rows => rows.map(r => {
+      if (r.id === rowId) {
+        const monto = parseFloat(montoValue.replace(/[^0-9.-]/g, '')) || 0;
+        const fee = parseFloat(r.feePrograma.replace(/[^0-9.-]/g, '')) || 0;
+        const feePorcentaje = calculateFeePercentage(monto, fee);
+        return { ...r, monto: montoValue, feePorcentaje };
       }
       return r;
     }));
@@ -162,26 +204,26 @@ export function ProgramaCard({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Monto</Label>
-            <Input
-              type="text"
-              value={row.monto ? formatPesosInput(row.monto) : ''}
-              onChange={(e) => {
-                const value = getNumericValue(e.target.value);
-                if (validateMonto(value)) {
-                  setImporteRows(rows => rows.map(r => r.id === row.id ? { ...r, monto: value } : r));
-                } else {
-                  alert('El monto no puede superar el Total de Venta');
-                }
-              }}
-              placeholder="$ 0"
-              className={`h-9 text-sm ${isDark
-                ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
-                : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }`}
-            />
-          </div>
+           <div className="space-y-1.5">
+             <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Monto</Label>
+             <Input
+               type="text"
+               value={row.monto ? formatPesosInput(row.monto) : ''}
+               onChange={(e) => {
+                 const value = getNumericValue(e.target.value);
+                 if (validateMonto(value)) {
+                   handleMontoChange(row.id, value);
+                 } else {
+                   alert('El monto no puede superar el Total de Venta');
+                 }
+               }}
+               placeholder="$ 0"
+               className={`h-9 text-sm ${isDark
+                 ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
+                 : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+                 }`}
+             />
+           </div>
 
           <div className="space-y-1.5">
             <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>NC Programa</Label>
@@ -258,22 +300,19 @@ export function ProgramaCard({
             />
           </div>
 
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>%</Label>
-            <Input
-              type="text"
-              value={row.feePorcentaje}
-              onChange={(e) => {
-                const value = formatPorcentaje(e.target.value);
-                handleFeePorcentajeChange(row.id, value);
-              }}
-              placeholder="0"
-              className={`h-9 text-sm ${isDark
-                ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
-                : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }`}
-            />
-          </div>
+           <div className="space-y-1.5 sm:col-span-2">
+             <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>%</Label>
+             <Input
+               type="text"
+               value={row.feePorcentaje}
+               disabled
+               placeholder="0"
+               className={`h-9 text-sm ${isDark
+                 ? 'bg-[#2a2a2a] border-gray-700 text-gray-400 placeholder:text-gray-600 cursor-not-allowed'
+                 : 'bg-gray-100 border-gray-300 text-gray-600 placeholder:text-gray-400 cursor-not-allowed'
+                 }`}
+             />
+           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

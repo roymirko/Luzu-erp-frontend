@@ -21,6 +21,8 @@ interface DatosBasicosSectionProps {
   mesesDisponibles: MesOption[];
   formatPesosInput: (v: string) => string;
   getNumericValue: (v: string) => string;
+  ordenPublicidadError?: boolean;
+  onOrdenBlur?: () => void;
 }
 
 export function DatosBasicosSection(props: DatosBasicosSectionProps) {
@@ -39,6 +41,8 @@ export function DatosBasicosSection(props: DatosBasicosSectionProps) {
     mesesDisponibles,
     formatPesosInput,
     getNumericValue,
+    ordenPublicidadError = false,
+    onOrdenBlur,
   } = props;
 
   return (
@@ -51,13 +55,17 @@ export function DatosBasicosSection(props: DatosBasicosSectionProps) {
           <Input
             value={ordenPublicidad}
             onChange={(e) => setOrdenPublicidad(e.target.value)}
+            onBlur={onOrdenBlur}
             placeholder="Ej: 202509-0133 VER001"
             disabled={isEditMode}
             className={isDark
-              ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed'
-              : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed'
+              ? `bg-[#141414] text-white placeholder:text-gray-600 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed border ${ordenPublicidadError ? 'border-red-500' : 'border-gray-800'}`
+              : `bg-white text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36] disabled:opacity-60 disabled:cursor-not-allowed border ${ordenPublicidadError ? 'border-red-500' : 'border-gray-300'}`
             }
           />
+          {ordenPublicidadError && (
+            <p className="text-red-500 text-sm">La Orden de Publicidad ya existe en el sistema</p>
+          )}
         </div>
 
         <div className="space-y-2">
