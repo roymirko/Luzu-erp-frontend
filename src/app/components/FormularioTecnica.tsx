@@ -143,10 +143,14 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
     const item = itemId ? formulario.importeRows?.find((row) => row.id === itemId) : null;
     const presupuestoTecnica = item
       ? parseFloat(String(item.tecnica || '0').replace(/[^0-9.-]/g, ''))
-      : 0;
+      : (formulario.importeRows || []).reduce((sum, row) => {
+          const val = parseFloat(String(row.tecnica || '0').replace(/[^0-9.-]/g, ''));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
 
     const programasConPresupuesto = formulario.importeRows
       ?.filter((row) => {
+        if (itemId && row.id !== itemId) return false;
         if (!row.programa) return false;
         const tec = row.tecnica;
         if (tec === null || tec === undefined || tec === '') return false;
@@ -308,31 +312,23 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
 
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
+      const isEfectivo = imp.formaPago === 'efectivo';
+      const isTarjeta = imp.formaPago === 'tarjeta';
 
-      if (!imp.facturaEmitidaA) {
-        importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
+      if (!isEfectivo) {
+        if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
+        if (!imp.empresa) importeErrors.empresa = 'Debe seleccionar una empresa';
+        if (!imp.fechaComprobante) importeErrors.fechaComprobante = 'Requerido';
       }
-      if (!imp.empresa) {
-        importeErrors.empresa = 'Debe seleccionar una empresa';
-      }
-      if (!imp.empresaPgm) {
-        importeErrors.empresaPgm = 'Requerido';
-      }
-      if (!imp.fechaComprobante) {
-        importeErrors.fechaComprobante = 'Requerido';
-      }
-      if (!imp.proveedor || !imp.razonSocial) {
+      if (!imp.empresaPgm) importeErrors.empresaPgm = 'Requerido';
+      if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) {
         importeErrors.proveedor = 'Debe seleccionar proveedor y razón social';
       }
-      if (!imp.formaPago) {
-        importeErrors.formaPago = 'Requerido';
-      }
-      if (imp.formaPago === 'cheque' && !imp.condicionPago) {
+      if (!imp.formaPago) importeErrors.formaPago = 'Requerido';
+      if (!isEfectivo && !isTarjeta && !imp.condicionPago) {
         importeErrors.condicionPago = 'Requerido';
       }
-      if (!imp.neto) {
-        importeErrors.neto = 'Requerido';
-      }
+      if (!imp.neto) importeErrors.neto = 'Requerido';
 
       if (Object.keys(importeErrors).length > 0) {
         newErrors.importes[imp.id] = importeErrors;

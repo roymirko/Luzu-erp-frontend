@@ -16,6 +16,7 @@ export interface OrdenPublicidadRow {
   acuerdo_pago: string | null;
   tipo_importe: 'canje' | 'factura' | null;
   observaciones: string | null;
+  estado_op: 'pendiente' | 'aprobado' | 'rechazado' | null;
   fecha_creacion: string;
   fecha_actualizacion: string;
   creado_por: string | null;

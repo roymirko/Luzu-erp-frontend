@@ -103,6 +103,21 @@ CREATE TABLE registros_auditoria (
 );
 ```
 
+### app_settings
+Key-value store for application configuration (e.g. API credentials).
+```sql
+CREATE TABLE app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_by TEXT
+);
+```
+
+**Current keys:**
+- `finnegans_client_id` - Finnegans OAuth2 Client ID
+- `finnegans_client_secret` - Finnegans OAuth2 Client Secret
+
 ## Commercial Module (Comercial)
 
 ### ordenes_publicidad

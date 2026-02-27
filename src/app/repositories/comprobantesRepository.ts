@@ -167,6 +167,20 @@ export async function search(term: string, tipoMovimiento?: 'ingreso' | 'egreso'
 
 const VIEW_NAME = 'comprobantes_full';
 
+export async function findByIdWithContext(id: string): Promise<RepositoryResult<ComprobanteFullRow>> {
+  const { data, error } = await supabase
+    .from(VIEW_NAME)
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    return { data: null, error: mapSupabaseError(error) };
+  }
+
+  return { data: data as ComprobanteFullRow, error: null };
+}
+
 export async function findAllWithContext(): Promise<RepositoryListResult<ComprobanteFullRow>> {
   const { data, error } = await supabase
     .from(VIEW_NAME)

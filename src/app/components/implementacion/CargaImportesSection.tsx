@@ -104,13 +104,17 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
 
   // Validate a single importe
   const validateImporte = (imp: BloqueImporte, index: number): string | null => {
-    if (!imp.facturaEmitidaA) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
-    if (!imp.empresa) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
+    const isEfectivo = imp.formaPago === 'efectivo';
+    const isTarjeta = imp.formaPago === 'tarjeta';
+    if (!isEfectivo) {
+      if (!imp.facturaEmitidaA) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
+      if (!imp.empresa) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
+      if (!imp.fechaComprobante) return `Gasto #${index + 1}: Fecha requerida`;
+    }
     if (!imp.empresaPgm) return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
-    if (!imp.fechaComprobante) return `Gasto #${index + 1}: Fecha requerida`;
-    if (!imp.proveedor || !imp.razonSocial) return `Gasto #${index + 1}: Debe seleccionar proveedor`;
+    if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) return `Gasto #${index + 1}: Debe seleccionar proveedor`;
     if (!imp.formaPago) return `Gasto #${index + 1}: Debe seleccionar forma de pago`;
-    if (imp.formaPago === 'cheque' && !imp.condicionPago) return `Gasto #${index + 1}: Debe seleccionar acuerdo de pago`;
+    if (!isEfectivo && !isTarjeta && !imp.condicionPago) return `Gasto #${index + 1}: Debe seleccionar acuerdo de pago`;
     if (!imp.neto) return `Gasto #${index + 1}: Debe ingresar un importe`;
     return null;
   };

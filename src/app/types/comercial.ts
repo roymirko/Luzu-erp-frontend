@@ -16,6 +16,7 @@ export interface OrdenPublicidad {
   acuerdoPago: string;
   tipoImporte: 'canje' | 'factura';
   observaciones: string;
+  estadoOp: 'pendiente' | 'aprobado' | 'rechazado';
   items: ItemOrdenPublicidad[];
   createdAt: Date;
   updatedAt: Date;

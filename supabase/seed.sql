@@ -30,6 +30,12 @@ VALUES
     ]'::jsonb)
 ON CONFLICT (name) DO NOTHING;
 
+-- 1b. APP SETTINGS
+INSERT INTO public.app_settings (key, value) VALUES
+  ('finnegans_client_id', ''),
+  ('finnegans_client_secret', '')
+ON CONFLICT (key) DO NOTHING;
+
 -- 2. USUARIOS
 INSERT INTO public.usuarios (email, first_name, last_name, active, creado_por, metadata, password_hash)
 VALUES

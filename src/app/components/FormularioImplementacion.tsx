@@ -111,12 +111,17 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     const item = itemId ? formulario.importeRows?.find((row) => row.id === itemId) : null;
     const presupuestoImpl = item
       ? parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''))
-      : 0;
+      : (formulario.importeRows || []).reduce((sum, row) => {
+          const val = parseFloat(String(row.implementacion || '0').replace(/[^0-9.-]/g, ''));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
 
     // Calculate remaining budget per program
     // Solo mostrar programas que tengan presupuesto asignado (implementacion no es null/undefined/vacío)
     const programasConPresupuesto = formulario.importeRows
       ?.filter((row) => {
+        // If itemId provided, only show that specific program
+        if (itemId && row.id !== itemId) return false;
         // Debe tener nombre de programa
         if (!row.programa) return false;
         // Debe tener presupuesto asignado (puede ser 0 o negativo, pero debe estar definido)
@@ -279,33 +284,23 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
+      const isEfectivo = imp.formaPago === 'efectivo';
+      const isTarjeta = imp.formaPago === 'tarjeta';
 
-      // Per-gasto validation for facturaEmitidaA and empresa
-      if (!imp.facturaEmitidaA) {
-        importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
+      if (!isEfectivo) {
+        if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
+        if (!imp.empresa) importeErrors.empresa = 'Debe seleccionar una empresa';
+        if (!imp.fechaComprobante) importeErrors.fechaComprobante = 'Requerido';
       }
-      if (!imp.empresa) {
-        importeErrors.empresa = 'Debe seleccionar una empresa';
-      }
-      if (!imp.empresaPgm) {
-        importeErrors.empresaPgm = 'Requerido';
-      }
-      if (!imp.fechaComprobante) {
-        importeErrors.fechaComprobante = 'Requerido';
-      }
-      if (!imp.proveedor || !imp.razonSocial) {
+      if (!imp.empresaPgm) importeErrors.empresaPgm = 'Requerido';
+      if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) {
         importeErrors.proveedor = 'Debe seleccionar proveedor y razón social';
       }
-      if (!imp.formaPago) {
-        importeErrors.formaPago = 'Requerido';
-      }
-      // Acuerdo de pago solo requerido si forma de pago es cheque
-      if (imp.formaPago === 'cheque' && !imp.condicionPago) {
+      if (!imp.formaPago) importeErrors.formaPago = 'Requerido';
+      if (!isEfectivo && !isTarjeta && !imp.condicionPago) {
         importeErrors.condicionPago = 'Requerido';
       }
-      if (!imp.neto) {
-        importeErrors.neto = 'Requerido';
-      }
+      if (!imp.neto) importeErrors.neto = 'Requerido';
 
       if (Object.keys(importeErrors).length > 0) {
         newErrors.importes[imp.id] = importeErrors;

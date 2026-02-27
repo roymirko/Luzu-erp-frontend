@@ -49,6 +49,7 @@ function mapFromDB(row: OrdenPublicidadWithItems): OrdenPublicidad {
     acuerdoPago: row.acuerdo_pago || '',
     tipoImporte: row.tipo_importe || 'factura',
     observaciones: row.observaciones || '',
+    estadoOp: row.estado_op || 'pendiente',
     items: (row.items_orden_publicidad || []).map(mapItemFromDB),
     createdAt: new Date(row.fecha_creacion),
     updatedAt: new Date(row.fecha_actualizacion),
@@ -262,6 +263,14 @@ export async function remove(id: string): Promise<{ success: boolean; error: str
     return { success: false, error: result.error.message };
   }
 
+  return { success: true, error: null };
+}
+
+export async function updateEstadoOp(id: string, estado: 'pendiente' | 'aprobado' | 'rechazado'): Promise<{ success: boolean; error: string | null }> {
+  const result = await ordenesRepo.updateEstadoOp(id, estado);
+  if (result.error) {
+    return { success: false, error: result.error.message };
+  }
   return { success: true, error: null };
 }
 

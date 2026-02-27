@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useFormFields } from '../contexts/FormFieldsContext';
 import { useData } from '../contexts/DataContext';
@@ -46,8 +46,12 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
-  TrendingUp
+  TrendingUp,
+  EyeOff,
+  Loader2,
+  Wifi
 } from 'lucide-react';
+import * as settingsService from '../services/settingsService';
 
 interface User {
   id: string;
@@ -1601,26 +1605,54 @@ const AuditTab = () => {
 // Tab de Configuración del Sistema
 const SystemConfigTab = () => {
   const { isDark } = useTheme();
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [showSecret, setShowSecret] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSaveConfig = () => {
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1000)),
-      {
-        loading: 'Guardando configuración...',
-        success: () => {
-          return '⚙️ Configuración guardada exitosamente';
-        },
-        error: 'Error al guardar la configuración',
-      }
-    );
+  useEffect(() => {
+    settingsService.getFinnegansCreds().then(({ data }) => {
+      setClientId(data.clientId);
+      setClientSecret(data.clientSecret);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleSaveFinnegans = async () => {
+    setSaving(true);
+    const { error } = await settingsService.saveFinnegansCreds(clientId, clientSecret);
+    setSaving(false);
+    if (error) {
+      toast.error(`Error al guardar: ${error}`);
+    } else {
+      toast.success('Credenciales de Finnegans guardadas');
+    }
   };
 
-  const handleCancel = () => {
-    toast.info('Cambios descartados');
+  const handleTestConnection = async () => {
+    if (!clientId || !clientSecret) {
+      toast.error('Ingresá Client ID y Client Secret');
+      return;
+    }
+    setTesting(true);
+    const { success, error } = await settingsService.testFinnegansConnection(clientId, clientSecret);
+    setTesting(false);
+    if (success) {
+      toast.success('Conexión exitosa con Finnegans');
+    } else {
+      toast.error(`Error de conexión: ${error}`);
+    }
   };
+
+  const inputCls = isDark
+    ? 'bg-[#141414] border-gray-700 text-white'
+    : 'bg-gray-50 border-gray-300 text-gray-900';
 
   return (
     <div className="space-y-6">
+      {/* Configuración General (static) */}
       <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
         <CardHeader>
           <CardTitle className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -1629,173 +1661,132 @@ const SystemConfigTab = () => {
           </CardTitle>
           <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Parámetros globales del sistema</p>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Nombre de la Empresa
-              </label>
-              <Input
-                defaultValue="Luzu TV"
-                className={isDark
-                  ? 'bg-[#141414] border-gray-700 text-white'
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
-                }
-              />
-            </div>
-
-            <div>
-              <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Email de Contacto
-              </label>
-              <Input
-                defaultValue="admin@luzutv.com"
-                type="email"
-                className={isDark
-                  ? 'bg-[#141414] border-gray-700 text-white'
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
-                }
-              />
-            </div>
-
-            <div>
-              <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Zona Horaria
-              </label>
-              <Input
-                defaultValue="America/Argentina/Buenos_Aires (GMT-3)"
-                className={isDark
-                  ? 'bg-[#141414] border-gray-700 text-white'
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
-                }
-              />
-            </div>
+        <CardContent className="space-y-4">
+          <div>
+            <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Nombre de la Empresa
+            </label>
+            <Input defaultValue="Luzu TV" className={inputCls} />
           </div>
-
-          <div className={`border-t pt-6 ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-            <h4 className={`font-medium mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Opciones del Sistema</h4>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Notificaciones por Email</p>
-                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Enviar alertas importantes por correo</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Modo Mantenimiento</p>
-                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Deshabilitar acceso al sistema temporalmente</p>
-                </div>
-                <Switch />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Backup Automático</p>
-                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Respaldo diario a las 03:00 AM</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Autenticación de 2 Factores</p>
-                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Requerir 2FA para todos los usuarios</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Registro de Auditoría Extendido</p>
-                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>Guardar logs detallados de todas las acciones</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            </div>
+          <div>
+            <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Email de Contacto
+            </label>
+            <Input defaultValue="admin@luzutv.com" type="email" className={inputCls} />
           </div>
-
-          <div className={`border-t pt-6 ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                className={isDark
-                  ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                }
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSaveConfig}
-                className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
-              >
-                Guardar Cambios
-              </Button>
-            </div>
+          <div>
+            <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              Zona Horaria
+            </label>
+            <Input defaultValue="America/Argentina/Buenos_Aires (GMT-3)" className={inputCls} />
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
-          <CardHeader>
-            <CardTitle className={`text-base flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              <Database className="h-5 w-5 text-blue-500" />
-              Base de Datos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Tamaño Total</span>
-              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>2.4 GB</span>
+      {/* Finnegans API Credentials */}
+      <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
+        <CardHeader>
+          <CardTitle className={`flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <Globe className="h-5 w-5 text-green-500" />
+            Finnegans - Credenciales API
+          </CardTitle>
+          <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+            OAuth2 credentials para teamplace.finneg.com
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 py-4">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Cargando...</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Registros</span>
-              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>45,892</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Último Backup</span>
-              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Hoy 03:00</span>
-            </div>
-            <Button variant="outline" className="w-full mt-4">
-              Crear Backup Manual
-            </Button>
-          </CardContent>
-        </Card>
+          ) : (
+            <>
+              <div>
+                <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Client ID
+                </label>
+                <Input
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  placeholder="Ingresá el Client ID"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={`text-sm font-medium mb-2 block ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Client Secret
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showSecret ? 'text' : 'password'}
+                    value={clientSecret}
+                    onChange={(e) => setClientSecret(e.target.value)}
+                    placeholder="Ingresá el Client Secret"
+                    className={`pr-10 ${inputCls}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSecret(!showSecret)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={handleTestConnection}
+                  disabled={testing}
+                  className={isDark
+                    ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }
+                >
+                  {testing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wifi className="h-4 w-4 mr-2" />}
+                  Probar Conexión
+                </Button>
+                <Button
+                  onClick={handleSaveFinnegans}
+                  disabled={saving}
+                  className="bg-[#fb2c36] text-white hover:bg-[#e02731]"
+                >
+                  {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Guardar
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
-          <CardHeader>
-            <CardTitle className={`text-base flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              <Globe className="h-5 w-5 text-green-500" />
-              API & Integraciones
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>API Activa</span>
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Online
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Requests Hoy</span>
-              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>1,245</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Webhooks</span>
-              <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>3 activos</span>
-            </div>
-            <Button variant="outline" className="w-full mt-4">
-              Configurar API
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Base de Datos (static) */}
+      <Card className={isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}>
+        <CardHeader>
+          <CardTitle className={`text-base flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <Database className="h-5 w-5 text-blue-500" />
+            Base de Datos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Tamaño Total</span>
+            <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>2.4 GB</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Registros</span>
+            <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>45,892</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Último Backup</span>
+            <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Hoy 03:00</span>
+          </div>
+          <Button variant="outline" className="w-full mt-4">
+            Crear Backup Manual
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };

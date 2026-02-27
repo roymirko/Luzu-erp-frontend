@@ -329,6 +329,12 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
   };
 }
 
+export async function getByIdWithContext(id: string): Promise<{ data: ComprobanteWithContext | null; error: string | null }> {
+  const result = await comprobantesRepo.findByIdWithContext(id);
+  if (result.error) return { data: null, error: result.error.message };
+  return { data: result.data ? mapFromDBWithContext(result.data) : null, error: null };
+}
+
 export async function getAllWithContext(): Promise<{ data: ComprobanteWithContext[]; error: string | null }> {
   const result = await comprobantesRepo.findAllWithContext();
   if (result.error) return { data: [], error: result.error.message };

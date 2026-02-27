@@ -162,7 +162,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
       return [{
         id: form.id,
         formId: form.id,
-        itemId: itemsWithImpl[0]?.id,
+        itemId: undefined,
         estado: linkedGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
         mesServicio: formatMesServicio(form.mesServicio),
         fechaRegistro,

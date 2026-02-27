@@ -144,7 +144,7 @@ export function TablaTalentos({ onOpen }: TablaTalentosProps = {}) {
       return [{
         id: form.id,
         formId: form.id,
-        itemId: itemsWithTalentos[0]?.id,
+        itemId: undefined,
         estado: linkedGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
         mesServicio: formatMesServicio(form.mesServicio),
         fechaRegistro,

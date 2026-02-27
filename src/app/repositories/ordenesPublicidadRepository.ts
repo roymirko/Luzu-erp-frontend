@@ -162,6 +162,21 @@ export async function deleteItemById(id: string): Promise<RepositoryResult<null>
   return { data: null, error: error ? mapSupabaseError(error) : null };
 }
 
+export async function updateEstadoOp(id: string, estadoOp: string): Promise<RepositoryResult<OrdenPublicidadRow>> {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .update({ estado_op: estadoOp, fecha_actualizacion: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    return { data: null, error: mapSupabaseError(error) };
+  }
+
+  return { data: data as OrdenPublicidadRow, error: null };
+}
+
 export async function findItemById(itemId: string): Promise<RepositoryResult<ItemOrdenPublicidadRow>> {
   const { data, error } = await supabase
     .from(ITEMS_TABLE_NAME)

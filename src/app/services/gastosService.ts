@@ -171,20 +171,24 @@ function mapToInsertRow(input: CreateGastoInput): GastoInsertRow {
 
 export function validateCreate(input: CreateGastoInput): GastoValidationResult {
   const errors: { field: string; message: string }[] = [];
-  if (!input.proveedor?.trim()) {
+  const isEfectivo = input.formaPago === 'efectivo';
+
+  if (!isEfectivo && !input.proveedor?.trim()) {
     errors.push({ field: 'proveedor', message: 'Debe seleccionar un proveedor' });
   }
   if (!input.neto || input.neto <= 0) {
     errors.push({ field: 'neto', message: 'El importe neto es requerido' });
   }
-  // Area-specific validations
-  if (['implementacion', 'tecnica', 'talentos'].includes(input.areaOrigen)) {
-    if (!input.facturaEmitidaA?.trim()) {
-      errors.push({ field: 'facturaEmitidaA', message: 'Debe seleccionar a quién se emite la factura' });
+  if (!isEfectivo) {
+    // Area-specific validations
+    if (['implementacion', 'tecnica', 'talentos'].includes(input.areaOrigen)) {
+      if (!input.facturaEmitidaA?.trim()) {
+        errors.push({ field: 'facturaEmitidaA', message: 'Debe seleccionar a quién se emite la factura' });
+      }
     }
-  }
-  if (!input.empresa?.trim()) {
-    errors.push({ field: 'empresa', message: 'Debe seleccionar una empresa' });
+    if (!input.empresa?.trim()) {
+      errors.push({ field: 'empresa', message: 'Debe seleccionar una empresa' });
+    }
   }
   return { valid: errors.length === 0, errors };
 }

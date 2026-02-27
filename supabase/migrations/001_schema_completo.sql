@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS public.entidades CASCADE;
 DROP TABLE IF EXISTS public.items_orden_publicidad CASCADE;
 DROP TABLE IF EXISTS public.ordenes_publicidad CASCADE;
 DROP TABLE IF EXISTS public.usuario_area_roles CASCADE;
+DROP TABLE IF EXISTS public.app_settings CASCADE;
 DROP TABLE IF EXISTS public.registros_auditoria CASCADE;
 DROP TABLE IF EXISTS public.usuarios CASCADE;
 DROP TABLE IF EXISTS public.areas CASCADE;
@@ -106,6 +107,17 @@ CREATE TABLE public.registros_auditoria (
 );
 
 -- ============================================
+-- 1b. APP SETTINGS (key-value config)
+-- ============================================
+
+CREATE TABLE public.app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_by TEXT
+);
+
+-- ============================================
 -- 2. COMERCIAL TABLES
 -- ============================================
 
@@ -127,6 +139,7 @@ CREATE TABLE public.ordenes_publicidad (
   acuerdo_pago TEXT,
   tipo_importe TEXT CHECK (tipo_importe IN ('canje', 'factura')),
   observaciones TEXT,
+  estado_op TEXT CHECK (estado_op IN ('pendiente', 'aprobado', 'rechazado')) DEFAULT 'pendiente',
   fecha_creacion TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   fecha_actualizacion TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   creado_por TEXT
@@ -379,6 +392,7 @@ SELECT
   op.marca AS op_marca,
   op.mes_servicio AS op_mes_servicio,
   op.acuerdo_pago AS op_acuerdo_pago,
+  op.estado_op AS op_estado_op,
   -- OP vinculada (ingresos)
   opi.id AS ingreso_op_id,
   opi.orden_publicidad AS ingreso_op_numero,
@@ -507,6 +521,7 @@ ALTER TABLE public.items_orden_publicidad ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.entidades ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contexto_comprobante ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comprobantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "allow_all" ON public.roles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.areas FOR ALL USING (true) WITH CHECK (true);
@@ -518,6 +533,7 @@ CREATE POLICY "allow_all" ON public.items_orden_publicidad FOR ALL USING (true) 
 CREATE POLICY "allow_all" ON public.entidades FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.contexto_comprobante FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON public.comprobantes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON public.app_settings FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================
 -- 12. GRANTS

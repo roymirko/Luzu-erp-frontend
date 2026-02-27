@@ -23,7 +23,6 @@ import {
   Key,
   Plus,
   Sparkles,
-  DollarSign,
   Building,
   Wrench,
   Clapperboard,
@@ -54,8 +53,11 @@ import { ExperienceForm } from "./components/experience/ExperienceForm";
 import { ProductoraProvider, useProductora } from "./contexts/ProductoraContext";
 import { Productora } from "./components/Productora";
 import { ProductoraForm } from "./components/productora/ProductoraForm";
-import { Finanzas } from "./components/finanzas/Finanzas";
-import { Administracion } from "./components/administracion/Administracion";
+import { AdminFinanzas } from "./components/admin-finanzas/AdminFinanzas";
+import { FormularioAdminEgreso } from "./components/admin-finanzas/FormularioAdminEgreso";
+import { FormularioAdminIngreso } from "./components/admin-finanzas/FormularioAdminIngreso";
+import { FormularioNuevoComprobante } from "./components/admin-finanzas/FormularioNuevoComprobante";
+import { FormularioAdminOP } from "./components/admin-finanzas/FormularioAdminOP";
 import { Avatar, AvatarFallback } from "./components/ui/avatar";
 import { Button } from "./components/ui/button";
 import { ActionCard } from "./components/ui/action-card";
@@ -117,15 +119,9 @@ const menuItems = [
     icon: <Clapperboard className="h-5 w-5" />,
   },
   {
-    id: "finanzas",
-    path: "/finanzas",
-    label: "Finanzas",
-    icon: <DollarSign className="h-5 w-5" />,
-  },
-  {
-    id: "administracion",
-    path: "/administracion",
-    label: "Administración",
+    id: "admin-finanzas",
+    path: "/admin-finanzas",
+    label: "Admin y Finanzas",
     icon: <Building className="h-5 w-5" />,
   },
 ];
@@ -314,16 +310,38 @@ function AppContent() {
         { label: "Backoffice", path: null },
       ];
     }
-    if (path === "/finanzas") {
+    if (path === "/admin-finanzas") {
       return [
         { label: "Inicio", path: null },
-        { label: "Finanzas", path: null },
+        { label: "Admin y Finanzas", path: null },
       ];
     }
-    if (path === "/administracion") {
+    if (path === "/admin-finanzas/nuevo") {
       return [
         { label: "Inicio", path: null },
-        { label: "Administración", path: null },
+        { label: "Admin y Finanzas", path: "/admin-finanzas" },
+        { label: "Nuevo Comprobante", path: null },
+      ];
+    }
+    if (path.startsWith("/admin-finanzas/egreso/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Admin y Finanzas", path: "/admin-finanzas" },
+        { label: "Egreso", path: null },
+      ];
+    }
+    if (path.startsWith("/admin-finanzas/ingreso/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Admin y Finanzas", path: "/admin-finanzas" },
+        { label: "Ingreso", path: null },
+      ];
+    }
+    if (path.startsWith("/admin-finanzas/op/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Admin y Finanzas", path: "/admin-finanzas" },
+        { label: "Orden de publicidad", path: null },
       ];
     }
     return [{ label: "Inicio", path: null }];
@@ -536,8 +554,11 @@ function AppContent() {
               <Route path="/productora" element={<ProductoraPage />} />
               <Route path="/productora/nuevo" element={<ProductoraNuevoPage />} />
               <Route path="/productora/editar/:id" element={<ProductoraEditarPage />} />
-              <Route path="/finanzas" element={<FinanzasPage />} />
-              <Route path="/administracion" element={<AdministracionPage />} />
+              <Route path="/admin-finanzas" element={<AdminFinanzasPage />} />
+              <Route path="/admin-finanzas/nuevo" element={<AdminFinanzasNuevoPage />} />
+              <Route path="/admin-finanzas/egreso/:id" element={<AdminFinanzasEgresoPage />} />
+              <Route path="/admin-finanzas/ingreso/:id" element={<AdminFinanzasIngresoPage />} />
+              <Route path="/admin-finanzas/op/:id" element={<AdminFinanzasOPPage />} />
               <Route path="/backoffice" element={<Suspense fallback={<LoadingFallback />}><FormBuilder /></Suspense>} />
             </Routes>
           </div>
@@ -822,12 +843,34 @@ function ProductoraEditarPage() {
   );
 }
 
-function FinanzasPage() {
-  return <Finanzas />;
+function AdminFinanzasPage() {
+  return <AdminFinanzas />;
 }
 
-function AdministracionPage() {
-  return <Administracion />;
+function AdminFinanzasNuevoPage() {
+  const navigate = useNavigate();
+  return <FormularioNuevoComprobante onClose={() => navigate("/admin-finanzas")} defaultTipoMovimiento="ingreso" />;
+}
+
+function AdminFinanzasEgresoPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  if (!id) return null;
+  return <FormularioAdminEgreso comprobanteId={id} onClose={() => navigate("/admin-finanzas")} />;
+}
+
+function AdminFinanzasIngresoPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  if (!id) return null;
+  return <FormularioAdminIngreso comprobanteId={id} onClose={() => navigate("/admin-finanzas")} />;
+}
+
+function AdminFinanzasOPPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  if (!id) return null;
+  return <FormularioAdminOP ordenId={id} onClose={() => navigate("/admin-finanzas")} />;
 }
 
 export default function App() {
