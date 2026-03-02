@@ -33,6 +33,8 @@ interface CargaImportesSectionProps {
   isNewGasto?: boolean;
   existingGastoIds?: Set<string>;
   estadoOP?: EstadoOP;
+  // Comercial payment method to block/default factura fields
+  ordenFormaPago?: string;
 }
 
 // Map BloqueImporte to GastoData format
@@ -79,6 +81,7 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     isNewGasto = true,
     existingGastoIds = new Set(),
     estadoOP = 'pendiente',
+    ordenFormaPago,
   } = props;
 
   // Track collapsed state for each importe
@@ -197,6 +200,7 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
               programOptions={programasConPresupuesto}
               isSaving={isSaving}
               observacionesLabel="Detalle de gasto"
+              ordenFormaPago={ordenFormaPago}
             />
           );
         })}

@@ -183,6 +183,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       responsable: formulario.responsable || '',
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
+      formaPago: formulario.formaPago || '',
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
@@ -727,6 +728,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
             isNewGasto={isNewGasto}
             existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
+            ordenFormaPago={ordenPublicidadData?.formaPago}
           />
 
           {!isStandalone && (

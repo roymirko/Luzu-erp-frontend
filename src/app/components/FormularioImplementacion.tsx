@@ -157,6 +157,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       responsable: formulario.responsable || '',
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
+      formaPago: formulario.formaPago || '',
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
@@ -657,6 +658,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             isNewGasto={isNewGasto}
             existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
+            ordenFormaPago={ordenPublicidadData?.formaPago}
           />
 
           {/* Resumen */}

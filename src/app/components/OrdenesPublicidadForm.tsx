@@ -426,6 +426,9 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
     // Solo validar proyecto si no está deshabilitado
     if (!isProyectoDisabled() && !proyecto) camposFaltantes.push('Proyecto');
 
+    // Forma de Pago es obligatorio
+    if (!formaPago) camposFaltantes.push('Forma de Pago');
+
     // Razón Social y Proveedor: solo obligatorios si forma de pago NO es "Efectivo"
     if (formaPago !== 'Efectivo (Contado)' && !razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');

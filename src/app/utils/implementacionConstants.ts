@@ -1,13 +1,13 @@
 import type { FormSelectOption } from '@/app/components/ui/form-select';
 
 export const FACTURAS_OPTIONS: FormSelectOption[] = [
-  { value: 'Luzu TV', label: 'Luzu TV' },
-  { value: 'Luzu TV SA', label: 'Luzu TV SA' },
+  { value: 'LUZU TV SF', label: 'LUZU TV SF' },
+  { value: 'LUZU TV S. A.', label: 'LUZU TV S. A.' },
 ];
 
 export const EMPRESAS_OPTIONS: FormSelectOption[] = [
-  { value: 'Luzu TV', label: 'Luzu TV' },
-  { value: 'Luzu TV SA', label: 'Luzu TV SA' },
+  { value: 'LUZU TV SF', label: 'LUZU TV SF' },
+  { value: 'LUZU TV S. A.', label: 'LUZU TV S. A.' },
 ];
 
 export const UNIDADES_NEGOCIO_OPTIONS: FormSelectOption[] = [
