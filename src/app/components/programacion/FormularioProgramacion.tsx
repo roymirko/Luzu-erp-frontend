@@ -273,25 +273,6 @@ export function FormularioProgramacion({
     setRazonSocial(data.razonSocial);
   };
 
-  const addGastoItem = () => {
-    setGastos((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        facturaEmitidaA: "",
-        empresa: "",
-        empresaPrograma: "",
-      fechaComprobante: "",
-        acuerdoPago: "",
-        numeroComprobante: "",
-        formaPago: "",
-        neto: 0,
-        observaciones: "",
-        estado: "pendiente-pago",
-      },
-    ]);
-  };
-
   const removeGastoItem = (id: string) => {
     if (gastos.length === 1) {
       toast.error("Debe haber al menos un gasto");
@@ -783,33 +764,6 @@ export function FormularioProgramacion({
               </div>
             </div>
 
-            {/* Row 3: Nombre de Campaña (full width) */}
-            <div className="space-y-1">
-              <Label className={labelClass}>
-                Nombre de Campaña<span className="text-red-500">*</span>
-              </Label>
-              <div className="relative">
-                <Search
-                  className={cn(
-                    "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",
-                    isDark ? "text-gray-500" : "text-gray-400",
-                  )}
-                />
-                <Input
-                  type="text"
-                  value={nombreCampana}
-                  onChange={(e) => setNombreCampana(e.target.value)}
-                  placeholder="Buscar campaña"
-                  disabled={isFormularioCerrado}
-                  className={cn(
-                    inputClass,
-                    "pl-10",
-                    errors.nombreCampana && "border-red-500",
-                  )}
-                />
-              </div>
-            </div>
-
           </div>
 
           {/* Section 2: Carga de importes */}
@@ -919,18 +873,6 @@ export function FormularioProgramacion({
                 />
               );
             })}
-
-            {/* Add Importe Button */}
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={addGastoItem}
-                className="bg-[#0070ff] hover:bg-[#0060dd] text-white"
-                disabled={isFormularioCerrado}
-              >
-                + Agregar importe
-              </Button>
-            </div>
           </div>
 
           {/* Section 3: Resumen */}
