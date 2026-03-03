@@ -3,7 +3,7 @@
  * Context columns are nullable; area_origen discriminates which fields apply.
  */
 
-export type AreaOrigenGasto = 'implementacion' | 'tecnica' | 'talentos' | 'programacion' | 'experience' | 'productora' | 'directo';
+export type AreaOrigenGasto = 'implementacion' | 'tecnica' | 'talentos' | 'programacion' | 'experience' | 'productora' | 'marketing' | 'directo';
 export type EstadoGasto = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
 export type EstadoPago = 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
 
@@ -162,7 +162,7 @@ export interface GastoValidationResult {
  */
 export interface ContextoComprobante {
   id: string;
-  areaOrigen: 'programacion' | 'experience' | 'productora';
+  areaOrigen: 'programacion' | 'experience' | 'productora' | 'marketing';
   mesGestion?: string;
   detalleCampana?: string;
   estado: string;
@@ -184,7 +184,7 @@ export interface ContextoComprobante {
 }
 
 export interface CreateContextoComprobanteInput {
-  areaOrigen: 'programacion' | 'experience' | 'productora';
+  areaOrigen: 'programacion' | 'experience' | 'productora' | 'marketing';
   mesGestion?: string;
   detalleCampana?: string;
   nombreCampana?: string;
@@ -211,6 +211,7 @@ export type GastoTalentos = Gasto;
 export type GastoProgramacion = Gasto;
 export type GastoExperience = Gasto;
 export type GastoProductora = Gasto;
+export type GastoMarketing = Gasto;
 export type CreateGastoImplementacionInput = CreateGastoInput;
 export type UpdateGastoImplementacionInput = UpdateGastoInput;
 export type CreateGastoTecnicaInput = CreateGastoInput;
@@ -223,3 +224,5 @@ export type CreateGastoExperienceInput = CreateGastoInput;
 export type UpdateGastoExperienceInput = UpdateGastoInput;
 export type CreateGastoProductoraInput = CreateGastoInput;
 export type UpdateGastoProductoraInput = UpdateGastoInput;
+export type CreateGastoMarketingInput = CreateGastoInput;
+export type UpdateGastoMarketingInput = UpdateGastoInput;

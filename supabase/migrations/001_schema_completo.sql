@@ -193,7 +193,7 @@ CREATE TABLE public.entidades (
 
 CREATE TABLE public.contexto_comprobante (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  area_origen TEXT NOT NULL CHECK (area_origen IN ('programacion','experience','productora')),
+  area_origen TEXT NOT NULL CHECK (area_origen IN ('programacion','experience','productora','marketing')),
   -- Shared
   mes_gestion VARCHAR(7),
   detalle_campana TEXT,
@@ -296,7 +296,7 @@ CREATE TABLE public.comprobantes (
   -- ============================================
   -- NEW: Flattened context columns (replaces 6 context tables)
   -- ============================================
-  area_origen TEXT, -- 'implementacion','tecnica','talentos','programacion','experience','productora','directo'
+  area_origen TEXT, -- 'implementacion','tecnica','talentos','programacion','experience','productora','marketing','directo'
   contexto_comprobante_id UUID REFERENCES public.contexto_comprobante(id),
   orden_publicidad_id UUID REFERENCES public.ordenes_publicidad(id),
   item_orden_publicidad_id UUID REFERENCES public.items_orden_publicidad(id),

@@ -182,6 +182,27 @@ export const TALENTOS_DEFAULTS = {
   ivaDefault: 21,
 } as const;
 
+// ============================================
+// Marketing Module Constants
+// ============================================
+
+export const SUBRUBROS_MARKETING_OPTIONS: FormSelectOption[] = [
+  { value: 'Producción', label: 'Producción' },
+  { value: 'Acciones de MKT', label: 'Acciones de MKT' },
+  { value: 'Diseño', label: 'Diseño' },
+  { value: 'Edición', label: 'Edición' },
+  { value: 'Pauta', label: 'Pauta' },
+  { value: 'Técnica', label: 'Técnica' },
+];
+
+export const MARKETING_DEFAULTS = {
+  unidadNegocio: 'Media',
+  categoriaNegocio: 'Proyectos especiales Marketing',
+  rubro: 'Gastos de Marketing',
+  moneda: 'ARS',
+  ivaDefault: 21,
+} as const;
+
 export const FIELD_MAX_LENGTHS = {
   conceptoGasto: 250,
   observaciones: 500,

@@ -258,7 +258,7 @@ CREATE TABLE comprobantes (
   acuerdo_pago TEXT,
   -- === FLATTENED CONTEXT COLUMNS (replaces 6 old context tables) ===
   area_origen TEXT CHECK (area_origen IN (
-    'implementacion','tecnica','talentos','programacion','experience','productora','directo'
+    'implementacion','tecnica','talentos','programacion','experience','productora','marketing','directo'
   )),
   contexto_comprobante_id UUID REFERENCES contexto_comprobante(id),
   orden_publicidad_id UUID REFERENCES ordenes_publicidad(id),
@@ -296,7 +296,7 @@ Unified header for prog/exp/prod areas (replaces old `*_formularios` tables).
 ```sql
 CREATE TABLE contexto_comprobante (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  area_origen TEXT NOT NULL CHECK (area_origen IN ('programacion','experience','productora')),
+  area_origen TEXT NOT NULL CHECK (area_origen IN ('programacion','experience','productora','marketing')),
   mes_gestion VARCHAR(7),
   detalle_campana TEXT,
   estado TEXT DEFAULT 'activo',
