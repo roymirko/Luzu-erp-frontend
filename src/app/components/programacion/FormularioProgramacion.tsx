@@ -76,7 +76,7 @@ const FORMAS_PAGO_OPTIONS = FORMAS_PAGO_EXPERIENCE_OPTIONS;
 const FACTURA_EMITIDA_A_OPTIONS = FACTURAS_OPTIONS;
 
 const SUB_RUBROS = ["Producción", "Diseño", "Edición", "Técnica"];
-const CATEGORIAS_NEGOCIO = ["PE", "Media"];
+const CATEGORIAS_NEGOCIO = ["PEP", "Media"];
 
 export function FormularioProgramacion({
   gastoId,
@@ -95,7 +95,7 @@ export function FormularioProgramacion({
 
   // Section 1: Cargar Datos
   const [unidadNegocio] = useState("Media");
-  const [categoriaNegocio, setCategoriaNegocio] = useState("");
+  const [categoriaNegocio, setCategoriaNegocio] = useState("PEP");
   const [rubroGasto] = useState("Gasto de programación"); // readonly
   const [subrubro, setSubrubro] = useState("");
   const [nombreCampana, setNombreCampana] = useState("");
@@ -156,7 +156,6 @@ export function FormularioProgramacion({
 
       // Use data from the first gasto for shared fields
       const firstGasto = formularioGastos[0];
-      setCategoriaNegocio(firstGasto.categoriaNegocio || "");
       setSubrubro(firstGasto.formularioSubRubro || firstGasto.subRubroEmpresa || firstGasto.ctxSubRubro || "");
       setNombreCampana(firstGasto.programa || "");
       setRazonSocial(firstGasto.razonSocial || "");
@@ -699,15 +698,15 @@ export function FormularioProgramacion({
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label className={labelClass}>Categoría de Negocio</Label>
-                <Select
-                  value={categoriaNegocio}
-                  onValueChange={setCategoriaNegocio}
-                  disabled={isFormularioCerrado}
-                >
-                  <SelectTrigger className={selectTriggerClass}>
-                    <SelectValue placeholder="Seleccionar" />
+               <div className="space-y-1">
+                 <Label className={labelClass}>Categoría de Negocio</Label>
+                 <Select
+                   value={categoriaNegocio}
+                   onValueChange={setCategoriaNegocio}
+                   disabled
+                 >
+                   <SelectTrigger className={disabledSelectClass}>
+                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIAS_NEGOCIO.map((opt) => (
