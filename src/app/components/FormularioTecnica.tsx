@@ -697,7 +697,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
                 />
                 <div className="sm:col-span-2">
                   <FormInput
-                    label="Nombre de campaña"
+                    label="Proyecto"
                     value={nombreCampana}
                     onChange={setNombreCampana}
                     required

@@ -702,13 +702,13 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
 
               <div className="space-y-1">
                 <Label className={labelClass}>
-                  Nombre de Campaña<span className="text-red-500">*</span>
+                  Evento<span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="text"
                   value={nombreCampana}
                   onChange={(e) => setNombreCampana(e.target.value)}
-                  placeholder="Buscar campaña"
+                  placeholder="Buscar evento"
                   disabled={isFormularioCerrado}
                   className={cn(
                     isFormularioCerrado ? disabledSelectClass : inputClass,
@@ -718,7 +718,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
               </div>
             </div>
 
-            {/* Row 3: Detalle/campaña */}
+            {/* Row 3: Detalle/evento */}
           </div>
 
           {/* Section 2: Carga de importes */}
