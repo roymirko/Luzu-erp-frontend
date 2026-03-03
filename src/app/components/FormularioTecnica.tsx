@@ -174,7 +174,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       ordenPublicidad: formulario.ordenPublicidad || '',
       unidadNegocio: formulario.unidadNegocio || '',
       categoriaNegocio: formulario.categoriaNegocio || '',
-      nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
       presupuesto: presupuestoTecnica,
       programasConPresupuesto: programasConPresupuesto.length > 0
@@ -717,7 +716,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
               unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
               categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
               marca={ordenPublicidadData?.marca}
-              nombreCampana={ordenPublicidadData?.nombreCampana || ''}
               rubro={TECNICA_DEFAULTS.rubro}
               subRubro={TECNICA_DEFAULTS.subRubro}
             />

@@ -433,6 +433,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
     if (formaPago !== 'Efectivo (Contado)' && !razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');
     if (!marca.trim()) camposFaltantes.push('Marca');
+    if (!nombreCampana.trim()) camposFaltantes.push('Nombre de Campaña');
 
     // Validación cruzada: Si formaPago es Efectivo o Transferencia, tipoImporte debe ser factura
     if ((formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)') && tipoImporte !== 'factura') {

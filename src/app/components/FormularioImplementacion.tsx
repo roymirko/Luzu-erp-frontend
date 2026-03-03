@@ -148,7 +148,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       ordenPublicidad: formulario.ordenPublicidad || '',
       unidadNegocio: formulario.unidadNegocio || '',
       categoriaNegocio: formulario.categoriaNegocio || '',
-      nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
       presupuesto: presupuestoImpl,
       programasConPresupuesto: programasConPresupuesto.length > 0
@@ -646,7 +645,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
             unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
             categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
             marca={ordenPublicidadData?.marca}
-            nombreCampana={ordenPublicidadData?.nombreCampana || ''}
             rubro={IMPLEMENTACION_DEFAULTS.rubro}
             subRubro={IMPLEMENTACION_DEFAULTS.subRubro}
           />

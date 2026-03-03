@@ -14,7 +14,6 @@ interface CampaignInfoCardProps {
   unidadNegocio: string;
   categoriaNegocio: string;
   marca?: string;
-  nombreCampana: string;
   rubro: string;
   subRubro: string;
 }
@@ -27,7 +26,6 @@ export function CampaignInfoCard({
   unidadNegocio,
   categoriaNegocio,
   marca,
-  nombreCampana,
   rubro,
   subRubro,
 }: CampaignInfoCardProps) {
@@ -41,7 +39,6 @@ export function CampaignInfoCard({
     [
       { label: 'Categoría de Negocio', value: categoriaNegocio || '-' },
       { label: 'Marca', value: marca || '-' },
-      { label: 'Nombre de Campaña', value: nombreCampana || '-' },
       { label: 'Rubro de Gasto', value: rubro || '-' },
     ],
     [

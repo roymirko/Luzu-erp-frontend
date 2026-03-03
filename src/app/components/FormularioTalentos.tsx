@@ -139,7 +139,6 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
       ordenPublicidad: formulario.ordenPublicidad || '',
       unidadNegocio: formulario.unidadNegocio || '',
       categoriaNegocio: formulario.categoriaNegocio || '',
-      nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
       presupuesto: presupuestoTalentos,
       programasConPresupuesto: programasConPresupuesto.length > 0
@@ -553,7 +552,6 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
             unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
             categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
             marca={ordenPublicidadData?.marca}
-            nombreCampana={ordenPublicidadData?.nombreCampana || ''}
             rubro={TALENTOS_DEFAULTS.rubro}
             subRubro={TALENTOS_DEFAULTS.subRubro}
           />
