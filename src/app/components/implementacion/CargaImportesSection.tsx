@@ -112,7 +112,17 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     if (!isEfectivo) {
       if (!imp.facturaEmitidaA) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
       if (!imp.empresa) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
-      if (!imp.fechaComprobante) return `Gasto #${index + 1}: Fecha requerida`;
+      
+      // Validación cruzada: Si hay uno, debe estar el otro
+      const tieneNumero = imp.numeroComprobante && imp.numeroComprobante.trim() !== '';
+      const tieneFecha = imp.fechaComprobante && imp.fechaComprobante.trim() !== '';
+      
+      if (tieneNumero && !tieneFecha) {
+        return `Gasto #${index + 1}: Debe ingresar fecha de comprobante cuando hay número`;
+      }
+      if (tieneFecha && !tieneNumero) {
+        return `Gasto #${index + 1}: Debe ingresar número de comprobante cuando hay fecha`;
+      }
     }
     if (!imp.empresaPgm) return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
     if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) return `Gasto #${index + 1}: Debe seleccionar proveedor`;

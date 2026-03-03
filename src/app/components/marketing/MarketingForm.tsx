@@ -142,7 +142,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           facturaEmitidaA: g.facturaEmitidaA || '',
           empresa: g.empresaContext || '',
           empresaPrograma: g.empresaPrograma || '',
-          fechaComprobante: g.fechaComprobante || new Date().toISOString().split('T')[0],
+          fechaComprobante: g.fechaComprobante || '',
           razonSocial: g.razonSocial || '',
           proveedor: g.proveedor || '',
           acuerdoPago: g.acuerdoPago || '',
@@ -176,6 +176,18 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
     if (!g.formaPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
     if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     if (!g.neto || g.neto <= 0) return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
+    
+    // Validación cruzada: Si hay uno, debe estar el otro
+    const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
+    const tieneFecha = g.fechaComprobante && g.fechaComprobante.trim() !== '';
+    
+    if (tieneNumero && !tieneFecha) {
+      return `Gasto #${index + 1}: Debe ingresar fecha de comprobante cuando hay número`;
+    }
+    if (tieneFecha && !tieneNumero) {
+      return `Gasto #${index + 1}: Debe ingresar número de comprobante cuando hay fecha`;
+    }
+    
     return null;
   };
 
@@ -195,7 +207,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         facturaEmitidaA: '',
         empresa: '',
         empresaPrograma: '',
-        fechaComprobante: new Date().toISOString().split('T')[0],
+      fechaComprobante: '',
         razonSocial: '',
         proveedor: '',
         acuerdoPago: '',
@@ -233,7 +245,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
       } else {
         setGastos([{
           id: crypto.randomUUID(), facturaEmitidaA: '', empresa: '', empresaPrograma: '',
-          fechaComprobante: new Date().toISOString().split('T')[0], razonSocial: '', proveedor: '',
+          fechaComprobante: '', razonSocial: '', proveedor: '',
           acuerdoPago: '', numeroComprobante: '', formaPago: '', pais: 'argentina', neto: 0,
           observaciones: '', estado: 'pendiente-pago',
         }]);

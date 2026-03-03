@@ -281,7 +281,6 @@ export function GastoCard(props: GastoCardProps) {
                   label="Fecha de comprobante"
                   value={gasto.fechaComprobante}
                   onChange={(v) => onUpdate('fechaComprobante', v)}
-                  required
                   disabled={isDisabled}
                   error={errors.fechaComprobante}
                   isDark={isDark}

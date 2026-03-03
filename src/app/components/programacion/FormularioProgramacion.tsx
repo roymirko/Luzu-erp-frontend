@@ -111,7 +111,7 @@ export function FormularioProgramacion({
       facturaEmitidaA: "",
       empresa: "",
       empresaPrograma: "",
-      fechaComprobante: new Date().toISOString().split("T")[0],
+        fechaComprobante: "",
       acuerdoPago: "",
       numeroComprobante: "",
       formaPago: "",
@@ -168,7 +168,7 @@ export function FormularioProgramacion({
         facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
         empresa: g.empresa || "",
         empresaPrograma: g.categoria || "",
-        fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : "",
         acuerdoPago: g.acuerdoPago || "",
         numeroComprobante: g.numeroFactura || "",
         formaPago: g.formaPago || "",
@@ -227,6 +227,18 @@ export function FormularioProgramacion({
       if (!g.neto || g.neto <= 0) {
         return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
       }
+      
+      // Validación cruzada: Si hay uno, debe estar el otro
+      const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
+      const tieneFecha = g.fechaComprobante && g.fechaComprobante.trim() !== '';
+      
+      if (tieneNumero && !tieneFecha) {
+        return `Gasto #${index + 1}: Debe ingresar fecha de comprobante cuando hay número`;
+      }
+      if (tieneFecha && !tieneNumero) {
+        return `Gasto #${index + 1}: Debe ingresar número de comprobante cuando hay fecha`;
+      }
+      
       return null;
     },
     [],
@@ -269,7 +281,7 @@ export function FormularioProgramacion({
         facturaEmitidaA: "",
         empresa: "",
         empresaPrograma: "",
-        fechaComprobante: new Date().toISOString().split("T")[0],
+      fechaComprobante: "",
         acuerdoPago: "",
         numeroComprobante: "",
         formaPago: "",
@@ -297,7 +309,7 @@ export function FormularioProgramacion({
               facturaEmitidaA: '',
               empresa: '',
               empresaPrograma: '',
-              fechaComprobante: new Date().toISOString().split('T')[0],
+              fechaComprobante: '',
               acuerdoPago: '',
               numeroComprobante: '',
               formaPago: '',
@@ -323,7 +335,7 @@ export function FormularioProgramacion({
           facturaEmitidaA: '',
           empresa: '',
           empresaPrograma: '',
-          fechaComprobante: new Date().toISOString().split('T')[0],
+          fechaComprobante: '',
           acuerdoPago: '',
           numeroComprobante: '',
           formaPago: '',
