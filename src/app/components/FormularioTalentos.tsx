@@ -44,7 +44,7 @@ function gastoToBloqueImporte(gasto: GastoTalentos): BloqueImporte {
     itemOrdenPublicidadId: gasto.itemOrdenPublicidadId,
     facturaEmitidaA: gasto.facturaEmitidaA || '',
     empresa: gasto.empresa || '',
-    fechaComprobante: gasto.fechaFactura || new Date().toISOString().split('T')[0],
+    fechaComprobante: gasto.fechaFactura || '',
     proveedor: gasto.proveedor,
     razonSocial: gasto.razonSocial,
     condicionPago: gasto.condicionPago || '30',
@@ -139,7 +139,6 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
       ordenPublicidad: formulario.ordenPublicidad || '',
       unidadNegocio: formulario.unidadNegocio || '',
       categoriaNegocio: formulario.categoriaNegocio || '',
-      nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
       presupuesto: presupuestoTalentos,
       programasConPresupuesto: programasConPresupuesto.length > 0
@@ -181,7 +180,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
         itemOrdenPublicidadId: itemId,
         facturaEmitidaA: '',
         empresa: '',
-        fechaComprobante: new Date().toISOString().split('T')[0],
+        fechaComprobante: '',
         proveedor: '',
         razonSocial: '',
         condicionPago: '30',
@@ -244,7 +243,17 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
       if (!isEfectivo) {
         if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
         if (!imp.empresa) importeErrors.empresa = 'Debe seleccionar una empresa';
-        if (!imp.fechaComprobante) importeErrors.fechaComprobante = 'Requerido';
+        
+        // Validación cruzada: Si hay uno, debe estar el otro
+        const tieneNumero = imp.numeroComprobante && imp.numeroComprobante.trim() !== '';
+        const tieneFecha = imp.fechaComprobante && imp.fechaComprobante.trim() !== '';
+        
+        if (tieneNumero && !tieneFecha) {
+          importeErrors.fechaComprobante = 'Requerido cuando hay número de comprobante';
+        }
+        if (tieneFecha && !tieneNumero) {
+          importeErrors.numeroComprobante = 'Requerido cuando hay fecha de comprobante';
+        }
       }
       if (!imp.empresaPgm) importeErrors.empresaPgm = 'Requerido';
       if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) importeErrors.proveedor = 'Debe seleccionar proveedor y razón social';
@@ -302,7 +311,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
               facturaEmitidaA: '',
               empresa: '',
               empresaPgm: '',
-              fechaComprobante: new Date().toISOString().split('T')[0],
+              fechaComprobante: '',
               proveedor: '',
               razonSocial: '',
               condicionPago: '30',
@@ -330,7 +339,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
           itemOrdenPublicidadId: itemId,
           facturaEmitidaA: '',
           empresa: '',
-          fechaComprobante: new Date().toISOString().split('T')[0],
+          fechaComprobante: '',
           proveedor: '',
           razonSocial: '',
           condicionPago: '30',
@@ -543,7 +552,6 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
             unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
             categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
             marca={ordenPublicidadData?.marca}
-            nombreCampana={ordenPublicidadData?.nombreCampana || ''}
             rubro={TALENTOS_DEFAULTS.rubro}
             subRubro={TALENTOS_DEFAULTS.subRubro}
           />

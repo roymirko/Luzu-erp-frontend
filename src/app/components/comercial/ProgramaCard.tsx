@@ -28,6 +28,7 @@ interface ProgramaCardProps {
   siblingRows: ImporteRow[];
   setImporteRows: Dispatch<SetStateAction<ImporteRow[]>>;
   onRemove: (id: string) => void;
+  isFirstProgram: boolean;
 }
 
 export function ProgramaCard({
@@ -39,6 +40,7 @@ export function ProgramaCard({
   siblingRows,
   setImporteRows,
   onRemove,
+  isFirstProgram,
 }: ProgramaCardProps) {
   const validateMonto = (monto: string) => {
     const montoNum = parseFloat(monto.replace(/[^0-9.-]/g, '')) || 0;
@@ -252,10 +254,11 @@ export function ProgramaCard({
                 handleNcPorcentajeChange(row.id, value);
               }}
               placeholder="0"
+              disabled={!isFirstProgram}
               className={`h-9 text-sm ${isDark
                 ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
                 : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }`}
+                } ${!isFirstProgram ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
           </div>
         </div>
@@ -308,9 +311,9 @@ export function ProgramaCard({
                disabled
                placeholder="0"
                className={`h-9 text-sm ${isDark
-                 ? 'bg-[#2a2a2a] border-gray-700 text-gray-400 placeholder:text-gray-600 cursor-not-allowed'
-                 : 'bg-gray-100 border-gray-300 text-gray-600 placeholder:text-gray-400 cursor-not-allowed'
-                 }`}
+                 ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
+                 : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+                 } opacity-60 cursor-not-allowed`}
              />
            </div>
         </div>

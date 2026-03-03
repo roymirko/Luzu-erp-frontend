@@ -52,7 +52,7 @@ function gastoToBloqueImporte(gasto: GastoTecnica): BloqueImporte {
     itemOrdenPublicidadId: gasto.itemOrdenPublicidadId,
     facturaEmitidaA: gasto.facturaEmitidaA || '',
     empresa: gasto.empresa || '',
-    fechaComprobante: gasto.fechaFactura || new Date().toISOString().split('T')[0],
+    fechaComprobante: gasto.fechaFactura || '',
     proveedor: gasto.proveedor,
     razonSocial: gasto.razonSocial,
     condicionPago: gasto.condicionPago || '30',
@@ -174,7 +174,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       ordenPublicidad: formulario.ordenPublicidad || '',
       unidadNegocio: formulario.unidadNegocio || '',
       categoriaNegocio: formulario.categoriaNegocio || '',
-      nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
       presupuesto: presupuestoTecnica,
       programasConPresupuesto: programasConPresupuesto.length > 0
@@ -224,7 +223,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
         itemOrdenPublicidadId: itemId,
         facturaEmitidaA: '',
         empresa: '',
-        fechaComprobante: new Date().toISOString().split('T')[0],
+        fechaComprobante: '',
         proveedor: '',
         razonSocial: '',
         condicionPago: '30',
@@ -319,7 +318,17 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       if (!isEfectivo) {
         if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
         if (!imp.empresa) importeErrors.empresa = 'Debe seleccionar una empresa';
-        if (!imp.fechaComprobante) importeErrors.fechaComprobante = 'Requerido';
+        
+        // Validación cruzada: Si hay uno, debe estar el otro
+        const tieneNumero = imp.numeroComprobante && imp.numeroComprobante.trim() !== '';
+        const tieneFecha = imp.fechaComprobante && imp.fechaComprobante.trim() !== '';
+        
+        if (tieneNumero && !tieneFecha) {
+          importeErrors.fechaComprobante = 'Requerido cuando hay número de comprobante';
+        }
+        if (tieneFecha && !tieneNumero) {
+          importeErrors.numeroComprobante = 'Requerido cuando hay fecha de comprobante';
+        }
       }
       if (!imp.empresaPgm) importeErrors.empresaPgm = 'Requerido';
       if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) {
@@ -384,7 +393,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
               facturaEmitidaA: '',
               empresa: '',
               empresaPgm: '',
-              fechaComprobante: new Date().toISOString().split('T')[0],
+              fechaComprobante: '',
               proveedor: '',
               razonSocial: '',
               condicionPago: '30',
@@ -413,7 +422,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
           itemOrdenPublicidadId: itemId,
           facturaEmitidaA: '',
           empresa: '',
-          fechaComprobante: new Date().toISOString().split('T')[0],
+          fechaComprobante: '',
           proveedor: '',
           razonSocial: '',
           condicionPago: '30',
@@ -688,7 +697,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
                 />
                 <div className="sm:col-span-2">
                   <FormInput
-                    label="Nombre de campaña"
+                    label="Proyecto"
                     value={nombreCampana}
                     onChange={setNombreCampana}
                     required
@@ -707,7 +716,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
               unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
               categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
               marca={ordenPublicidadData?.marca}
-              nombreCampana={ordenPublicidadData?.nombreCampana || ''}
               rubro={TECNICA_DEFAULTS.rubro}
               subRubro={TECNICA_DEFAULTS.subRubro}
             />

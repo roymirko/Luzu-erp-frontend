@@ -63,7 +63,7 @@ interface ExperienceFormProps {
   onSave?: () => void;
 }
 
-const MAX_OBSERVACIONES_LENGTH = 250;
+const MAX_OBSERVACIONES_LENGTH = 15;
 
 export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }: ExperienceFormProps) {
   const { isDark } = useTheme();
@@ -168,7 +168,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           facturaEmitidaA: g.facturaEmitidaA || '',
           empresa: g.empresaContext || '',
           empresaPrograma: g.empresaPrograma || '',
-          fechaComprobante: g.fechaComprobante || new Date().toISOString().split('T')[0],
+          fechaComprobante: g.fechaComprobante || '',
           razonSocial: g.razonSocial || '',
           proveedor: g.proveedor || '',
           acuerdoPago: g.acuerdoPago || '',
@@ -227,6 +227,18 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     if (!g.neto || g.neto <= 0) {
       return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
     }
+    
+    // Validación cruzada: Si hay uno, debe estar el otro
+    const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
+    const tieneFecha = g.fechaComprobante && g.fechaComprobante.trim() !== '';
+    
+    if (tieneNumero && !tieneFecha) {
+      return `Gasto #${index + 1}: Debe ingresar fecha de comprobante cuando hay número`;
+    }
+    if (tieneFecha && !tieneNumero) {
+      return `Gasto #${index + 1}: Debe ingresar número de comprobante cuando hay fecha`;
+    }
+    
     return null;
   };
 
@@ -256,7 +268,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         facturaEmitidaA: '',
         empresa: '',
         empresaPrograma: '',
-        fechaComprobante: new Date().toISOString().split('T')[0],
+        fechaComprobante: '',
         razonSocial: '',
         proveedor: '',
         acuerdoPago: '',
@@ -287,7 +299,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
               facturaEmitidaA: '',
               empresa: '',
               empresaPrograma: '',
-              fechaComprobante: new Date().toISOString().split('T')[0],
+      fechaComprobante: '',
               razonSocial: '',
               proveedor: '',
               acuerdoPago: '',
@@ -315,7 +327,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           facturaEmitidaA: '',
           empresa: '',
           empresaPrograma: '',
-          fechaComprobante: new Date().toISOString().split('T')[0],
+          fechaComprobante: '',
           razonSocial: '',
           proveedor: '',
           acuerdoPago: '',
@@ -690,13 +702,13 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
 
               <div className="space-y-1">
                 <Label className={labelClass}>
-                  Nombre de Campaña<span className="text-red-500">*</span>
+                  Evento<span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="text"
                   value={nombreCampana}
                   onChange={(e) => setNombreCampana(e.target.value)}
-                  placeholder="Buscar campaña"
+                  placeholder="Buscar evento"
                   disabled={isFormularioCerrado}
                   className={cn(
                     isFormularioCerrado ? disabledSelectClass : inputClass,
@@ -706,7 +718,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
               </div>
             </div>
 
-            {/* Row 3: Detalle/campaña */}
+            {/* Row 3: Detalle/evento */}
           </div>
 
           {/* Section 2: Carga de importes */}
@@ -777,7 +789,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                   showCharacterCount
                   showButtonsBorder
                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
-                  observacionesLabel="Detalle de gasto"
+                  observacionesLabel="Concepto del gasto"
                   programOptions={availableProgramOptions}
                   acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
                   formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}

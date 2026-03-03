@@ -42,6 +42,7 @@ export function ProgramasList({
           siblingRows={importeRows}
           setImporteRows={setImporteRows}
           onRemove={onRemove}
+          isFirstProgram={index === 0}
         />
       ))}
 

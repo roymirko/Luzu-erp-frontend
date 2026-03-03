@@ -52,7 +52,6 @@ export function DatosBasicosSection(props: DatosBasicosSectionProps) {
   const currentMonth = now.getMonth() + 1; // 1-12
   const currentYear = now.getFullYear();
   const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-  const previousMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
   const previousMonthValue = previousMonth.toString().padStart(2, '0');
 
   // Determinar si una opción de mes debe estar deshabilitada
@@ -62,17 +61,7 @@ export function DatosBasicosSection(props: DatosBasicosSectionProps) {
       return false;
     }
 
-    // Si el mes anterior está disponible, no deshabilitar nada
-    if (monthBeforeAvailable) {
-      return false;
-    }
-
-    // Si el mes anterior NO está disponible, deshabilitar solo el mes anterior del año actual
-    const selectedYear = mesServicioAnio || currentYear.toString();
-    if (mes.value === previousMonthValue && selectedYear === currentYear.toString()) {
-      return true;
-    }
-
+    // Nunca deshabilitar nada (la lógica de incluir/excluir opciones está en el padre)
     return false;
   };
 

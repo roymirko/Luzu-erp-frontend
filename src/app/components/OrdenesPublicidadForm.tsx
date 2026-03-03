@@ -364,6 +364,10 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1; // getMonth() devuelve 0-11
 
+  // Calcular mes anterior y si está disponible
+  const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+  const monthBeforeAvailable = isMonthBeforeAvailable(isEditMode);
+
   // Generar años desde el año actual hasta 2030 (solo años futuros o actual)
   const ANIOS_DISPONIBLES = isEditMode
     ? Array.from({ length: 11 }, (_, i) => 2020 + i) // En modo edición permitir todos los años
@@ -385,10 +389,19 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   ];
 
   // Filtrar meses disponibles: si el año seleccionado es el actual, solo mostrar meses >= mes actual
+  // O incluir el mes anterior si estamos dentro de los 5 primeros días hábiles
   const MESES_DISPONIBLES = isEditMode
     ? MESES // En modo edición permitir todos los meses
     : (mesServicioAnio && parseInt(mesServicioAnio) === currentYear)
-      ? MESES.filter(mes => parseInt(mes.value) >= currentMonth)
+      ? MESES.filter(mes => {
+          const mesNum = parseInt(mes.value);
+          // Incluir mes anterior si está disponible
+          if (monthBeforeAvailable && mesNum === previousMonth) {
+            return true;
+          }
+          // Incluir meses >= mes actual
+          return mesNum >= currentMonth;
+        })
       : MESES;
 
   // Actualizar mesServicio cuando cambian mes o año
@@ -407,11 +420,16 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
       const selectedMonth = parseInt(mesServicioMes);
 
       // Si el año seleccionado es el actual y el mes es menor al mes actual, resetear
+      // PERO: permitir el mes anterior si está disponible en los primeros 5 días hábiles
       if (selectedYear === currentYear && selectedMonth < currentMonth) {
+        // Si es el mes anterior y está disponible, no resetear
+        if (selectedMonth === previousMonth && monthBeforeAvailable) {
+          return;
+        }
         setMesServicioMes('');
       }
     }
-  }, [mesServicioAnio, isEditMode, currentYear, currentMonth, mesServicioMes]);
+  }, [mesServicioAnio, isEditMode, currentYear, currentMonth, mesServicioMes, monthBeforeAvailable, previousMonth]);
 
   // Función para validar todos los campos obligatorios
   const validarCamposObligatorios = () => {
@@ -433,6 +451,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
     if (formaPago !== 'Efectivo (Contado)' && !razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');
     if (!marca.trim()) camposFaltantes.push('Marca');
+    if (!nombreCampana.trim()) camposFaltantes.push('Nombre de Campaña');
 
     // Validación cruzada: Si formaPago es Efectivo o Transferencia, tipoImporte debe ser factura
     if ((formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)') && tipoImporte !== 'factura') {
@@ -480,7 +499,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   getNumericValue={getNumericValue}
                   ordenPublicidadError={ordenPublicidadError}
                   onOrdenBlur={handleOrdenPublicidadBlur}
-                  monthBeforeAvailable={isMonthBeforeAvailable(isEditMode)}
+                  monthBeforeAvailable={monthBeforeAvailable}
                 />
 
               <DetallesSoloLectura

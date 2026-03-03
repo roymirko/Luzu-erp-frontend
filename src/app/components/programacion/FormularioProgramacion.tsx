@@ -63,7 +63,7 @@ import {
   PROGRAMAS_LUZU_OPTIONS,
 } from '../../utils/implementacionConstants';
 
-const MAX_OBSERVACIONES_LENGTH = 250;
+const MAX_OBSERVACIONES_LENGTH = 15;
 
 const EMPRESAS_PROGRAMACION_OPTIONS: FormSelectOption[] = [
   { value: 'Luzu TV', label: 'Luzu TV' },
@@ -76,7 +76,7 @@ const FORMAS_PAGO_OPTIONS = FORMAS_PAGO_EXPERIENCE_OPTIONS;
 const FACTURA_EMITIDA_A_OPTIONS = FACTURAS_OPTIONS;
 
 const SUB_RUBROS = ["Producción", "Diseño", "Edición", "Técnica"];
-const CATEGORIAS_NEGOCIO = ["PE", "Media"];
+const CATEGORIAS_NEGOCIO = ["PEP", "Media"];
 
 export function FormularioProgramacion({
   gastoId,
@@ -95,7 +95,7 @@ export function FormularioProgramacion({
 
   // Section 1: Cargar Datos
   const [unidadNegocio] = useState("Media");
-  const [categoriaNegocio, setCategoriaNegocio] = useState("");
+  const [categoriaNegocio, setCategoriaNegocio] = useState("PEP");
   const [rubroGasto] = useState("Gasto de programación"); // readonly
   const [subrubro, setSubrubro] = useState("");
   const [nombreCampana, setNombreCampana] = useState("");
@@ -111,7 +111,7 @@ export function FormularioProgramacion({
       facturaEmitidaA: "",
       empresa: "",
       empresaPrograma: "",
-      fechaComprobante: new Date().toISOString().split("T")[0],
+        fechaComprobante: "",
       acuerdoPago: "",
       numeroComprobante: "",
       formaPago: "",
@@ -156,7 +156,6 @@ export function FormularioProgramacion({
 
       // Use data from the first gasto for shared fields
       const firstGasto = formularioGastos[0];
-      setCategoriaNegocio(firstGasto.categoriaNegocio || "");
       setSubrubro(firstGasto.formularioSubRubro || firstGasto.subRubroEmpresa || firstGasto.ctxSubRubro || "");
       setNombreCampana(firstGasto.programa || "");
       setRazonSocial(firstGasto.razonSocial || "");
@@ -168,7 +167,7 @@ export function FormularioProgramacion({
         facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
         empresa: g.empresa || "",
         empresaPrograma: g.categoria || "",
-        fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : "",
         acuerdoPago: g.acuerdoPago || "",
         numeroComprobante: g.numeroFactura || "",
         formaPago: g.formaPago || "",
@@ -227,6 +226,18 @@ export function FormularioProgramacion({
       if (!g.neto || g.neto <= 0) {
         return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
       }
+      
+      // Validación cruzada: Si hay uno, debe estar el otro
+      const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
+      const tieneFecha = g.fechaComprobante && g.fechaComprobante.trim() !== '';
+      
+      if (tieneNumero && !tieneFecha) {
+        return `Gasto #${index + 1}: Debe ingresar fecha de comprobante cuando hay número`;
+      }
+      if (tieneFecha && !tieneNumero) {
+        return `Gasto #${index + 1}: Debe ingresar número de comprobante cuando hay fecha`;
+      }
+      
       return null;
     },
     [],
@@ -261,25 +272,6 @@ export function FormularioProgramacion({
     setRazonSocial(data.razonSocial);
   };
 
-  const addGastoItem = () => {
-    setGastos((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        facturaEmitidaA: "",
-        empresa: "",
-        empresaPrograma: "",
-        fechaComprobante: new Date().toISOString().split("T")[0],
-        acuerdoPago: "",
-        numeroComprobante: "",
-        formaPago: "",
-        neto: 0,
-        observaciones: "",
-        estado: "pendiente-pago",
-      },
-    ]);
-  };
-
   const removeGastoItem = (id: string) => {
     if (gastos.length === 1) {
       toast.error("Debe haber al menos un gasto");
@@ -297,7 +289,7 @@ export function FormularioProgramacion({
               facturaEmitidaA: '',
               empresa: '',
               empresaPrograma: '',
-              fechaComprobante: new Date().toISOString().split('T')[0],
+              fechaComprobante: '',
               acuerdoPago: '',
               numeroComprobante: '',
               formaPago: '',
@@ -323,7 +315,7 @@ export function FormularioProgramacion({
           facturaEmitidaA: '',
           empresa: '',
           empresaPrograma: '',
-          fechaComprobante: new Date().toISOString().split('T')[0],
+          fechaComprobante: '',
           acuerdoPago: '',
           numeroComprobante: '',
           formaPago: '',
@@ -706,15 +698,15 @@ export function FormularioProgramacion({
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label className={labelClass}>Categoría de Negocio</Label>
-                <Select
-                  value={categoriaNegocio}
-                  onValueChange={setCategoriaNegocio}
-                  disabled={isFormularioCerrado}
-                >
-                  <SelectTrigger className={selectTriggerClass}>
-                    <SelectValue placeholder="Seleccionar" />
+               <div className="space-y-1">
+                 <Label className={labelClass}>Categoría de Negocio</Label>
+                 <Select
+                   value={categoriaNegocio}
+                   onValueChange={setCategoriaNegocio}
+                   disabled
+                 >
+                   <SelectTrigger className={disabledSelectClass}>
+                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIAS_NEGOCIO.map((opt) => (
@@ -768,33 +760,6 @@ export function FormularioProgramacion({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {/* Row 3: Nombre de Campaña (full width) */}
-            <div className="space-y-1">
-              <Label className={labelClass}>
-                Nombre de Campaña<span className="text-red-500">*</span>
-              </Label>
-              <div className="relative">
-                <Search
-                  className={cn(
-                    "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",
-                    isDark ? "text-gray-500" : "text-gray-400",
-                  )}
-                />
-                <Input
-                  type="text"
-                  value={nombreCampana}
-                  onChange={(e) => setNombreCampana(e.target.value)}
-                  placeholder="Buscar campaña"
-                  disabled={isFormularioCerrado}
-                  className={cn(
-                    inputClass,
-                    "pl-10",
-                    errors.nombreCampana && "border-red-500",
-                  )}
-                />
               </div>
             </div>
 
@@ -898,7 +863,7 @@ export function FormularioProgramacion({
                   showAttachments
                   showButtonsBorder
                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
-                  observacionesLabel="Detalle de gasto"
+                  observacionesLabel="Concepto del gasto"
                   programOptions={availableProgramOptions}
                   facturaOptions={FACTURA_EMITIDA_A_OPTIONS}
                   empresaOptions={EMPRESAS_PROGRAMACION_OPTIONS}
@@ -907,18 +872,6 @@ export function FormularioProgramacion({
                 />
               );
             })}
-
-            {/* Add Importe Button */}
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={addGastoItem}
-                className="bg-[#0070ff] hover:bg-[#0060dd] text-white"
-                disabled={isFormularioCerrado}
-              >
-                + Agregar importe
-              </Button>
-            </div>
           </div>
 
           {/* Section 3: Resumen */}
