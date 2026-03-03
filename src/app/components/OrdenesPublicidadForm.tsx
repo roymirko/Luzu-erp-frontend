@@ -27,9 +27,11 @@ import { DatosBasicosSection } from './comercial/DatosBasicosSection';
 import { DetallesSoloLectura } from './comercial/DetallesSoloLectura';
 import { ConfiguracionSection } from './comercial/ConfiguracionSection';
 import { MarcaCategoriaSection } from './comercial/MarcaCategoriaSection';
+import { PagoSection } from './comercial/PagoSection';
 import { formatPesos, formatPesosInput, formatPorcentaje, getNumericValue } from '@/app/utils/formatters';
 import { ProgramasList } from './comercial/ProgramasList';
-import { PROGRAMAS_LUZU } from '@/app/utils/implementacionConstants';
+import { PROGRAMAS_LUZU, FORMAS_PAGO_COMERCIAL_OPTIONS } from '@/app/utils/implementacionConstants';
+import { isMonthBeforeAvailable } from '@/app/utils/businessDaysUtils';
 
 interface OrdenesPublicidadFormProps {
   onFormularioGuardado?: () => void;
@@ -76,6 +78,11 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
   const [marca, setMarca] = useState('');
   const [nombreCampana, setNombreCampana] = useState('');
   const [acuerdoPago, setAcuerdoPago] = useState('');
+  const [formaPago, setFormaPago] = useState('');
+  const [numeroComprobante, setNumeroComprobante] = useState('');
+  const [fechaComprobante, setFechaComprobante] = useState('');
+  const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
+  const [empresa, setEmpresa] = useState('');
   const [tipoImporte, setTipoImporte] = useState<'canje' | 'factura'>('factura');
   const [observaciones, setObservaciones] = useState('');
   const [showAddRazonSocial, setShowAddRazonSocial] = useState(false);
@@ -174,6 +181,11 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
       setMarca(formularioExistente.marca || '');
       setNombreCampana(formularioExistente.nombreCampana || '');
       setAcuerdoPago(formularioExistente.acuerdoPago || '');
+      setFormaPago(formularioExistente.formaPago || '');
+      setNumeroComprobante(formularioExistente.numeroComprobante || '');
+      setFechaComprobante(formularioExistente.fechaComprobante || '');
+      setFacturaEmitidaA(formularioExistente.facturaEmitidaA || '');
+      setEmpresa(formularioExistente.empresa || '');
       setTipoImporte(formularioExistente.tipoImporte || 'factura');
       setObservaciones(formularioExistente.observaciones || '');
       setImporteRows(formularioExistente.importeRows || []);
@@ -194,6 +206,13 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
       setProyecto('');
     }
   }, [categoriaNegocio, isEditMode]);
+
+  // Resetear tipoImporte a 'factura' cuando formaPago es Efectivo o Transferencia
+  useEffect(() => {
+    if (formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)') {
+      setTipoImporte('factura');
+    }
+  }, [formaPago]);
 
   // Calcular NC Programa cuando cambia NC Porcentaje
   const handleNcPorcentajeChange = (rowId: string, porcentaje: string) => {
@@ -407,9 +426,18 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
     // Solo validar proyecto si no está deshabilitado
     if (!isProyectoDisabled() && !proyecto) camposFaltantes.push('Proyecto');
 
-    if (!razonSocial) camposFaltantes.push('Razón Social');
+    // Forma de Pago es obligatorio
+    if (!formaPago) camposFaltantes.push('Forma de Pago');
+
+    // Razón Social y Proveedor: solo obligatorios si forma de pago NO es "Efectivo"
+    if (formaPago !== 'Efectivo (Contado)' && !razonSocial) camposFaltantes.push('Razón Social');
     if (!categoria) camposFaltantes.push('Categoría');
     if (!marca.trim()) camposFaltantes.push('Marca');
+
+    // Validación cruzada: Si formaPago es Efectivo o Transferencia, tipoImporte debe ser factura
+    if ((formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)') && tipoImporte !== 'factura') {
+      camposFaltantes.push('Tipo de Importe debe ser Factura para esta forma de pago');
+    }
 
     return camposFaltantes;
   };
@@ -434,25 +462,26 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
           </div>
 
             <div className="space-y-6">
-               <DatosBasicosSection
-                 isDark={isDark}
-                 isEditMode={isEditMode}
-                 ordenPublicidad={ordenPublicidad}
-                 setOrdenPublicidad={setOrdenPublicidad}
-                 totalVenta={totalVenta}
-                 setTotalVenta={setTotalVenta}
-                 mesServicioMes={mesServicioMes}
-                 setMesServicioMes={setMesServicioMes}
-                 mesServicioAnio={mesServicioAnio}
-                 setMesServicioAnio={setMesServicioAnio}
-                 aniosDisponibles={ANIOS_DISPONIBLES}
-                 meses={MESES}
-                 mesesDisponibles={MESES_DISPONIBLES}
-                 formatPesosInput={formatPesosInput}
-                 getNumericValue={getNumericValue}
-                 ordenPublicidadError={ordenPublicidadError}
-                 onOrdenBlur={handleOrdenPublicidadBlur}
-               />
+                <DatosBasicosSection
+                  isDark={isDark}
+                  isEditMode={isEditMode}
+                  ordenPublicidad={ordenPublicidad}
+                  setOrdenPublicidad={setOrdenPublicidad}
+                  totalVenta={totalVenta}
+                  setTotalVenta={setTotalVenta}
+                  mesServicioMes={mesServicioMes}
+                  setMesServicioMes={setMesServicioMes}
+                  mesServicioAnio={mesServicioAnio}
+                  setMesServicioAnio={setMesServicioAnio}
+                  aniosDisponibles={ANIOS_DISPONIBLES}
+                  meses={MESES}
+                  mesesDisponibles={MESES_DISPONIBLES}
+                  formatPesosInput={formatPesosInput}
+                  getNumericValue={getNumericValue}
+                  ordenPublicidadError={ordenPublicidadError}
+                  onOrdenBlur={handleOrdenPublicidadBlur}
+                  monthBeforeAvailable={isMonthBeforeAvailable(isEditMode)}
+                />
 
               <DetallesSoloLectura
                 isDark={isDark}
@@ -477,6 +506,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   setRazonSocial(next.razonSocial);
                   setEmpresaAgencia(next.proveedor);
                 }}
+                formaPago={formaPago}
               />
 
               <MarcaCategoriaSection
@@ -501,17 +531,26 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
             </h2>
 
             <div className="space-y-6">
-              {/* Acuerdo de Pago */}
-                <AcuerdoPagoSelect
-                  isDark={isDark}
-                  acuerdosPago={ACUERDOS_PAGO}
-                  value={acuerdoPago}
-                  onChange={setAcuerdoPago}
-                />
+              {/* Forma de Pago y Acuerdo de Pago */}
+              <PagoSection
+                isDark={isDark}
+                formaPago={formaPago}
+                setFormaPago={setFormaPago}
+                numeroComprobante={numeroComprobante}
+                setNumeroComprobante={setNumeroComprobante}
+                fechaComprobante={fechaComprobante}
+                setFechaComprobante={setFechaComprobante}
+                facturaEmitidaA={facturaEmitidaA}
+                setFacturaEmitidaA={setFacturaEmitidaA}
+                empresa={empresa}
+                setEmpresa={setEmpresa}
+                formasPagoOptions={FORMAS_PAGO_COMERCIAL_OPTIONS}
+                acuerdoPago={acuerdoPago}
+                setAcuerdoPago={setAcuerdoPago}
+                acuerdoPagoOptions={ACUERDOS_PAGO}
+              />
 
-
-
-               {/* Programas */}
+              {/* Programas */}
                 <ProgramasList
                   isDark={isDark}
                   importeRows={importeRows}
@@ -531,11 +570,16 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                 <div className="flex flex-wrap gap-4">
                   <button
                     onClick={() => setTipoImporte('canje')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${tipoImporte === 'canje'
-                      ? 'bg-green-600 border-green-600 text-white'
-                      : isDark
-                        ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
-                        : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                    disabled={formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)'}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${(formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)')
+                      ? isDark
+                        ? 'bg-gray-800 border-gray-700 text-gray-600 opacity-50 cursor-not-allowed'
+                        : 'bg-gray-100 border-gray-300 text-gray-500 opacity-50 cursor-not-allowed'
+                      : tipoImporte === 'canje'
+                        ? 'bg-green-600 border-green-600 text-white'
+                        : isDark
+                          ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
+                          : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
                       }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tipoImporte === 'canje'
@@ -549,11 +593,16 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
 
                   <button
                     onClick={() => setTipoImporte('factura')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${tipoImporte === 'factura'
-                      ? 'bg-green-600 border-green-600 text-white'
-                      : isDark
-                        ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
-                        : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                    disabled={formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)'}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${(formaPago === 'Efectivo (Contado)' || formaPago === 'Transferencia (Adelantado)')
+                      ? isDark
+                        ? 'bg-gray-800 border-gray-700 text-gray-600 opacity-50 cursor-not-allowed'
+                        : 'bg-gray-100 border-gray-300 text-gray-500 opacity-50 cursor-not-allowed'
+                      : tipoImporte === 'factura'
+                        ? 'bg-green-600 border-green-600 text-white'
+                        : isDark
+                          ? 'bg-[#141414] border-gray-700 text-gray-400 hover:border-gray-600'
+                          : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
                       }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${tipoImporte === 'factura'
@@ -725,6 +774,11 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                   marca,
                   nombreCampana,
                   acuerdoPago,
+                  formaPago,
+                  numeroComprobante,
+                  fechaComprobante,
+                  facturaEmitidaA,
+                  empresa,
                   tipoImporte,
                   observaciones,
                   importeRows,

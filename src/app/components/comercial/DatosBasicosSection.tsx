@@ -23,6 +23,7 @@ interface DatosBasicosSectionProps {
   getNumericValue: (v: string) => string;
   ordenPublicidadError?: boolean;
   onOrdenBlur?: () => void;
+  monthBeforeAvailable?: boolean;
 }
 
 export function DatosBasicosSection(props: DatosBasicosSectionProps) {
@@ -43,7 +44,37 @@ export function DatosBasicosSection(props: DatosBasicosSectionProps) {
     getNumericValue,
     ordenPublicidadError = false,
     onOrdenBlur,
+    monthBeforeAvailable = true,
   } = props;
+
+  // Calcular mes anterior del mes actual
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1; // 1-12
+  const currentYear = now.getFullYear();
+  const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+  const previousMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+  const previousMonthValue = previousMonth.toString().padStart(2, '0');
+
+  // Determinar si una opción de mes debe estar deshabilitada
+  const isMonthDisabled = (mes: MesOption): boolean => {
+    // Si estamos en modo edición, nunca deshabilitar
+    if (isEditMode) {
+      return false;
+    }
+
+    // Si el mes anterior está disponible, no deshabilitar nada
+    if (monthBeforeAvailable) {
+      return false;
+    }
+
+    // Si el mes anterior NO está disponible, deshabilitar solo el mes anterior del año actual
+    const selectedYear = mesServicioAnio || currentYear.toString();
+    if (mes.value === previousMonthValue && selectedYear === currentYear.toString()) {
+      return true;
+    }
+
+    return false;
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -121,7 +152,13 @@ export function DatosBasicosSection(props: DatosBasicosSectionProps) {
               >
                 <option value="">Mes</option>
                 {mesesDisponibles.map((mes) => (
-                  <option key={mes.value} value={mes.value}>{mes.label}</option>
+                  <option 
+                    key={mes.value} 
+                    value={mes.value}
+                    disabled={isMonthDisabled(mes)}
+                  >
+                    {mes.label}
+                  </option>
                 ))}
               </select>
               <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />

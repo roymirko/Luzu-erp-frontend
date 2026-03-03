@@ -148,6 +148,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
       responsable: formulario.responsable || '',
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
+      formaPago: formulario.formaPago || '',
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
@@ -562,6 +563,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
             isNewGasto={isNewGasto}
             existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
+            ordenFormaPago={ordenPublicidadData?.formaPago}
           />
 
           <ResumenPresupuestario

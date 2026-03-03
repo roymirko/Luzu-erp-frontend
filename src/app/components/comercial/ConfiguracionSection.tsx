@@ -21,6 +21,7 @@ interface ConfiguracionSectionProps {
   ProveedorSelector: React.ComponentType<any>;
   proveedorValue: { proveedor: string; razonSocial: string; proveedorId: string | null };
   onProveedorChange: (next: { proveedor: string; razonSocial: string; proveedorId: string | null }) => void;
+  formaPago?: string;
 }
 
 export function ConfiguracionSection(props: ConfiguracionSectionProps) {
@@ -37,11 +38,15 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
     ProveedorSelector,
     proveedorValue,
     onProveedorChange,
+    formaPago,
   } = props;
 
   // Categoría de negocio solo habilitada para Media
   const isCategoriaDisabled = !unidadNegocio || unidadNegocio !== 'Media';
   const categoriasDisponibles = CATEGORIAS_POR_UNIDAD[unidadNegocio] || [];
+  
+  // Razón social es obligatoria solo si formaPago NO es "Efectivo (Contado)"
+  const isRazonSocialRequired = formaPago && formaPago !== 'Efectivo (Contado)';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -126,6 +131,7 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
         <ProveedorSelector
           value={proveedorValue}
           onChange={onProveedorChange}
+          required={isRazonSocialRequired}
         />
       </div>
     </div>

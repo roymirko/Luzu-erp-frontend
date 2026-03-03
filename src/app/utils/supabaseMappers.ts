@@ -153,53 +153,63 @@ export const mapLogToDB = (log: Partial<AuditLog>) => {
 // FORMS
 // FORMS
 export const mapFormFromDB = (dbForm: any, dbItems: any[] = []): FormularioData => ({
-    id: dbForm.id,
-    fecha: dbForm.fecha,
-    mesServicio: dbForm.mes_servicio,
-    responsable: dbForm.responsable,
-    ordenPublicidad: dbForm.orden_publicidad,
-    totalVenta: dbForm.total_venta,
-    unidadNegocio: dbForm.unidad_negocio,
-    categoriaNegocio: dbForm.categoria_negocio,
-    proyecto: dbForm.proyecto,
-    razonSocial: dbForm.razon_social,
-    categoria: dbForm.categoria,
-    empresaAgencia: dbForm.empresa_agencia,
-    marca: dbForm.marca,
-    nombreCampana: dbForm.nombre_campana,
-    acuerdoPago: dbForm.acuerdo_pago,
-    tipoImporte: dbForm.tipo_importe,
-    observaciones: dbForm.observaciones,
-    importeRows: dbItems.map(mapFormItemFromDB),
-    createdAt: toDate(dbForm.fecha_creacion ?? dbForm.creado_el ?? dbForm.created_at),
-    updatedAt: toDate(dbForm.fecha_actualizacion ?? dbForm.actualizado_el ?? dbForm.updated_at),
-    createdBy: dbForm.creado_por ?? dbForm.created_by
-});
+     id: dbForm.id,
+     fecha: dbForm.fecha,
+     mesServicio: dbForm.mes_servicio,
+     responsable: dbForm.responsable,
+     ordenPublicidad: dbForm.orden_publicidad,
+     totalVenta: dbForm.total_venta,
+     unidadNegocio: dbForm.unidad_negocio,
+     categoriaNegocio: dbForm.categoria_negocio,
+     proyecto: dbForm.proyecto,
+     razonSocial: dbForm.razon_social,
+     categoria: dbForm.categoria,
+     empresaAgencia: dbForm.empresa_agencia,
+     marca: dbForm.marca,
+     nombreCampana: dbForm.nombre_campana,
+     acuerdoPago: dbForm.acuerdo_pago,
+     formaPago: dbForm.forma_pago,
+     numeroComprobante: dbForm.numero_comprobante,
+     fechaComprobante: dbForm.fecha_comprobante,
+     facturaEmitidaA: dbForm.factura_emitida_a,
+     empresa: dbForm.empresa,
+     tipoImporte: dbForm.tipo_importe,
+     observaciones: dbForm.observaciones,
+     importeRows: dbItems.map(mapFormItemFromDB),
+     createdAt: toDate(dbForm.fecha_creacion ?? dbForm.creado_el ?? dbForm.created_at),
+     updatedAt: toDate(dbForm.fecha_actualizacion ?? dbForm.actualizado_el ?? dbForm.updated_at),
+     createdBy: dbForm.creado_por ?? dbForm.created_by
+ });
 
 export const mapFormToDB = (form: Partial<FormularioData>) => {
-    const dbForm: any = {};
-    if (form.id) dbForm.id = form.id;
-    if (form.fecha) dbForm.fecha = form.fecha;
-    if (form.mesServicio) dbForm.mes_servicio = form.mesServicio;
-    if (form.responsable) dbForm.responsable = form.responsable;
-    if (form.ordenPublicidad) dbForm.orden_publicidad = form.ordenPublicidad;
-    if (form.totalVenta) dbForm.total_venta = form.totalVenta;
-    if (form.unidadNegocio) dbForm.unidad_negocio = form.unidadNegocio;
-    if (form.categoriaNegocio) dbForm.categoria_negocio = form.categoriaNegocio;
-    if (form.proyecto) dbForm.proyecto = form.proyecto;
-    if (form.razonSocial) dbForm.razon_social = form.razonSocial;
-    if (form.categoria) dbForm.categoria = form.categoria;
-    if (form.empresaAgencia) dbForm.empresa_agencia = form.empresaAgencia;
-    if (form.marca) dbForm.marca = form.marca;
-    if (form.nombreCampana) dbForm.nombre_campana = form.nombreCampana;
-    if (form.acuerdoPago) dbForm.acuerdo_pago = form.acuerdoPago;
-    if (form.tipoImporte) dbForm.tipo_importe = form.tipoImporte;
-    if (form.observaciones) dbForm.observaciones = form.observaciones;
-    if (form.createdBy) dbForm.creado_por = form.createdBy;
-    if (form.updatedAt) dbForm.fecha_actualizacion = form.updatedAt.toISOString();
-    // fecha_creacion usually handled by default
-    return dbForm;
-};
+     const dbForm: any = {};
+     if (form.id) dbForm.id = form.id;
+     if (form.fecha) dbForm.fecha = form.fecha;
+     if (form.mesServicio) dbForm.mes_servicio = form.mesServicio;
+     if (form.responsable) dbForm.responsable = form.responsable;
+     if (form.ordenPublicidad) dbForm.orden_publicidad = form.ordenPublicidad;
+     if (form.totalVenta) dbForm.total_venta = form.totalVenta;
+     if (form.unidadNegocio) dbForm.unidad_negocio = form.unidadNegocio;
+     if (form.categoriaNegocio) dbForm.categoria_negocio = form.categoriaNegocio;
+     if (form.proyecto) dbForm.proyecto = form.proyecto;
+     if (form.razonSocial) dbForm.razon_social = form.razonSocial;
+     if (form.categoria) dbForm.categoria = form.categoria;
+     if (form.empresaAgencia) dbForm.empresa_agencia = form.empresaAgencia;
+     if (form.marca) dbForm.marca = form.marca;
+     if (form.nombreCampana) dbForm.nombre_campana = form.nombreCampana;
+     if (form.acuerdoPago) dbForm.acuerdo_pago = form.acuerdoPago;
+     if (form.formaPago) dbForm.forma_pago = form.formaPago;
+     if (form.numeroComprobante) dbForm.numero_comprobante = form.numeroComprobante;
+     if (form.fechaComprobante) dbForm.fecha_comprobante = form.fechaComprobante;
+     if (form.facturaEmitidaA) dbForm.factura_emitida_a = form.facturaEmitidaA;
+     if (form.empresa) dbForm.empresa = form.empresa;
+     if (form.tipoImporte) dbForm.tipo_importe = form.tipoImporte;
+     if (form.observaciones) dbForm.observaciones = form.observaciones;
+     if (form.createdBy) dbForm.creado_por = form.createdBy;
+     if (form.updatedAt) dbForm.fecha_actualizacion = form.updatedAt.toISOString();
+     // fecha_creacion usually handled by default
+     return dbForm;
+ };
 
 // FORM ITEMS (items_orden_publicidad)
 export const mapFormItemFromDB = (dbItem: any): any => ({

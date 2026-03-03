@@ -22,9 +22,10 @@ interface ProveedorSelectorProps {
   disabled?: boolean;
   allowCreate?: boolean;
   className?: string;
+  required?: boolean;
 }
 
-export function ProveedorSelector({ value, onChange, disabled, allowCreate = true, className }: ProveedorSelectorProps) {
+export function ProveedorSelector({ value, onChange, disabled, allowCreate = true, className, required = true }: ProveedorSelectorProps) {
   const { isDark } = useTheme();
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -75,10 +76,10 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
   return (
     <div className={className}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <Label className={labelClass}>
-            Razón social<span className="text-red-500">*</span>
-          </Label>
+         <div className="space-y-1">
+           <Label className={labelClass}>
+             Razón social{required && <span className="text-red-500">*</span>}
+           </Label>
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <Search className={cn(
@@ -121,10 +122,10 @@ export function ProveedorSelector({ value, onChange, disabled, allowCreate = tru
           </div>
         </div>
 
-        <div className="space-y-1">
-          <Label className={labelClass}>
-            Proveedor<span className="text-red-500">*</span>
-          </Label>
+         <div className="space-y-1">
+           <Label className={labelClass}>
+             Proveedor{required && <span className="text-red-500">*</span>}
+           </Label>
           <div className="relative">
             <Search className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4",

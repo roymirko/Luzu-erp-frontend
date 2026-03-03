@@ -137,6 +137,10 @@ interface GastoCardProps {
 
   // Show buttons border top separator
   showButtonsBorder?: boolean;
+
+  // Campos heredados desde Comercial
+  ordenFormaPago?: string; // Forma de pago desde Comercial
+  facturaEmitidaAReadOnly?: boolean; // Si campos vienen bloqueados desde Comercial
 }
 
 export function GastoCard(props: GastoCardProps) {
@@ -180,10 +184,17 @@ export function GastoCard(props: GastoCardProps) {
     defaultCollapsed,
     // UI options
     showButtonsBorder = false,
+    // Heredados desde Comercial
+    ordenFormaPago,
+    facturaEmitidaAReadOnly = false,
   } = props;
 
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Determinar si campos factura/empresa están bloqueados según forma de pago
+  const isEfectivoFromComercial = ordenFormaPago === 'Efectivo (Contado)';
+  const areFacturaFieldsDisabled = isDisabled || isEfectivoFromComercial || facturaEmitidaAReadOnly;
 
   // Internal collapse state for uncontrolled mode
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(
@@ -277,28 +288,28 @@ export function GastoCard(props: GastoCardProps) {
                 />
               </FormRow>
 
-              <FormRow>
-                <FormSelect
-                  label="Factura emitida a"
-                  value={gasto.facturaEmitidaA}
-                  onChange={(v) => onUpdate('facturaEmitidaA', v)}
-                  options={facturaOptions}
-                  required
-                  disabled={isDisabled}
-                  error={errors.facturaEmitidaA}
-                  isDark={isDark}
-                />
-                <FormSelect
-                  label="Empresa"
-                  value={gasto.empresa}
-                  onChange={(v) => onUpdate('empresa', v)}
-                  options={empresaOptions}
-                  required
-                  disabled={isDisabled}
-                  error={errors.empresa}
-                  isDark={isDark}
-                />
-              </FormRow>
+               <FormRow>
+                 <FormSelect
+                   label="Factura emitida a"
+                   value={gasto.facturaEmitidaA}
+                   onChange={(v) => onUpdate('facturaEmitidaA', v)}
+                   options={facturaOptions}
+                   required={!areFacturaFieldsDisabled}
+                   disabled={areFacturaFieldsDisabled}
+                   error={errors.facturaEmitidaA}
+                   isDark={isDark}
+                 />
+                 <FormSelect
+                   label="Empresa"
+                   value={gasto.empresa}
+                   onChange={(v) => onUpdate('empresa', v)}
+                   options={empresaOptions}
+                   required={!areFacturaFieldsDisabled}
+                   disabled={areFacturaFieldsDisabled}
+                   error={errors.empresa}
+                   isDark={isDark}
+                 />
+               </FormRow>
             </>
           )}
 

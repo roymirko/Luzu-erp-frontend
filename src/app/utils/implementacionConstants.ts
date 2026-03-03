@@ -1,13 +1,13 @@
 import type { FormSelectOption } from '@/app/components/ui/form-select';
 
 export const FACTURAS_OPTIONS: FormSelectOption[] = [
-  { value: 'Luzu TV', label: 'Luzu TV' },
-  { value: 'Luzu TV SA', label: 'Luzu TV SA' },
+  { value: 'LUZU TV SF', label: 'LUZU TV SF' },
+  { value: 'LUZU TV S. A.', label: 'LUZU TV S. A.' },
 ];
 
 export const EMPRESAS_OPTIONS: FormSelectOption[] = [
-  { value: 'Luzu TV', label: 'Luzu TV' },
-  { value: 'Luzu TV SA', label: 'Luzu TV SA' },
+  { value: 'LUZU TV SF', label: 'LUZU TV SF' },
+  { value: 'LUZU TV S. A.', label: 'LUZU TV S. A.' },
 ];
 
 export const UNIDADES_NEGOCIO_OPTIONS: FormSelectOption[] = [
@@ -36,6 +36,16 @@ export const FORMAS_PAGO_OPTIONS: FormSelectOption[] = [
   { value: 'transferencia', label: 'Transferencia' },
   { value: 'cheque', label: 'Cheque' },
   { value: 'tarjeta', label: 'Tarjeta' },
+];
+
+export const FORMAS_PAGO_COMERCIAL_OPTIONS: FormSelectOption[] = [
+  { value: 'Transferencia (Adelantado)', label: 'Transferencia (Adelantado)' },
+  { value: 'Tarjeta de crédito', label: 'Tarjeta de crédito' },
+  { value: 'Tarjeta de débito', label: 'Tarjeta de débito' },
+  { value: 'Efectivo (Contado)', label: 'Efectivo (Contado)' },
+  { value: 'Débito automático', label: 'Débito automático' },
+  { value: 'e check', label: 'e check' },
+  { value: 'Pago Mis cuentas', label: 'Pago Mis cuentas' },
 ];
 
 export const PAISES_OPTIONS: FormSelectOption[] = [

@@ -82,6 +82,11 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
       marca: formulario.marca || '',
       nombreCampana: formulario.nombreCampana || '',
       acuerdoPago: formulario.acuerdoPago || '',
+      formaPago: formulario.formaPago,
+      numeroComprobante: formulario.numeroComprobante,
+      fechaComprobante: formulario.fechaComprobante,
+      facturaEmitidaA: formulario.facturaEmitidaA,
+      empresa: formulario.empresa,
       tipoImporte: formulario.tipoImporte || 'factura',
       observaciones: formulario.observaciones,
       items: (formulario.importeRows || []).map(item => ({
@@ -133,38 +138,43 @@ export function FormulariosProvider({ children }: { children: ReactNode }) {
     return { success: true };
   };
 
-  const updateFormulario = async (id: string, formulario: FormularioData): Promise<{ success: boolean }> => {
-    const result = await ordenesService.update({
-      id,
-      mesServicio: formulario.mesServicio,
-      responsable: formulario.responsable,
-      ordenPublicidad: formulario.ordenPublicidad,
-      totalVenta: formulario.totalVenta,
-      unidadNegocio: formulario.unidadNegocio,
-      categoriaNegocio: formulario.categoriaNegocio,
-      proyecto: formulario.proyecto,
-      razonSocial: formulario.razonSocial,
-      categoria: formulario.categoria,
-      empresaAgencia: formulario.empresaAgencia,
-      marca: formulario.marca,
-      nombreCampana: formulario.nombreCampana,
-      acuerdoPago: formulario.acuerdoPago,
-      tipoImporte: formulario.tipoImporte,
-      observaciones: formulario.observaciones,
-      items: formulario.importeRows.map(item => ({
-        id: item.id,
-        programa: item.programa,
-        monto: item.monto,
-        ncPrograma: item.ncPrograma,
-        ncPorcentaje: item.ncPorcentaje,
-        proveedorFee: item.proveedorFee,
-        feePrograma: item.feePrograma,
-        feePorcentaje: item.feePorcentaje,
-        implementacion: item.implementacion,
-        talentos: item.talentos,
-        tecnica: item.tecnica,
-      })),
-    });
+   const updateFormulario = async (id: string, formulario: FormularioData): Promise<{ success: boolean }> => {
+     const result = await ordenesService.update({
+       id,
+       mesServicio: formulario.mesServicio,
+       responsable: formulario.responsable,
+       ordenPublicidad: formulario.ordenPublicidad,
+       totalVenta: formulario.totalVenta,
+       unidadNegocio: formulario.unidadNegocio,
+       categoriaNegocio: formulario.categoriaNegocio,
+       proyecto: formulario.proyecto,
+       razonSocial: formulario.razonSocial,
+       categoria: formulario.categoria,
+       empresaAgencia: formulario.empresaAgencia,
+       marca: formulario.marca,
+       nombreCampana: formulario.nombreCampana,
+       acuerdoPago: formulario.acuerdoPago,
+       formaPago: formulario.formaPago,
+       numeroComprobante: formulario.numeroComprobante,
+       fechaComprobante: formulario.fechaComprobante,
+       facturaEmitidaA: formulario.facturaEmitidaA,
+       empresa: formulario.empresa,
+       tipoImporte: formulario.tipoImporte,
+       observaciones: formulario.observaciones,
+       items: formulario.importeRows.map(item => ({
+         id: item.id,
+         programa: item.programa,
+         monto: item.monto,
+         ncPrograma: item.ncPrograma,
+         ncPorcentaje: item.ncPorcentaje,
+         proveedorFee: item.proveedorFee,
+         feePrograma: item.feePrograma,
+         feePorcentaje: item.feePorcentaje,
+         implementacion: item.implementacion,
+         talentos: item.talentos,
+         tecnica: item.tecnica,
+       })),
+     });
 
     if (result.error || !result.data) {
       return { success: false };
