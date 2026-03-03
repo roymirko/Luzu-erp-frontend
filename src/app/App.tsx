@@ -27,6 +27,7 @@ import {
   Wrench,
   Clapperboard,
   Star,
+  Megaphone,
 } from "lucide-react";
 import { Dashboard } from "./components/Dashboard";
 // Lazy-loaded heavy components
@@ -48,8 +49,11 @@ import { Programacion } from "./components/Programacion";
 import { FormularioProgramacion } from "./components/programacion/FormularioProgramacion";
 import { ProgramacionProvider } from "./contexts/ProgramacionContext";
 import { ExperienceProvider, useExperience } from "./contexts/ExperienceContext";
+import { MarketingProvider, useMarketing } from "./contexts/MarketingContext";
 import { Experience } from "./components/Experience";
 import { ExperienceForm } from "./components/experience/ExperienceForm";
+import { Marketing } from "./components/Marketing";
+import { MarketingForm } from "./components/marketing/MarketingForm";
 import { ProductoraProvider, useProductora } from "./contexts/ProductoraContext";
 import { Productora } from "./components/Productora";
 import { ProductoraForm } from "./components/productora/ProductoraForm";
@@ -111,6 +115,12 @@ const menuItems = [
     path: "/experience",
     label: "Experience",
     icon: <Sparkles className="h-5 w-5" />,
+  },
+  {
+    id: "marketing",
+    path: "/marketing",
+    label: "Marketing",
+    icon: <Megaphone className="h-5 w-5" />,
   },
   {
     id: "productora",
@@ -281,6 +291,26 @@ function AppContent() {
       return [
         { label: "Inicio", path: null },
         { label: "Experience", path: "/experience" },
+        { label: "Editar formulario", path: null },
+      ];
+    }
+    if (path === "/marketing") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Marketing", path: null },
+      ];
+    }
+    if (path === "/marketing/nuevo") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Marketing", path: "/marketing" },
+        { label: "Nuevo formulario", path: null },
+      ];
+    }
+    if (path.startsWith("/marketing/editar/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Marketing", path: "/marketing" },
         { label: "Editar formulario", path: null },
       ];
     }
@@ -551,6 +581,9 @@ function AppContent() {
               <Route path="/experience" element={<ExperiencePage />} />
               <Route path="/experience/nuevo" element={<ExperienceNuevoPage />} />
               <Route path="/experience/editar/:id" element={<ExperienceEditarPage />} />
+              <Route path="/marketing" element={<MarketingPage />} />
+              <Route path="/marketing/nuevo" element={<MarketingNuevoPage />} />
+              <Route path="/marketing/editar/:id" element={<MarketingEditarPage />} />
               <Route path="/productora" element={<ProductoraPage />} />
               <Route path="/productora/nuevo" element={<ProductoraNuevoPage />} />
               <Route path="/productora/editar/:id" element={<ProductoraEditarPage />} />
@@ -800,6 +833,58 @@ function ExperienceEditarPage() {
   );
 }
 
+function MarketingPage() {
+  const navigate = useNavigate();
+  return (
+    <Marketing
+      onNew={() => navigate("/marketing/nuevo")}
+      onOpen={(id) => navigate(`/marketing/editar/${id}`)}
+    />
+  );
+}
+
+function MarketingNuevoPage() {
+  const navigate = useNavigate();
+  return (
+    <MarketingForm
+      onCancel={() => navigate("/marketing")}
+      onSave={() => navigate("/marketing")}
+    />
+  );
+}
+
+function MarketingEditarPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { getGastoById } = useMarketing();
+  const { users } = useData();
+
+  const existingGasto = id ? getGastoById(id) : undefined;
+
+  const getResponsableName = (createdById: string | undefined) => {
+    if (!createdById) return '-';
+    const user = users.find(u => u.id === createdById);
+    return user ? `${user.firstName} ${user.lastName}` : '-';
+  };
+
+  const existingFormulario = existingGasto
+    ? {
+        responsable: getResponsableName(existingGasto.formularioCreatedBy || existingGasto.createdBy),
+        fechaRegistro: existingGasto.formularioCreatedAt?.toISOString() || existingGasto.createdAt?.toISOString(),
+        formularioEstado: existingGasto.formularioEstado as 'abierto' | 'cerrado' | 'anulado' | undefined,
+      }
+    : undefined;
+
+  return (
+    <MarketingForm
+      gastoId={id}
+      existingFormulario={existingFormulario}
+      onCancel={() => navigate("/marketing")}
+      onSave={() => navigate("/marketing")}
+    />
+  );
+}
+
 function ProductoraPage() {
   const navigate = useNavigate();
   return (
@@ -886,10 +971,12 @@ export default function App() {
                   <TecnicaProvider>
                     <ProgramacionProvider>
                       <ExperienceProvider>
-                        <ProductoraProvider>
-                          <AppContent />
-                          <Toaster richColors position="top-right" />
-                        </ProductoraProvider>
+                        <MarketingProvider>
+                          <ProductoraProvider>
+                            <AppContent />
+                            <Toaster richColors position="top-right" />
+                          </ProductoraProvider>
+                        </MarketingProvider>
                       </ExperienceProvider>
                     </ProgramacionProvider>
                   </TecnicaProvider>
