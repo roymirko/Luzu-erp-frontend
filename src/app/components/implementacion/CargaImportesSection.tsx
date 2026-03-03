@@ -199,7 +199,7 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
               showFormaPago
               programOptions={programasConPresupuesto}
               isSaving={isSaving}
-              observacionesLabel="Detalle de gasto"
+               observacionesLabel="Concepto del gasto"
               ordenFormaPago={ordenFormaPago}
             />
           );

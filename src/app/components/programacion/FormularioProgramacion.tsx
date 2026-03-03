@@ -63,7 +63,7 @@ import {
   PROGRAMAS_LUZU_OPTIONS,
 } from '../../utils/implementacionConstants';
 
-const MAX_OBSERVACIONES_LENGTH = 250;
+const MAX_OBSERVACIONES_LENGTH = 15;
 
 const EMPRESAS_PROGRAMACION_OPTIONS: FormSelectOption[] = [
   { value: 'Luzu TV', label: 'Luzu TV' },
@@ -898,7 +898,7 @@ export function FormularioProgramacion({
                   showAttachments
                   showButtonsBorder
                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
-                  observacionesLabel="Detalle de gasto"
+                  observacionesLabel="Concepto del gasto"
                   programOptions={availableProgramOptions}
                   facturaOptions={FACTURA_EMITIDA_A_OPTIONS}
                   empresaOptions={EMPRESAS_PROGRAMACION_OPTIONS}

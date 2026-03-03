@@ -205,5 +205,5 @@ export const MARKETING_DEFAULTS = {
 
 export const FIELD_MAX_LENGTHS = {
   conceptoGasto: 250,
-  observaciones: 500,
+  observaciones: 15,
 } as const;

@@ -63,7 +63,7 @@ interface ExperienceFormProps {
   onSave?: () => void;
 }
 
-const MAX_OBSERVACIONES_LENGTH = 250;
+const MAX_OBSERVACIONES_LENGTH = 15;
 
 export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }: ExperienceFormProps) {
   const { isDark } = useTheme();
@@ -777,7 +777,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                   showCharacterCount
                   showButtonsBorder
                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
-                  observacionesLabel="Detalle de gasto"
+                  observacionesLabel="Concepto del gasto"
                   programOptions={availableProgramOptions}
                   acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
                   formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}
