@@ -57,14 +57,15 @@ export function PagoSection(props: PagoSectionProps) {
     ? 'bg-[#141414] border-gray-800 text-white focus:border-[#fb2c36]'
     : 'bg-white border-gray-300 text-gray-900 focus:border-[#fb2c36]';
 
-  // Autocompletar según forma de pago
+  // Autocompletar según forma de pago y resetear acuerdo de pago cuando es efectivo
   useEffect(() => {
     if (!hasFormaPago) return;
 
     if (isEfectivo) {
-      // Efectivo: bloquear con LUZU TV SF
+      // Efectivo: bloquear con LUZU TV SF y limpiar acuerdo de pago
       setFacturaEmitidaA('LUZU TV SF');
       setEmpresa('LUZU TV SF');
+      setAcuerdoPago('');
     } else {
       // Otros medios: autocompletar con LUZU TV S. A. solo si están vacíos
       if (!facturaEmitidaA) setFacturaEmitidaA('LUZU TV S. A.');
@@ -96,26 +97,28 @@ export function PagoSection(props: PagoSectionProps) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
-            Acuerdo de Pago
-          </Label>
-          <div className="relative">
-            <select
-              value={acuerdoPago}
-              onChange={(e) => setAcuerdoPago(e.target.value)}
-              className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${selectBaseClass} focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
-            >
-              <option value="">Seleccionar</option>
-              {acuerdoPagoOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+        {!isEfectivo && (
+          <div className="space-y-2">
+            <Label className={`${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
+              Acuerdo de Pago
+            </Label>
+            <div className="relative">
+              <select
+                value={acuerdoPago}
+                onChange={(e) => setAcuerdoPago(e.target.value)}
+                className={`w-full h-10 pl-3 pr-10 rounded-md border text-sm appearance-none ${selectBaseClass} focus:outline-none focus:ring-2 focus:ring-[#fb2c36]/20`}
+              >
+                <option value="">Seleccionar</option>
+                {acuerdoPagoOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {hasFormaPago && !isEfectivo && (
