@@ -449,58 +449,61 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
             </div>
           )}
 
-          {/* Section 1: Cargar Datos */}
-          <div className="space-y-4">
-            {/* Row 1: Unidad de Negocio | Categoría de negocio */}
-            <div className="grid grid-cols-2 gap-5">
-              <div className="space-y-1">
-                <Label className={labelClass}>Unidad de Negocio</Label>
-                <Input type="text" value="Media" disabled className={disabledSelectClass} />
-              </div>
-              <div className="space-y-1">
-                <Label className={labelClass}>Categoría de negocio</Label>
-                <Input type="text" value="Proyectos especiales Marketing" disabled className={disabledSelectClass} />
-              </div>
-            </div>
+           {/* Section 1: Cargar Datos */}
+           <div className="space-y-4">
+             {/* Row 1: Unidad de Negocio | Categoría de negocio */}
+             <div className="grid grid-cols-2 gap-5">
+               <div className="space-y-1">
+                 <Label className={labelClass}>Unidad de Negocio</Label>
+                 <Input type="text" value="Media" disabled className={disabledSelectClass} />
+               </div>
+               <div className="space-y-1">
+                 <Label className={labelClass}>Categoría de negocio</Label>
+                 <Input type="text" value="Proyectos especiales Marketing" disabled className={disabledSelectClass} />
+               </div>
+             </div>
 
-            {/* Row 2: Rubro del gasto | Subrubro | Evento */}
-            <div className="grid grid-cols-3 gap-5">
-              <div className="space-y-1">
-                <Label className={labelClass}>Rubro del gasto</Label>
-                <Input type="text" value="Gastos de Marketing" disabled className={disabledSelectClass} />
-              </div>
+             {/* Row 2: Rubro del gasto | Subrubro */}
+             <div className="grid grid-cols-2 gap-5">
+               <div className="space-y-1">
+                 <Label className={labelClass}>Rubro del gasto</Label>
+                 <Input type="text" value="Gastos de Marketing" disabled className={disabledSelectClass} />
+               </div>
 
-              <div className="space-y-1">
-                <Label className={labelClass}>
-                  Subrubro<span className="text-red-500">*</span>
-                </Label>
-                <Select value={subrubro} onValueChange={setSubrubro} disabled={isFormularioCerrado}>
-                  <SelectTrigger className={cn(isFormularioCerrado ? disabledSelectClass : selectTriggerClass, errors.subrubro && 'border-red-500')}>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUBRUBROS_MARKETING_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+               <div className="space-y-1">
+                 <Label className={labelClass}>
+                   Subrubro<span className="text-red-500">*</span>
+                 </Label>
+                 <Select value={subrubro} onValueChange={setSubrubro} disabled={isFormularioCerrado}>
+                   <SelectTrigger className={cn(isFormularioCerrado ? disabledSelectClass : selectTriggerClass, errors.subrubro && 'border-red-500')}>
+                     <SelectValue placeholder="Seleccionar" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {SUBRUBROS_MARKETING_OPTIONS.map((opt) => (
+                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+             </div>
 
-              <div className="space-y-1">
-                <Label className={labelClass}>
-                  Evento<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="text"
-                  value={nombreCampana}
-                  onChange={(e) => setNombreCampana(e.target.value)}
-                  placeholder="Buscar evento"
-                  disabled={isFormularioCerrado}
-                  className={cn(isFormularioCerrado ? disabledSelectClass : inputClass, errors.nombreCampana && 'border-red-500')}
-                />
-              </div>
-            </div>
-          </div>
+             {/* Row 3: Evento */}
+             <div className="grid grid-cols-1 gap-5">
+               <div className="space-y-1">
+                 <Label className={labelClass}>
+                   Evento<span className="text-red-500">*</span>
+                 </Label>
+                 <Input
+                   type="text"
+                   value={nombreCampana}
+                   onChange={(e) => setNombreCampana(e.target.value)}
+                   placeholder="Buscar evento"
+                   disabled={isFormularioCerrado}
+                   className={cn(isFormularioCerrado ? disabledSelectClass : inputClass, errors.nombreCampana && 'border-red-500')}
+                 />
+               </div>
+             </div>
+           </div>
 
           {/* Section 2: Carga de importes */}
           <div className="space-y-4">
