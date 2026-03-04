@@ -43,7 +43,7 @@ export function TablaMarketing({ onOpen, onNew }: TablaMarketingProps) {
       case 'anulado':
         return 'error';
       default:
-        return 'neutral';
+        return 'pending-factura';
     }
   };
 
@@ -58,7 +58,7 @@ export function TablaMarketing({ onOpen, onNew }: TablaMarketingProps) {
       case 'anulado':
         return 'Anulado';
       default:
-        return 'Pendiente de carga';
+        return 'Pendiente de Factura';
     }
   };
 

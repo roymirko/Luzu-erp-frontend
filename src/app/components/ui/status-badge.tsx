@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "./utils";
 
-type StatusVariant = "success" | "warning" | "error" | "neutral" | "info";
+type StatusVariant = "success" | "warning" | "error" | "neutral" | "info" | "pending-factura";
 
 interface StatusBadgeProps {
   label: string;
@@ -12,10 +12,10 @@ interface StatusBadgeProps {
 // Figma-based styles matching Estados de Formulario design
 const variantStyles: Record<StatusVariant, { bg: string; border: string; text: string; dot: string }> = {
   success: {
-    bg: "bg-[#DCFCE7]",
-    border: "border-[#22C55E]",
-    text: "text-[#15803D]",
-    dot: "bg-[#22C55E]",
+    bg: "bg-[#ecffe9]",
+    border: "border-[#118f00]",
+    text: "text-[#118f00]",
+    dot: "bg-[#118f00]",
   },
   warning: {
     bg: "bg-[#FEF3C7]",
@@ -40,6 +40,12 @@ const variantStyles: Record<StatusVariant, { bg: string; border: string; text: s
     border: "border-[#3B82F6]",
     text: "text-[#1D4ED8]",
     dot: "bg-[#3B82F6]",
+  },
+  "pending-factura": {
+    bg: "bg-[#fffae8]",
+    border: "border-[#8f6e00]",
+    text: "text-[#8f6e00]",
+    dot: "bg-[#8f6e00]",
   },
 };
 
