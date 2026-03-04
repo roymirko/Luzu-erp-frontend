@@ -251,7 +251,7 @@ export function GastoCard(props: GastoCardProps) {
                 isDark={isDark}
               />
             )}
-            {(!showFormaPago || gasto.formaPago === 'cheque' || gasto.formaPago === 'transferencia') && (
+            {(!showFormaPago || (gasto.formaPago === 'cheque' || gasto.formaPago === 'transferencia')) && gasto.formaPago !== 'efectivo' && (
               <FormSelect
                 label="Acuerdo de pago"
                 value={gasto.acuerdoPago}

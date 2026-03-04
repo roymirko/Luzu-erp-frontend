@@ -205,6 +205,17 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
   };
 
   const validateSingleGasto = (g: GastoItem, index: number): string | null => {
+    if (!g.formaPago?.trim()) {
+      return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
+    }
+    
+    if (g.formaPago === 'efectivo') {
+      if (!g.neto || g.neto <= 0) {
+        return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
+      }
+      return null;
+    }
+    
     if (!g.facturaEmitidaA?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
     }
@@ -214,13 +225,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     if (!g.empresaPrograma?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
     }
-    if (!g.razonSocial?.trim()) {
-      return `Gasto #${index + 1}: Debe seleccionar una razón social`;
-    }
-    if (!g.formaPago?.trim()) {
-      return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
-    }
-    // Acuerdo de pago solo requerido si forma de pago es cheque
     if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     }
@@ -228,7 +232,6 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
     }
     
-    // Validación cruzada: Si hay uno, debe estar el otro
     const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
     const tieneFecha = g.fechaComprobante && g.fechaComprobante.trim() !== '';
     
