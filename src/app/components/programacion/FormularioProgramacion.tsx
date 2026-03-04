@@ -53,7 +53,7 @@ interface GastoItem {
   formaPago: string;
   neto: number;
   observaciones: string;
-  estado: "pendiente-pago" | "pagado" | "anulado";
+  estado: "pendiente-pago" | "pendiente-factura" | "pagado" | "anulado";
 }
 
 import {
@@ -173,7 +173,7 @@ export function FormularioProgramacion({
         formaPago: g.formaPago || "",
         neto: g.neto || 0,
         observaciones: g.observaciones || "",
-        estado: g.estadoPago === "pago" ? "pagado" : "pendiente-pago",
+        estado: g.estadoPago === "pago" ? "pagado" : "pendiente-factura",
       }));
 
       setGastos(loadedGastos);
@@ -646,6 +646,7 @@ export function FormularioProgramacion({
             title="Cargar Datos"
             subtitle="Complete la información del nuevo formulario de Programación"
             isCerrado={isFormularioCerrado}
+            estadoLabel={gastos.length > 0 && gastos[0].estado === 'anulado' ? 'anulado' : 'cerrado'}
           />
 
           {/* Read-only fields - only visible when editing */}

@@ -151,7 +151,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
            // pais: g.pais || 'argentina',
            neto: g.neto || 0,
            observaciones: g.observaciones || '',
-           estado: g.estadoPago === 'pagado' ? 'pagado' : g.estadoPago === 'anulado' ? 'anulado' : 'pendiente-pago',
+            estado: g.estadoPago === 'pagado' ? 'pagado' : g.estadoPago === 'anulado' ? 'anulado' : 'pendiente-factura',
          }));
          setGastos(mappedGastos);
          loadedGastoIdsRef.current = new Set(mappedGastos.map(g => g.id));
