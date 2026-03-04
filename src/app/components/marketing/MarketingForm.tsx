@@ -38,7 +38,7 @@ interface GastoItem {
   acuerdoPago: string;
   numeroComprobante: string;
   formaPago: string;
-  pais: string;
+  // pais: string;
   neto: number;
   observaciones: string;
   estado: 'pendiente-pago' | 'pagado' | 'anulado';
@@ -105,7 +105,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
       acuerdoPago: '',
       numeroComprobante: '',
       formaPago: '',
-      pais: 'argentina',
+      // pais: 'argentina',
       neto: 0,
       observaciones: '',
       estado: 'pendiente-pago',
@@ -136,26 +136,26 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         .filter(g => g.formularioId === existingGasto.formularioId)
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-      if (formularioGastos.length > 0) {
-        const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
-          id: g.id,
-          facturaEmitidaA: g.facturaEmitidaA || '',
-          empresa: g.empresaContext || '',
-          empresaPrograma: g.empresaPrograma || '',
-          fechaComprobante: g.fechaComprobante || '',
-          razonSocial: g.razonSocial || '',
-          proveedor: g.proveedor || '',
-          acuerdoPago: g.acuerdoPago || '',
-          numeroComprobante: g.numeroFactura || '',
-          formaPago: g.formaPago || '',
-          pais: g.pais || 'argentina',
-          neto: g.neto || 0,
-          observaciones: g.observaciones || '',
-          estado: g.estadoPago === 'pagado' ? 'pagado' : g.estadoPago === 'anulado' ? 'anulado' : 'pendiente-pago',
-        }));
-        setGastos(mappedGastos);
-        loadedGastoIdsRef.current = new Set(mappedGastos.map(g => g.id));
-      }
+       if (formularioGastos.length > 0) {
+         const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
+           id: g.id,
+           facturaEmitidaA: g.facturaEmitidaA || '',
+           empresa: g.empresaContext || '',
+           empresaPrograma: g.empresaPrograma || '',
+           fechaComprobante: g.fechaComprobante || '',
+           razonSocial: g.razonSocial || '',
+           proveedor: g.proveedor || '',
+           acuerdoPago: g.acuerdoPago || '',
+           numeroComprobante: g.numeroFactura || '',
+           formaPago: g.formaPago || '',
+           // pais: g.pais || 'argentina',
+           neto: g.neto || 0,
+           observaciones: g.observaciones || '',
+           estado: g.estadoPago === 'pagado' ? 'pagado' : g.estadoPago === 'anulado' ? 'anulado' : 'pendiente-pago',
+         }));
+         setGastos(mappedGastos);
+         loadedGastoIdsRef.current = new Set(mappedGastos.map(g => g.id));
+       }
       setDataLoaded(true);
     }
     setLoadingData(false);
@@ -211,13 +211,13 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         facturaEmitidaA: '',
         empresa: '',
         empresaPrograma: '',
-      fechaComprobante: '',
+        fechaComprobante: '',
         razonSocial: '',
         proveedor: '',
         acuerdoPago: '',
         numeroComprobante: '',
         formaPago: '',
-        pais: 'argentina',
+        // pais: 'argentina',
         neto: 0,
         observaciones: '',
         estado: 'pendiente-pago',
@@ -234,7 +234,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
     setGastos((prev) =>
       prev.map((g) =>
         g.id === id
-          ? { ...g, facturaEmitidaA: '', empresa: '', empresaPrograma: '', fechaComprobante: new Date().toISOString().split('T')[0], razonSocial: '', proveedor: '', acuerdoPago: '', numeroComprobante: '', formaPago: '', pais: 'argentina', neto: 0, observaciones: '' }
+          ? { ...g, facturaEmitidaA: '', empresa: '', empresaPrograma: '', fechaComprobante: new Date().toISOString().split('T')[0], razonSocial: '', proveedor: '', acuerdoPago: '', numeroComprobante: '', formaPago: '', /* pais: 'argentina' */ neto: 0, observaciones: '' }
           : g
       )
     );
@@ -250,7 +250,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         setGastos([{
           id: crypto.randomUUID(), facturaEmitidaA: '', empresa: '', empresaPrograma: '',
           fechaComprobante: '', razonSocial: '', proveedor: '',
-          acuerdoPago: '', numeroComprobante: '', formaPago: '', pais: 'argentina', neto: 0,
+          acuerdoPago: '', numeroComprobante: '', formaPago: '', /* pais: 'argentina' */ neto: 0,
           observaciones: '', estado: 'pendiente-pago',
         }]);
       }
@@ -284,7 +284,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           id: gasto.id, neto: gasto.neto, empresa: gasto.empresa, empresaPrograma: gasto.empresaPrograma,
           observaciones: gasto.observaciones, facturaEmitidaA: gasto.facturaEmitidaA, proveedor: gasto.proveedor,
           razonSocial: gasto.razonSocial, acuerdoPago: gasto.acuerdoPago, numeroFactura: gasto.numeroComprobante || undefined,
-          formaPago: gasto.formaPago, pais: gasto.pais, fechaComprobante: gasto.fechaComprobante,
+          formaPago: gasto.formaPago, /* pais: gasto.pais */ fechaComprobante: gasto.fechaComprobante,
         });
         if (success) { toggleGastoCollapse(gasto.id); toast.success(`Gasto #${index + 1} actualizado`); return true; }
         toast.error(`Error al actualizar gasto #${index + 1}`); return false;
@@ -294,7 +294,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           facturaEmitidaA: gasto.facturaEmitidaA, empresa: gasto.empresa, empresaPrograma: gasto.empresaPrograma,
           fechaComprobante: gasto.fechaComprobante, razonSocial: gasto.razonSocial, proveedor: gasto.proveedor,
           acuerdoPago: gasto.acuerdoPago, numeroFactura: gasto.numeroComprobante || undefined,
-          formaPago: gasto.formaPago, pais: gasto.pais, neto: gasto.neto, observaciones: gasto.observaciones,
+          formaPago: gasto.formaPago, /* pais: gasto.pais */ neto: gasto.neto, observaciones: gasto.observaciones,
           createdBy: currentUser?.id,
         });
         if (result) {
@@ -346,7 +346,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
             proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, observaciones: g.observaciones,
             facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa, empresaPrograma: g.empresaPrograma,
             fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
-            numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, pais: g.pais,
+            numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
           });
           if (!result) { allSucceeded = false; failedCount++; }
         }
@@ -357,7 +357,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
               proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, observaciones: g.observaciones,
               facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa, empresaPrograma: g.empresaPrograma,
               fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
-              numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, pais: g.pais,
+              numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
               createdBy: currentUser?.id,
             });
             if (!result) { allSucceeded = false; failedCount++; }
@@ -373,7 +373,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, empresa: g.empresa,
           observaciones: g.observaciones, facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa,
           empresaPrograma: g.empresaPrograma, fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
-          numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, pais: g.pais,
+          numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
         }));
 
         const result = await addMultipleGastos({
@@ -529,45 +529,44 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
 
               const isGastoNew = !loadedGastoIdsRef.current.has(gasto.id);
 
-              return (
-                <GastoCard
-                  key={gasto.id}
-                  isDark={isDark}
-                  gasto={gastoData}
-                  index={index}
-                  isNew={isGastoNew}
-                  isDisabled={isDisabled}
-                  estado={gasto.estado}
-                  isCollapsed={isCollapsed}
-                  onToggleCollapse={() => toggleGastoCollapse(gasto.id)}
-                  onUpdate={(field, value) => {
-                    if (field === 'neto') updateGastoItem(gasto.id, field, Number(value) || 0);
-                    else updateGastoItem(gasto.id, field as keyof GastoItem, value);
-                  }}
-                  onCancel={() => {
-                    if (isGastoNew) {
-                      if (gastos.length > 1) removeGastoItem(gasto.id);
-                      else resetGastoItem(gasto.id);
-                    }
-                  }}
-                  onDeleteSaved={!isGastoNew ? async () => handleDeleteSavedGasto(gasto.id) : undefined}
-                  onSave={async () => {
-                    const error = validateSingleGasto(gasto, index);
-                    if (error) { toast.error(error); return; }
-                    await handleSaveGasto(gasto, index);
-                  }}
-                  isSaving={savingGastos.has(gasto.id)}
-                  showFormaPago
-                  showPais
-                  showCharacterCount
-                  showButtonsBorder
-                  maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
-                  observacionesLabel="Concepto del gasto"
-                  programOptions={availableProgramOptions}
-                  acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
-                  formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}
-                />
-              );
+               return (
+                 <GastoCard
+                   key={gasto.id}
+                   isDark={isDark}
+                   gasto={gastoData}
+                   index={index}
+                   isNew={isGastoNew}
+                   isDisabled={isDisabled}
+                   estado={gasto.estado}
+                   isCollapsed={isCollapsed}
+                   onToggleCollapse={() => toggleGastoCollapse(gasto.id)}
+                   onUpdate={(field, value) => {
+                     if (field === 'neto') updateGastoItem(gasto.id, field, Number(value) || 0);
+                     else updateGastoItem(gasto.id, field as keyof GastoItem, value);
+                   }}
+                   onCancel={() => {
+                     if (isGastoNew) {
+                       if (gastos.length > 1) removeGastoItem(gasto.id);
+                       else resetGastoItem(gasto.id);
+                     }
+                   }}
+                   onDeleteSaved={!isGastoNew ? async () => handleDeleteSavedGasto(gasto.id) : undefined}
+                   onSave={async () => {
+                     const error = validateSingleGasto(gasto, index);
+                     if (error) { toast.error(error); return; }
+                     await handleSaveGasto(gasto, index);
+                   }}
+                   isSaving={savingGastos.has(gasto.id)}
+                   showFormaPago
+                   showCharacterCount
+                   showButtonsBorder
+                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
+                   observacionesLabel="Concepto del gasto"
+                   programOptions={availableProgramOptions}
+                   acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
+                   formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}
+                 />
+               );
             })}
 
             <div className="flex justify-end">
