@@ -251,7 +251,7 @@ export function GastoCard(props: GastoCardProps) {
                 isDark={isDark}
               />
             )}
-            {(!showFormaPago || gasto.formaPago === 'cheque' || gasto.formaPago === 'transferencia') && (
+            {(!showFormaPago || gasto.formaPago !== 'Efectivo (Contado)') && gasto.formaPago && (
               <FormSelect
                 label="Acuerdo de pago"
                 value={gasto.acuerdoPago}
@@ -265,8 +265,8 @@ export function GastoCard(props: GastoCardProps) {
             )}
           </FormRow>
 
-          {/* ── Grupo: Comprobante (hidden on efectivo) ── */}
-          {gasto.formaPago !== 'efectivo' && (
+          {/* ── Grupo: Comprobante (hidden on Efectivo (Contado)) ── */}
+          {gasto.formaPago !== 'Efectivo (Contado)' && (
             <>
               <FormRow>
                 <FormInput
@@ -353,6 +353,7 @@ export function GastoCard(props: GastoCardProps) {
                 }}
                 disabled={isDisabled}
                 allowCreate={!isDisabled}
+                required={gasto.formaPago && gasto.formaPago !== 'Efectivo (Contado)'}
               />
               {errors.proveedor && (
                 <p className="text-sm text-red-500">{errors.proveedor}</p>

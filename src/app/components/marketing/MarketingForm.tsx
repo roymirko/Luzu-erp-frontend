@@ -38,7 +38,7 @@ interface GastoItem {
   acuerdoPago: string;
   numeroComprobante: string;
   formaPago: string;
-  pais: string;
+  // pais: string;
   neto: number;
   observaciones: string;
   estado: 'pendiente-pago' | 'pagado' | 'anulado';
@@ -105,7 +105,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
       acuerdoPago: '',
       numeroComprobante: '',
       formaPago: '',
-      pais: 'argentina',
+      // pais: 'argentina',
       neto: 0,
       observaciones: '',
       estado: 'pendiente-pago',
@@ -136,26 +136,26 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         .filter(g => g.formularioId === existingGasto.formularioId)
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-      if (formularioGastos.length > 0) {
-        const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
-          id: g.id,
-          facturaEmitidaA: g.facturaEmitidaA || '',
-          empresa: g.empresaContext || '',
-          empresaPrograma: g.empresaPrograma || '',
-          fechaComprobante: g.fechaComprobante || '',
-          razonSocial: g.razonSocial || '',
-          proveedor: g.proveedor || '',
-          acuerdoPago: g.acuerdoPago || '',
-          numeroComprobante: g.numeroFactura || '',
-          formaPago: g.formaPago || '',
-          pais: g.pais || 'argentina',
-          neto: g.neto || 0,
-          observaciones: g.observaciones || '',
-          estado: g.estadoPago === 'pagado' ? 'pagado' : g.estadoPago === 'anulado' ? 'anulado' : 'pendiente-pago',
-        }));
-        setGastos(mappedGastos);
-        loadedGastoIdsRef.current = new Set(mappedGastos.map(g => g.id));
-      }
+       if (formularioGastos.length > 0) {
+         const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
+           id: g.id,
+           facturaEmitidaA: g.facturaEmitidaA || '',
+           empresa: g.empresaContext || '',
+           empresaPrograma: g.empresaPrograma || '',
+           fechaComprobante: g.fechaComprobante || '',
+           razonSocial: g.razonSocial || '',
+           proveedor: g.proveedor || '',
+           acuerdoPago: g.acuerdoPago || '',
+           numeroComprobante: g.numeroFactura || '',
+           formaPago: g.formaPago || '',
+           // pais: g.pais || 'argentina',
+           neto: g.neto || 0,
+           observaciones: g.observaciones || '',
+            estado: g.estadoPago === 'pagado' ? 'pagado' : g.estadoPago === 'anulado' ? 'anulado' : 'pendiente-factura',
+         }));
+         setGastos(mappedGastos);
+         loadedGastoIdsRef.current = new Set(mappedGastos.map(g => g.id));
+       }
       setDataLoaded(true);
     }
     setLoadingData(false);
@@ -169,15 +169,19 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
   };
 
   const validateSingleGasto = (g: GastoItem, index: number): string | null => {
+    if (!g.formaPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
+    
+    if (g.formaPago === 'Efectivo (Contado)') {
+      if (!g.neto || g.neto <= 0) return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
+      return null;
+    }
+    
     if (!g.facturaEmitidaA?.trim()) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
     if (!g.empresa?.trim()) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
     if (!g.empresaPrograma?.trim()) return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
-    if (!g.razonSocial?.trim()) return `Gasto #${index + 1}: Debe seleccionar una razón social`;
-    if (!g.formaPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
-    if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
+    if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     if (!g.neto || g.neto <= 0) return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
     
-    // Validación cruzada: Si hay uno, debe estar el otro
     const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
     const tieneFecha = g.fechaComprobante && g.fechaComprobante.trim() !== '';
     
@@ -207,13 +211,13 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         facturaEmitidaA: '',
         empresa: '',
         empresaPrograma: '',
-      fechaComprobante: '',
+        fechaComprobante: '',
         razonSocial: '',
         proveedor: '',
         acuerdoPago: '',
         numeroComprobante: '',
         formaPago: '',
-        pais: 'argentina',
+        // pais: 'argentina',
         neto: 0,
         observaciones: '',
         estado: 'pendiente-pago',
@@ -230,7 +234,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
     setGastos((prev) =>
       prev.map((g) =>
         g.id === id
-          ? { ...g, facturaEmitidaA: '', empresa: '', empresaPrograma: '', fechaComprobante: new Date().toISOString().split('T')[0], razonSocial: '', proveedor: '', acuerdoPago: '', numeroComprobante: '', formaPago: '', pais: 'argentina', neto: 0, observaciones: '' }
+          ? { ...g, facturaEmitidaA: '', empresa: '', empresaPrograma: '', fechaComprobante: new Date().toISOString().split('T')[0], razonSocial: '', proveedor: '', acuerdoPago: '', numeroComprobante: '', formaPago: '', /* pais: 'argentina' */ neto: 0, observaciones: '' }
           : g
       )
     );
@@ -246,7 +250,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         setGastos([{
           id: crypto.randomUUID(), facturaEmitidaA: '', empresa: '', empresaPrograma: '',
           fechaComprobante: '', razonSocial: '', proveedor: '',
-          acuerdoPago: '', numeroComprobante: '', formaPago: '', pais: 'argentina', neto: 0,
+          acuerdoPago: '', numeroComprobante: '', formaPago: '', /* pais: 'argentina' */ neto: 0,
           observaciones: '', estado: 'pendiente-pago',
         }]);
       }
@@ -280,7 +284,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           id: gasto.id, neto: gasto.neto, empresa: gasto.empresa, empresaPrograma: gasto.empresaPrograma,
           observaciones: gasto.observaciones, facturaEmitidaA: gasto.facturaEmitidaA, proveedor: gasto.proveedor,
           razonSocial: gasto.razonSocial, acuerdoPago: gasto.acuerdoPago, numeroFactura: gasto.numeroComprobante || undefined,
-          formaPago: gasto.formaPago, pais: gasto.pais, fechaComprobante: gasto.fechaComprobante,
+          formaPago: gasto.formaPago, /* pais: gasto.pais */ fechaComprobante: gasto.fechaComprobante,
         });
         if (success) { toggleGastoCollapse(gasto.id); toast.success(`Gasto #${index + 1} actualizado`); return true; }
         toast.error(`Error al actualizar gasto #${index + 1}`); return false;
@@ -290,7 +294,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           facturaEmitidaA: gasto.facturaEmitidaA, empresa: gasto.empresa, empresaPrograma: gasto.empresaPrograma,
           fechaComprobante: gasto.fechaComprobante, razonSocial: gasto.razonSocial, proveedor: gasto.proveedor,
           acuerdoPago: gasto.acuerdoPago, numeroFactura: gasto.numeroComprobante || undefined,
-          formaPago: gasto.formaPago, pais: gasto.pais, neto: gasto.neto, observaciones: gasto.observaciones,
+          formaPago: gasto.formaPago, /* pais: gasto.pais */ neto: gasto.neto, observaciones: gasto.observaciones,
           createdBy: currentUser?.id,
         });
         if (result) {
@@ -342,7 +346,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
             proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, observaciones: g.observaciones,
             facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa, empresaPrograma: g.empresaPrograma,
             fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
-            numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, pais: g.pais,
+            numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
           });
           if (!result) { allSucceeded = false; failedCount++; }
         }
@@ -353,7 +357,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
               proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, observaciones: g.observaciones,
               facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa, empresaPrograma: g.empresaPrograma,
               fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
-              numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, pais: g.pais,
+              numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
               createdBy: currentUser?.id,
             });
             if (!result) { allSucceeded = false; failedCount++; }
@@ -369,7 +373,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, empresa: g.empresa,
           observaciones: g.observaciones, facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa,
           empresaPrograma: g.empresaPrograma, fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
-          numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, pais: g.pais,
+          numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
         }));
 
         const result = await addMultipleGastos({
@@ -429,7 +433,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           {/* Read-only fields for edit mode */}
           {isEditing && (
             <div className="grid grid-cols-3 gap-5">
-              <div className="space-y-1">
+              <div className="space-y-1 hidden">
                 <Label className={labelClass}>Responsable</Label>
                 <Input
                   type="text"
@@ -438,69 +442,72 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
                   className={disabledSelectClass}
                 />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 hidden">
                 <Label className={labelClass}>Fecha de Registro</Label>
                 <Input type="text" value={formatDateDisplay(existingFormulario?.fechaRegistro)} disabled className={disabledSelectClass} />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 hidden">
                 <Label className={labelClass}>Sector</Label>
                 <Input type="text" value="Marketing" disabled className={disabledSelectClass} />
               </div>
             </div>
           )}
 
-          {/* Section 1: Cargar Datos */}
-          <div className="space-y-4">
-            {/* Row 1: Unidad de Negocio | Categoría de negocio */}
-            <div className="grid grid-cols-2 gap-5">
-              <div className="space-y-1">
-                <Label className={labelClass}>Unidad de Negocio</Label>
-                <Input type="text" value="Media" disabled className={disabledSelectClass} />
-              </div>
-              <div className="space-y-1">
-                <Label className={labelClass}>Categoría de negocio</Label>
-                <Input type="text" value="Proyectos especiales Marketing" disabled className={disabledSelectClass} />
-              </div>
-            </div>
+           {/* Section 1: Cargar Datos */}
+           <div className="space-y-4">
+             {/* Row 1: Unidad de Negocio | Categoría de negocio */}
+             <div className="grid grid-cols-2 gap-5">
+               <div className="space-y-1">
+                 <Label className={labelClass}>Unidad de Negocio</Label>
+                 <Input type="text" value="Media" disabled className={disabledSelectClass} />
+               </div>
+               <div className="space-y-1">
+                 <Label className={labelClass}>Categoría de negocio</Label>
+                 <Input type="text" value="Proyectos especiales Marketing" disabled className={disabledSelectClass} />
+               </div>
+             </div>
 
-            {/* Row 2: Rubro del gasto | Subrubro | Evento */}
-            <div className="grid grid-cols-3 gap-5">
-              <div className="space-y-1">
-                <Label className={labelClass}>Rubro del gasto</Label>
-                <Input type="text" value="Gastos de Marketing" disabled className={disabledSelectClass} />
-              </div>
+             {/* Row 2: Rubro del gasto | Subrubro */}
+             <div className="grid grid-cols-2 gap-5">
+               <div className="space-y-1">
+                 <Label className={labelClass}>Rubro del gasto</Label>
+                 <Input type="text" value="Gastos de Marketing" disabled className={disabledSelectClass} />
+               </div>
 
-              <div className="space-y-1">
-                <Label className={labelClass}>
-                  Subrubro<span className="text-red-500">*</span>
-                </Label>
-                <Select value={subrubro} onValueChange={setSubrubro} disabled={isFormularioCerrado}>
-                  <SelectTrigger className={cn(isFormularioCerrado ? disabledSelectClass : selectTriggerClass, errors.subrubro && 'border-red-500')}>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUBRUBROS_MARKETING_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+               <div className="space-y-1">
+                 <Label className={labelClass}>
+                   Subrubro<span className="text-red-500">*</span>
+                 </Label>
+                 <Select value={subrubro} onValueChange={setSubrubro} disabled={isFormularioCerrado}>
+                   <SelectTrigger className={cn(isFormularioCerrado ? disabledSelectClass : selectTriggerClass, errors.subrubro && 'border-red-500')}>
+                     <SelectValue placeholder="Seleccionar" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {SUBRUBROS_MARKETING_OPTIONS.map((opt) => (
+                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+             </div>
 
-              <div className="space-y-1">
-                <Label className={labelClass}>
-                  Evento<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="text"
-                  value={nombreCampana}
-                  onChange={(e) => setNombreCampana(e.target.value)}
-                  placeholder="Buscar evento"
-                  disabled={isFormularioCerrado}
-                  className={cn(isFormularioCerrado ? disabledSelectClass : inputClass, errors.nombreCampana && 'border-red-500')}
-                />
-              </div>
-            </div>
-          </div>
+             {/* Row 3: Evento */}
+             <div className="grid grid-cols-1 gap-5">
+               <div className="space-y-1">
+                 <Label className={labelClass}>
+                   Evento<span className="text-red-500">*</span>
+                 </Label>
+                 <Input
+                   type="text"
+                   value={nombreCampana}
+                   onChange={(e) => setNombreCampana(e.target.value)}
+                   placeholder="Buscar evento"
+                   disabled={isFormularioCerrado}
+                   className={cn(isFormularioCerrado ? disabledSelectClass : inputClass, errors.nombreCampana && 'border-red-500')}
+                 />
+               </div>
+             </div>
+           </div>
 
           {/* Section 2: Carga de importes */}
           <div className="space-y-4">
@@ -522,45 +529,44 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
 
               const isGastoNew = !loadedGastoIdsRef.current.has(gasto.id);
 
-              return (
-                <GastoCard
-                  key={gasto.id}
-                  isDark={isDark}
-                  gasto={gastoData}
-                  index={index}
-                  isNew={isGastoNew}
-                  isDisabled={isDisabled}
-                  estado={gasto.estado}
-                  isCollapsed={isCollapsed}
-                  onToggleCollapse={() => toggleGastoCollapse(gasto.id)}
-                  onUpdate={(field, value) => {
-                    if (field === 'neto') updateGastoItem(gasto.id, field, Number(value) || 0);
-                    else updateGastoItem(gasto.id, field as keyof GastoItem, value);
-                  }}
-                  onCancel={() => {
-                    if (isGastoNew) {
-                      if (gastos.length > 1) removeGastoItem(gasto.id);
-                      else resetGastoItem(gasto.id);
-                    }
-                  }}
-                  onDeleteSaved={!isGastoNew ? async () => handleDeleteSavedGasto(gasto.id) : undefined}
-                  onSave={async () => {
-                    const error = validateSingleGasto(gasto, index);
-                    if (error) { toast.error(error); return; }
-                    await handleSaveGasto(gasto, index);
-                  }}
-                  isSaving={savingGastos.has(gasto.id)}
-                  showFormaPago
-                  showPais
-                  showCharacterCount
-                  showButtonsBorder
-                  maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
-                  observacionesLabel="Concepto del gasto"
-                  programOptions={availableProgramOptions}
-                  acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
-                  formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}
-                />
-              );
+               return (
+                 <GastoCard
+                   key={gasto.id}
+                   isDark={isDark}
+                   gasto={gastoData}
+                   index={index}
+                   isNew={isGastoNew}
+                   isDisabled={isDisabled}
+                   estado={gasto.estado}
+                   isCollapsed={isCollapsed}
+                   onToggleCollapse={() => toggleGastoCollapse(gasto.id)}
+                   onUpdate={(field, value) => {
+                     if (field === 'neto') updateGastoItem(gasto.id, field, Number(value) || 0);
+                     else updateGastoItem(gasto.id, field as keyof GastoItem, value);
+                   }}
+                   onCancel={() => {
+                     if (isGastoNew) {
+                       if (gastos.length > 1) removeGastoItem(gasto.id);
+                       else resetGastoItem(gasto.id);
+                     }
+                   }}
+                   onDeleteSaved={!isGastoNew ? async () => handleDeleteSavedGasto(gasto.id) : undefined}
+                   onSave={async () => {
+                     const error = validateSingleGasto(gasto, index);
+                     if (error) { toast.error(error); return; }
+                     await handleSaveGasto(gasto, index);
+                   }}
+                   isSaving={savingGastos.has(gasto.id)}
+                   showFormaPago
+                   showCharacterCount
+                   showButtonsBorder
+                   maxObservacionesLength={MAX_OBSERVACIONES_LENGTH}
+                   observacionesLabel="Concepto del gasto"
+                   programOptions={availableProgramOptions}
+                   acuerdoPagoOptions={ACUERDOS_PAGO_EXPERIENCE_OPTIONS}
+                   formaPagoOptions={FORMAS_PAGO_EXPERIENCE_OPTIONS}
+                 />
+               );
             })}
 
             <div className="flex justify-end">

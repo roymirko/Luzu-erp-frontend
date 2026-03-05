@@ -1,7 +1,7 @@
 import { cn } from '@/app/components/ui/utils';
 
 // Simple estado for programacion/experience gastos
-export type EstadoPago = 'pendiente' | 'pendiente-pago' | 'pagado' | 'pago' | 'anulado';
+export type EstadoPago = 'pendiente' | 'pendiente-pago' | 'pendiente-factura' | 'pagado' | 'pago' | 'anulado';
 
 // Complex estado for implementacion
 export type EstadoOP = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
@@ -76,31 +76,38 @@ const FORMULARIO_STATUS_CONFIG: Record<string, StatusConfig> = {
 const SIMPLE_STATUS_CONFIG: Record<string, StatusConfig> = {
   'pendiente': {
     bg: 'bg-[#fffae8]',
-    border: 'border-[#8f6e00]',
-    text: 'text-[#8f6e00]',
-    dot: 'bg-[#8f6e00]',
-    label: 'Pendiente de pago',
+    border: 'border-[#f76517]',
+    text: 'text-[#f76517]',
+    dot: 'bg-[#f76517]',
+    label: 'Pendiente de Pago',
   },
   'pendiente-pago': {
+    bg: 'bg-[#fffae8]',
+    border: 'border-[#f76517]',
+    text: 'text-[#f76517]',
+    dot: 'bg-[#f76517]',
+    label: 'Pendiente de Pago',
+  },
+  'pendiente-factura': {
     bg: 'bg-[#fffae8]',
     border: 'border-[#8f6e00]',
     text: 'text-[#8f6e00]',
     dot: 'bg-[#8f6e00]',
-    label: 'Pendiente de pago',
+    label: 'Pendiente de Factura',
   },
   'pagado': {
     bg: 'bg-[#ecffe9]',
     border: 'border-[#118f00]',
     text: 'text-[#118f00]',
     dot: 'bg-[#118f00]',
-    label: 'Pago',
+    label: 'Pagado',
   },
   'pago': {
     bg: 'bg-[#ecffe9]',
     border: 'border-[#118f00]',
     text: 'text-[#118f00]',
     dot: 'bg-[#118f00]',
-    label: 'Pago',
+    label: 'Pagado',
   },
   'anulado': {
     bg: 'bg-[#ffebef]',
@@ -125,10 +132,10 @@ function getComplexStatusConfig(estado: EstadoOP, estadoPago?: EstadoPGM): Statu
   if (estado === 'pendiente') {
     return {
       bg: 'bg-[#fffae8]',
-      border: 'border-[#8f6e00]',
-      text: 'text-[#8f6e00]',
-      dot: 'bg-[#8f6e00]',
-      label: 'Pendiente de aprobacion',
+      border: 'border-[#f76517]',
+      text: 'text-[#f76517]',
+      dot: 'bg-[#f76517]',
+      label: 'Pendiente de Pago',
     };
   }
 
@@ -139,7 +146,7 @@ function getComplexStatusConfig(estado: EstadoOP, estadoPago?: EstadoPGM): Statu
         border: 'border-[#118f00]',
         text: 'text-[#118f00]',
         dot: 'bg-[#118f00]',
-        label: 'Pago',
+        label: 'Pagado',
       };
     }
     if (estadoPago === 'anulado') {
@@ -154,10 +161,10 @@ function getComplexStatusConfig(estado: EstadoOP, estadoPago?: EstadoPGM): Statu
     // pendiente, pendiente-pago
     return {
       bg: 'bg-[#fffae8]',
-      border: 'border-[#8f6e00]',
-      text: 'text-[#8f6e00]',
-      dot: 'bg-[#8f6e00]',
-      label: 'Pendiente de pago',
+      border: 'border-[#f76517]',
+      text: 'text-[#f76517]',
+      dot: 'bg-[#f76517]',
+      label: 'Pendiente de Pago',
     };
   }
 

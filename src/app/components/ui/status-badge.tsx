@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "./utils";
 
-type StatusVariant = "success" | "warning" | "error" | "neutral" | "info";
+type StatusVariant = "success" | "warning" | "error" | "neutral" | "info" | "pending-factura";
 
 interface StatusBadgeProps {
   label: string;
@@ -9,29 +9,29 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-// Figma-based styles matching Estados de Formulario design
+// Figma-based styles matching Estados de Pago (Pendiente/Pagado/Factura)
 const variantStyles: Record<StatusVariant, { bg: string; border: string; text: string; dot: string }> = {
   success: {
-    bg: "bg-[#DCFCE7]",
-    border: "border-[#22C55E]",
-    text: "text-[#15803D]",
-    dot: "bg-[#22C55E]",
+    bg: "bg-[#ecffe9]",
+    border: "border-[#118f00]",
+    text: "text-[#118f00]",
+    dot: "bg-[#118f00]",
   },
   warning: {
-    bg: "bg-[#FEF3C7]",
-    border: "border-[#F59E0B]",
-    text: "text-[#B45309]",
-    dot: "bg-[#F59E0B]",
+    bg: "bg-[#fffae8]",
+    border: "border-[#f76517]",
+    text: "text-[#f76517]",
+    dot: "bg-[#f76517]",
   },
   error: {
-    bg: "bg-[#FEE2E2]",
-    border: "border-[#EF4444]",
-    text: "text-[#DC2626]",
-    dot: "bg-[#EF4444]",
+    bg: "bg-[#ffebef]",
+    border: "border-[#ea173e]",
+    text: "text-[#ea173e]",
+    dot: "bg-[#ea173e]",
   },
   neutral: {
     bg: "bg-[#E5E7EB]",
-    border: "border-[#E5E7EB]",
+    border: "border-[#9CA3AF]",
     text: "text-[#6B7280]",
     dot: "bg-[#6B7280]",
   },
@@ -40,6 +40,12 @@ const variantStyles: Record<StatusVariant, { bg: string; border: string; text: s
     border: "border-[#3B82F6]",
     text: "text-[#1D4ED8]",
     dot: "bg-[#3B82F6]",
+  },
+  "pending-factura": {
+    bg: "bg-[#fffae8]",
+    border: "border-[#8f6e00]",
+    text: "text-[#8f6e00]",
+    dot: "bg-[#8f6e00]",
   },
 };
 

@@ -53,7 +53,7 @@ interface GastoItem {
   formaPago: string;
   neto: number;
   observaciones: string;
-  estado: "pendiente-pago" | "pagado" | "anulado";
+  estado: "pendiente-pago" | "pendiente-factura" | "pagado" | "anulado";
 }
 
 import {
@@ -173,7 +173,7 @@ export function FormularioProgramacion({
         formaPago: g.formaPago || "",
         neto: g.neto || 0,
         observaciones: g.observaciones || "",
-        estado: g.estadoPago === "pago" ? "pagado" : "pendiente-pago",
+        estado: g.estadoPago === "pago" ? "pagado" : "pendiente-factura",
       }));
 
       setGastos(loadedGastos);
@@ -207,6 +207,17 @@ export function FormularioProgramacion({
 
   const validateSingleGasto = useCallback(
     (g: GastoItem, index: number): string | null => {
+      if (!g.formaPago?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
+      }
+      
+      if (g.formaPago === 'Efectivo (Contado)') {
+        if (!g.neto || g.neto <= 0) {
+          return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
+        }
+        return null;
+      }
+      
       if (!g.facturaEmitidaA?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
       }
@@ -216,18 +227,13 @@ export function FormularioProgramacion({
       if (!g.empresaPrograma?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
       }
-      if (!g.formaPago?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
-      }
-      // Acuerdo de pago solo requerido si forma de pago es cheque
-      if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) {
+      if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
       }
       if (!g.neto || g.neto <= 0) {
         return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
       }
       
-      // Validación cruzada: Si hay uno, debe estar el otro
       const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
       const tieneFecha = g.fechaComprobante && g.fechaComprobante.trim() !== '';
       
@@ -640,6 +646,7 @@ export function FormularioProgramacion({
             title="Cargar Datos"
             subtitle="Complete la información del nuevo formulario de Programación"
             isCerrado={isFormularioCerrado}
+            estadoLabel={gastos.length > 0 && gastos[0].estado === 'anulado' ? 'anulado' : 'cerrado'}
           />
 
           {/* Read-only fields - only visible when editing */}

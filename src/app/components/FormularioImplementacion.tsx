@@ -54,7 +54,7 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
     neto: String(gasto.neto),
     observaciones: gasto.observaciones || '',
     documentoAdjunto: gasto.adjuntos?.[0],
-    estadoPgm: gasto.estadoPago === 'pagado' ? 'pagado' : gasto.estadoPago === 'anulado' ? 'anulado' : 'pendiente',
+    estadoPgm: gasto.estadoPago === 'pagado' ? 'pagado' : gasto.estadoPago === 'anulado' ? 'anulado' : 'pendiente-factura',
   };
 }
 
@@ -197,13 +197,15 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     // Helper to initialize empty form
     const initEmptyForm = () => {
       console.log('[FormImplementacion] Inicializando formulario vacío');
+      const isEfectivo = ordenPublicidadData?.formaPago === 'Efectivo (Contado)';
+      const facturaPorDefecto = isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.';
       setImportes([{
         id: crypto.randomUUID(),
         programa: '',
         empresaPgm: '',
         itemOrdenPublicidadId: itemId,
-        facturaEmitidaA: '',
-        empresa: '',
+        facturaEmitidaA: facturaPorDefecto,
+        empresa: facturaPorDefecto,
         fechaComprobante: '',
         proveedor: '',
         razonSocial: '',
@@ -284,8 +286,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
-      const isEfectivo = imp.formaPago === 'efectivo';
-      const isTarjeta = imp.formaPago === 'tarjeta';
+      const isEfectivo = imp.formaPago === 'Efectivo (Contado)';
+      const isTarjeta = imp.formaPago === 'Tarjeta de crédito' || imp.formaPago === 'Tarjeta de débito';
 
       if (!isEfectivo) {
         if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
@@ -326,16 +328,24 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     }
   }, [importes, hasAttemptedSubmit, validateForm]);
 
+  useEffect(() => {
+    if (!ordenPublicidadData?.formaPago) return;
+    
+    const isEfectivo = ordenPublicidadData.formaPago === 'Efectivo (Contado)';
+    setFacturaEmitidaA(isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.');
+    setEmpresa(isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.');
+  }, [ordenPublicidadData?.formaPago]);
+
   const addImporte = () => {
-    // For new gastos, inherit facturaEmitidaA and empresa from global state (or last importe)
-    const lastImporte = importes[importes.length - 1];
+    const isEfectivo = ordenPublicidadData?.formaPago === 'Efectivo (Contado)';
+    const facturaPorDefecto = isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.';
     const newImporte: BloqueImporte = {
       id: crypto.randomUUID(),
       programa: '',
       empresaPgm: '',
       itemOrdenPublicidadId: itemId,
-      facturaEmitidaA: lastImporte?.facturaEmitidaA || facturaEmitidaA || '',
-      empresa: lastImporte?.empresa || empresa || '',
+      facturaEmitidaA: facturaPorDefecto,
+      empresa: facturaPorDefecto,
       fechaComprobante: new Date().toISOString().split('T')[0],
       proveedor: '',
       razonSocial: '',

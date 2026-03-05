@@ -119,13 +119,19 @@ function mapToInsertRow(input: CreateGastoInput): GastoInsertRow {
   const ivaMonto = neto * (iva / 100);
   const total = neto + ivaMonto;
 
+  // Helper to clean empty date strings
+  const cleanDateValue = (value: unknown): unknown => {
+    if (typeof value === 'string' && value.trim() === '') return null;
+    return value || null;
+  };
+
   return {
     tipo_movimiento: 'egreso',
     entidad_nombre: input.proveedor,
     entidad_cuit: null,
     tipo_comprobante: input.tipoFactura || null,
     numero_comprobante: input.numeroFactura || null,
-    fecha_comprobante: input.fechaFactura || null,
+    fecha_comprobante: cleanDateValue(input.fechaFactura),
     moneda: input.moneda || 'ARS',
     neto,
     iva_alicuota: iva,
@@ -138,7 +144,7 @@ function mapToInsertRow(input: CreateGastoInput): GastoInsertRow {
     estado: 'activo',
     estado_pago: 'creado',
     forma_pago: input.formaPago || null,
-    fecha_pago: input.fechaPago || null,
+    fecha_pago: cleanDateValue(input.fechaPago),
     factura_emitida_a: input.facturaEmitidaA || null,
     acuerdo_pago: input.acuerdoPago || null,
     created_by: input.createdBy || null,
@@ -171,7 +177,7 @@ function mapToInsertRow(input: CreateGastoInput): GastoInsertRow {
 
 export function validateCreate(input: CreateGastoInput): GastoValidationResult {
   const errors: { field: string; message: string }[] = [];
-  const isEfectivo = input.formaPago === 'efectivo';
+  const isEfectivo = input.formaPago === 'Efectivo (Contado)';
 
   if (!isEfectivo && !input.proveedor?.trim()) {
     errors.push({ field: 'proveedor', message: 'Debe seleccionar un proveedor' });
@@ -260,33 +266,46 @@ export async function createMultiple(inputs: CreateGastoInput[]): Promise<{ data
 }
 
 export async function update(input: UpdateGastoInput): Promise<{ data: Gasto | null; error: string | null }> {
-  const { id, ...fields } = input;
-  const updateData: Record<string, unknown> = {};
+   const { id, ...fields } = input;
+   const updateData: Record<string, unknown> = {};
 
-  // Core comprobante fields
-  if (fields.proveedor !== undefined) updateData.entidad_nombre = fields.proveedor;
-  if (fields.razonSocial !== undefined) updateData.entidad_nombre = fields.razonSocial;
-  if (fields.tipoFactura !== undefined) updateData.tipo_comprobante = fields.tipoFactura;
-  if (fields.numeroFactura !== undefined) updateData.numero_comprobante = fields.numeroFactura;
-  if (fields.fechaFactura !== undefined) updateData.fecha_comprobante = fields.fechaFactura;
-  if (fields.moneda !== undefined) updateData.moneda = fields.moneda;
-  if (fields.neto !== undefined) {
-    const iva = fields.iva ?? DEFAULT_IVA;
-    updateData.neto = fields.neto;
-    updateData.iva_alicuota = iva;
-    updateData.iva_monto = fields.neto * (iva / 100);
-    updateData.total = fields.neto + fields.neto * (iva / 100);
-  }
-  if (fields.empresa !== undefined) updateData.empresa = fields.empresa;
-  if (fields.conceptoGasto !== undefined) updateData.concepto = fields.conceptoGasto;
-  if (fields.observaciones !== undefined) updateData.observaciones = fields.observaciones;
-  if (fields.estado !== undefined) updateData.estado = fields.estado;
-  if (fields.estadoPago !== undefined) updateData.estado_pago = fields.estadoPago;
-  // Consolidated
-  if (fields.facturaEmitidaA !== undefined) updateData.factura_emitida_a = fields.facturaEmitidaA;
-  if (fields.acuerdoPago !== undefined) updateData.acuerdo_pago = fields.acuerdoPago;
-  if (fields.formaPago !== undefined) updateData.forma_pago = fields.formaPago;
-  if (fields.fechaPago !== undefined) updateData.fecha_pago = fields.fechaPago;
+   // Helper to validate and clean date strings (prevent empty string errors in Postgres)
+   const cleanDateField = (value: unknown): unknown => {
+     if (value === undefined) return undefined;
+     if (typeof value === 'string' && value.trim() === '') return null;
+     return value;
+   };
+
+   // Core comprobante fields
+   if (fields.proveedor !== undefined) updateData.entidad_nombre = fields.proveedor;
+   if (fields.razonSocial !== undefined) updateData.entidad_nombre = fields.razonSocial;
+   if (fields.tipoFactura !== undefined) updateData.tipo_comprobante = fields.tipoFactura;
+   if (fields.numeroFactura !== undefined) updateData.numero_comprobante = fields.numeroFactura;
+   if (fields.fechaFactura !== undefined) {
+     const cleanedDate = cleanDateField(fields.fechaFactura);
+     if (cleanedDate !== undefined) updateData.fecha_comprobante = cleanedDate;
+   }
+   if (fields.moneda !== undefined) updateData.moneda = fields.moneda;
+   if (fields.neto !== undefined) {
+     const iva = fields.iva ?? DEFAULT_IVA;
+     updateData.neto = fields.neto;
+     updateData.iva_alicuota = iva;
+     updateData.iva_monto = fields.neto * (iva / 100);
+     updateData.total = fields.neto + fields.neto * (iva / 100);
+   }
+   if (fields.empresa !== undefined) updateData.empresa = fields.empresa;
+   if (fields.conceptoGasto !== undefined) updateData.concepto = fields.conceptoGasto;
+   if (fields.observaciones !== undefined) updateData.observaciones = fields.observaciones;
+   if (fields.estado !== undefined) updateData.estado = fields.estado;
+   if (fields.estadoPago !== undefined) updateData.estado_pago = fields.estadoPago;
+   // Consolidated
+   if (fields.facturaEmitidaA !== undefined) updateData.factura_emitida_a = fields.facturaEmitidaA;
+   if (fields.acuerdoPago !== undefined) updateData.acuerdo_pago = fields.acuerdoPago;
+   if (fields.formaPago !== undefined) updateData.forma_pago = fields.formaPago;
+   if (fields.fechaPago !== undefined) {
+     const cleanedDate = cleanDateField(fields.fechaPago);
+     if (cleanedDate !== undefined) updateData.fecha_pago = cleanedDate;
+   }
   // Context columns
   if (fields.ordenPublicidadId !== undefined) updateData.orden_publicidad_id = fields.ordenPublicidadId;
   if (fields.itemOrdenPublicidadId !== undefined) updateData.item_orden_publicidad_id = fields.itemOrdenPublicidadId;
