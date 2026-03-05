@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Eye } from 'lucide-react';
 import { ActionCard } from '@/app/components/ui/action-card';
 import { TablaComprobantes } from '@/app/components/shared/TablaComprobantes';
-import { FilterToggle } from '@/app/components/ui/filter-toggle';
 import { TableHeader } from '@/app/components/ui/table-header';
+import { FilterToggle } from '@/app/components/ui/filter-toggle';
 import { Button } from '@/app/components/ui/button';
 import {
   DataTable,
@@ -54,6 +54,13 @@ function EstadoOpBadge({ estado }: { estado: string }) {
   );
 }
 
+const ADMIN_FILTER_OPTIONS = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'ordenes', label: 'Ordenes de Publicidad' },
+  { value: 'egreso', label: 'Egresos' },
+  { value: 'ingreso', label: 'Ingresos' },
+];
+
 const OP_ITEMS_PER_PAGE = 10;
 
 export function AdminFinanzas() {
@@ -63,24 +70,15 @@ export function AdminFinanzas() {
   const [loadingComp, setLoadingComp] = useState(true);
   const [ordenes, setOrdenes] = useState<OrdenPublicidad[]>([]);
   const [loadingOP, setLoadingOP] = useState(true);
-  const [opSearch, setOpSearch] = useState('');
+  const [search, setSearch] = useState('');
   const [opPage, setOpPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('ordenes');
+  const [activeFilter, setActiveFilter] = useState('todos');
 
-  const tabOptions = useMemo(() => [
-    { value: 'ordenes', label: 'Ordenes de Publicidad' },
-    { value: 'ingresos', label: 'Ingresos' },
-    { value: 'egresos', label: 'Egresos' },
-  ], []);
-
-  const ingresosFiltered = useMemo(
-    () => comprobantes.filter(c => c.tipoMovimiento === 'ingreso'),
-    [comprobantes]
-  );
-  const egresosFiltered = useMemo(
-    () => comprobantes.filter(c => c.tipoMovimiento === 'egreso'),
-    [comprobantes]
-  );
+  const handleFilterChange = (value: string) => {
+    setActiveFilter(value);
+    setSearch('');
+    setOpPage(1);
+  };
 
   const fetchComprobantes = useCallback(async () => {
     setLoadingComp(true);
@@ -124,14 +122,14 @@ export function AdminFinanzas() {
   };
 
   const filteredOrdenes = useMemo(() => {
-    if (!opSearch.trim()) return ordenes;
-    const term = opSearch.toLowerCase();
+    if (!search.trim()) return ordenes;
+    const term = search.toLowerCase();
     return ordenes.filter((op) =>
       op.ordenPublicidad?.toLowerCase().includes(term) ||
       op.nombreCampana?.toLowerCase().includes(term) ||
       op.razonSocial?.toLowerCase().includes(term)
     );
-  }, [ordenes, opSearch]);
+  }, [ordenes, search]);
 
   const opTotalPages = Math.ceil(filteredOrdenes.length / OP_ITEMS_PER_PAGE);
   const paginatedOrdenes = useMemo(() => {
@@ -139,116 +137,119 @@ export function AdminFinanzas() {
     return filteredOrdenes.slice(start, start + OP_ITEMS_PER_PAGE);
   }, [filteredOrdenes, opPage]);
 
+  const isOP = activeFilter === 'ordenes';
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <ActionCard
-          title="Nuevo Formulario"
-          description="Cargar nuevo ingreso/egreso"
-          icon={Plus}
-          onClick={() => navigate('/admin-finanzas/nuevo')}
-        />
+      <ActionCard
+        title="Nuevo Formulario"
+        description="Cargar nuevo ingreso/egreso"
+        icon={Plus}
+        onClick={() => navigate('/admin-finanzas/nuevo')}
+      />
 
-        <FilterToggle options={tabOptions} value={activeTab} onChange={setActiveTab} />
-      </div>
-
-      {activeTab === 'ordenes' && (
       <div className="space-y-4">
         <TableHeader
-          title="Órdenes de Publicidad"
-          searchValue={opSearch}
-          onSearchChange={(v) => { setOpSearch(v); setOpPage(1); }}
-          searchPlaceholder="Buscar por OP, campaña, razón social..."
-        />
+          title={isOP ? 'Órdenes de Publicidad' : 'Comprobantes'}
+          searchValue={search}
+          onSearchChange={(v) => { setSearch(v); setOpPage(1); }}
+          searchPlaceholder={isOP ? 'Buscar por OP, campaña, razón social...' : 'Buscar por entidad, concepto, campaña...'}
+        >
+          <FilterToggle
+            options={ADMIN_FILTER_OPTIONS}
+            value={activeFilter}
+            onChange={handleFilterChange}
+          />
+        </TableHeader>
 
-        <DataTable>
-          <DataTableHead>
-            <tr>
-              <DataTableHeaderCell>OP #</DataTableHeaderCell>
-              <DataTableHeaderCell>Campaña</DataTableHeaderCell>
-              <DataTableHeaderCell>Razón Social</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">Total Venta</DataTableHeaderCell>
-              <DataTableHeaderCell>Estado</DataTableHeaderCell>
-              <DataTableHeaderCell>Acciones</DataTableHeaderCell>
-            </tr>
-          </DataTableHead>
-          <DataTableBody>
-            {loadingOP ? (
-              <DataTableEmpty colSpan={6}>Cargando órdenes...</DataTableEmpty>
-            ) : paginatedOrdenes.length === 0 ? (
-              <DataTableEmpty colSpan={6}>
-                {opSearch ? 'No se encontraron órdenes' : 'No hay órdenes de publicidad'}
-              </DataTableEmpty>
-            ) : (
-              paginatedOrdenes.map((op) => (
-                <DataTableRow
-                  key={op.id}
-                  onClick={() => navigate(`/admin-finanzas/op/${op.id}`)}
-                >
-                  <DataTableCell>{op.ordenPublicidad}</DataTableCell>
-                  <DataTableCell>
-                    <div className="max-w-[200px] truncate" title={op.nombreCampana}>
-                      {op.nombreCampana || '-'}
-                    </div>
-                  </DataTableCell>
-                  <DataTableCell muted>
-                    <div className="max-w-[200px] truncate" title={op.razonSocial}>
-                      {op.razonSocial || '-'}
-                    </div>
-                  </DataTableCell>
-                  <DataTableCell className="text-right font-medium">
-                    {op.totalVenta ? formatCurrency(parseFloat(op.totalVenta)) : '-'}
-                  </DataTableCell>
-                  <DataTableCell>
-                    <EstadoOpBadge estado={op.estadoOp} />
-                  </DataTableCell>
-                  <DataTableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/admin-finanzas/op/${op.id}`);
-                      }}
-                      className={cn(
-                        'h-8 w-8 p-0',
-                        isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
-                      )}
+        {isOP ? (
+          <>
+            <DataTable>
+              <DataTableHead>
+                <tr>
+                  <DataTableHeaderCell>OP #</DataTableHeaderCell>
+                  <DataTableHeaderCell>Campaña</DataTableHeaderCell>
+                  <DataTableHeaderCell>Razón Social</DataTableHeaderCell>
+                  <DataTableHeaderCell className="text-right">Total Venta</DataTableHeaderCell>
+                  <DataTableHeaderCell>Estado</DataTableHeaderCell>
+                  <DataTableHeaderCell>Acciones</DataTableHeaderCell>
+                </tr>
+              </DataTableHead>
+              <DataTableBody>
+                {loadingOP ? (
+                  <DataTableEmpty colSpan={6}>Cargando órdenes...</DataTableEmpty>
+                ) : paginatedOrdenes.length === 0 ? (
+                  <DataTableEmpty colSpan={6}>
+                    {search ? 'No se encontraron órdenes' : 'No hay órdenes de publicidad'}
+                  </DataTableEmpty>
+                ) : (
+                  paginatedOrdenes.map((op) => (
+                    <DataTableRow
+                      key={op.id}
+                      onClick={() => navigate(`/admin-finanzas/op/${op.id}`)}
                     >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </DataTableCell>
-                </DataTableRow>
-              ))
-            )}
-          </DataTableBody>
-        </DataTable>
+                      <DataTableCell>{op.ordenPublicidad}</DataTableCell>
+                      <DataTableCell>
+                        <div className="max-w-[200px] truncate" title={op.nombreCampana}>
+                          {op.nombreCampana || '-'}
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell muted>
+                        <div className="max-w-[200px] truncate" title={op.razonSocial}>
+                          {op.razonSocial || '-'}
+                        </div>
+                      </DataTableCell>
+                      <DataTableCell className="text-right font-medium">
+                        {op.totalVenta ? formatCurrency(parseFloat(op.totalVenta)) : '-'}
+                      </DataTableCell>
+                      <DataTableCell>
+                        <EstadoOpBadge estado={op.estadoOp} />
+                      </DataTableCell>
+                      <DataTableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin-finanzas/op/${op.id}`);
+                          }}
+                          className={cn(
+                            'h-8 w-8 p-0',
+                            isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+                          )}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </DataTableCell>
+                    </DataTableRow>
+                  ))
+                )}
+              </DataTableBody>
+            </DataTable>
 
-        <DataTablePagination
-          currentPage={opPage}
-          totalPages={opTotalPages}
-          onPageChange={setOpPage}
-        />
+            <DataTablePagination
+              currentPage={opPage}
+              totalPages={opTotalPages}
+              onPageChange={setOpPage}
+            />
+          </>
+        ) : (
+          <TablaComprobantes
+            comprobantes={
+              activeFilter === 'ingreso'
+                ? comprobantes.filter(c => c.tipoMovimiento === 'ingreso')
+                : activeFilter === 'egreso'
+                  ? comprobantes.filter(c => c.tipoMovimiento === 'egreso')
+                  : comprobantes
+            }
+            loading={loadingComp}
+            onRowClick={handleRowClick}
+            hideFilter
+            hideHeader
+            externalSearch={search}
+          />
+        )}
       </div>
-      )}
-
-      {activeTab === 'ingresos' && (
-        <TablaComprobantes
-          comprobantes={ingresosFiltered}
-          loading={loadingComp}
-          onRowClick={handleRowClick}
-          title="Ingresos"
-        />
-      )}
-
-      {activeTab === 'egresos' && (
-        <TablaComprobantes
-          comprobantes={egresosFiltered}
-          loading={loadingComp}
-          onRowClick={handleRowClick}
-          title="Egresos"
-        />
-      )}
     </div>
   );
 }

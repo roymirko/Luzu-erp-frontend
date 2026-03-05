@@ -41,6 +41,9 @@ interface TablaComprobantesProps {
   loading?: boolean;
   onRowClick?: (comprobante: ComprobanteWithContext) => void;
   title?: string;
+  hideFilter?: boolean;
+  hideHeader?: boolean;
+  externalSearch?: string;
 }
 
 
@@ -162,6 +165,9 @@ export function TablaComprobantes({
   loading = false,
   onRowClick,
   title = 'Comprobantes',
+  hideFilter = false,
+  hideHeader = false,
+  externalSearch,
 }: TablaComprobantesProps) {
   const { isDark } = useTheme();
   const [filterType, setFilterType] = useState<'todos' | TipoMovimiento>('todos');
@@ -177,8 +183,9 @@ export function TablaComprobantes({
     }
 
     // Filter by search term
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
+    const activeSearch = externalSearch ?? searchTerm;
+    if (activeSearch.trim()) {
+      const term = activeSearch.toLowerCase();
       result = result.filter((c) => {
         return (
           c.entidadNombre?.toLowerCase().includes(term) ||
@@ -193,7 +200,7 @@ export function TablaComprobantes({
     }
 
     return result;
-  }, [comprobantes, filterType, searchTerm]);
+  }, [comprobantes, filterType, searchTerm, externalSearch]);
 
   const totalPages = Math.ceil(filteredComprobantes.length / ITEMS_PER_PAGE);
   const paginatedComprobantes = useMemo(() => {
@@ -213,19 +220,23 @@ export function TablaComprobantes({
 
   return (
     <div className="space-y-4">
-      <TableHeader
-        title={title}
-        searchValue={searchTerm}
-        onSearchChange={handleSearchChange}
-        searchPlaceholder="Buscar por entidad, concepto, campaña..."
-      >
-        <FilterToggle
-          options={FILTER_OPTIONS}
-          value={filterType}
-          onChange={handleFilterChange}
-          className="w-[280px]"
-        />
-      </TableHeader>
+      {!hideHeader && (
+        <TableHeader
+          title={title}
+          searchValue={searchTerm}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Buscar por entidad, concepto, campaña..."
+        >
+          {!hideFilter && (
+            <FilterToggle
+              options={FILTER_OPTIONS}
+              value={filterType}
+              onChange={handleFilterChange}
+              className="w-[280px]"
+            />
+          )}
+        </TableHeader>
+      )}
 
       <DataTable>
         <DataTableHead>
