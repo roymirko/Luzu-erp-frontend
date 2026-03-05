@@ -367,6 +367,7 @@ export interface ImplementationExpense {
     condicionPago?: string;
     neto?: number;
     fechaComprobante?: string;
+    formaPago?: string;
 }
 
 export const mapImplementationExpenseFromDB = (dbItem: any): ImplementationExpense => ({
@@ -377,7 +378,8 @@ export const mapImplementationExpenseFromDB = (dbItem: any): ImplementationExpen
     proveedorId: dbItem.proveedor_id ?? null,
     condicionPago: dbItem.condicion_pago || '',
     neto: typeof dbItem.neto === 'number' ? dbItem.neto : Number(dbItem.neto || 0),
-    fechaComprobante: dbItem.fecha_factura ? String(dbItem.fecha_factura) : ''
+    fechaComprobante: dbItem.fecha_factura ? String(dbItem.fecha_factura) : '',
+    formaPago: dbItem.forma_pago || ''
 });
 
 export const mapImplementationExpenseToDB = (item: Partial<ImplementationExpense>) => {
@@ -389,5 +391,6 @@ export const mapImplementationExpenseToDB = (item: Partial<ImplementationExpense
     if (item.condicionPago !== undefined) db.condicion_pago = item.condicionPago;
     if (item.neto !== undefined) db.neto = item.neto;
     if (item.fechaComprobante !== undefined) db.fecha_factura = item.fechaComprobante;
+    if (item.formaPago !== undefined) db.forma_pago = item.formaPago;
     return db;
 };

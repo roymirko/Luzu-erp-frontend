@@ -14,28 +14,16 @@ export type EstadoComprobante = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
 export type EstadoPago = 'creado' | 'aprobado' | 'requiere_info' | 'rechazado' | 'pagado';
 export type Moneda = 'ARS' | 'USD';
 export type TipoGasto = 'implementacion' | 'programacion' | 'experience';
-export type FormaPago = 'transferencia' | 'cheque' | 'efectivo' | 'tarjeta' | 'otro';
-export type CondicionIva =
-  | 'responsable_inscripto'
-  | 'monotributista'
-  | 'exento'
-  | 'consumidor_final'
-  | 'no_responsable';
-
-export const CONDICION_IVA_LABELS: Record<CondicionIva, string> = {
-  responsable_inscripto: 'Responsable Inscripto',
-  monotributista: 'Monotributista',
-  exento: 'Exento',
-  consumidor_final: 'Consumidor Final',
-  no_responsable: 'No Responsable',
-};
+export type FormaPago = 'Transferencia (Adelantado)' | 'Tarjeta de crédito' | 'Tarjeta de débito' | 'Efectivo (Contado)' | 'Débito automático' | 'e check' | 'Pago Mis cuentas';
 
 export const FORMA_PAGO_LABELS: Record<FormaPago, string> = {
-  transferencia: 'Transferencia',
-  cheque: 'Cheque',
-  efectivo: 'Efectivo',
-  tarjeta: 'Tarjeta',
-  otro: 'Otro',
+  'Transferencia (Adelantado)': 'Transferencia (Adelantado)',
+  'Tarjeta de crédito': 'Tarjeta de crédito',
+  'Tarjeta de débito': 'Tarjeta de débito',
+  'Efectivo (Contado)': 'Efectivo (Contado)',
+  'Débito automático': 'Débito automático',
+  'e check': 'e check',
+  'Pago Mis cuentas': 'Pago Mis cuentas',
 };
 
 /**

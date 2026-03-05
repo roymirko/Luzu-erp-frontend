@@ -209,7 +209,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
     }
     
-    if (g.formaPago === 'efectivo') {
+    if (g.formaPago === 'Efectivo (Contado)') {
       if (!g.neto || g.neto <= 0) {
         return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
       }
@@ -225,7 +225,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     if (!g.empresaPrograma?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
     }
-    if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) {
+    if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     }
     if (!g.neto || g.neto <= 0) {

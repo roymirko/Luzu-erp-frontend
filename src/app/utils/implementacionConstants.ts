@@ -32,10 +32,13 @@ export const ACUERDOS_PAGO_OPTIONS: FormSelectOption[] = [
 ];
 
 export const FORMAS_PAGO_OPTIONS: FormSelectOption[] = [
-  { value: 'efectivo', label: 'Efectivo' },
-  { value: 'transferencia', label: 'Transferencia' },
-  { value: 'cheque', label: 'Cheque' },
-  { value: 'tarjeta', label: 'Tarjeta' },
+  { value: 'Transferencia (Adelantado)', label: 'Transferencia (Adelantado)' },
+  { value: 'Tarjeta de crédito', label: 'Tarjeta de crédito' },
+  { value: 'Tarjeta de débito', label: 'Tarjeta de débito' },
+  { value: 'Efectivo (Contado)', label: 'Efectivo (Contado)' },
+  { value: 'Débito automático', label: 'Débito automático' },
+  { value: 'e check', label: 'e check' },
+  { value: 'Pago Mis cuentas', label: 'Pago Mis cuentas' },
 ];
 
 export const FORMAS_PAGO_COMERCIAL_OPTIONS: FormSelectOption[] = [
@@ -75,9 +78,13 @@ export const ACUERDOS_PAGO_EXPERIENCE_OPTIONS: FormSelectOption[] = [
 ];
 
 export const FORMAS_PAGO_EXPERIENCE_OPTIONS: FormSelectOption[] = [
-  { value: 'cheque', label: 'Cheque' },
-  { value: 'transferencia', label: 'Transferencia' },
-  { value: 'efectivo', label: 'Efectivo' },
+  { value: 'Transferencia (Adelantado)', label: 'Transferencia (Adelantado)' },
+  { value: 'Tarjeta de crédito', label: 'Tarjeta de crédito' },
+  { value: 'Tarjeta de débito', label: 'Tarjeta de débito' },
+  { value: 'Efectivo (Contado)', label: 'Efectivo (Contado)' },
+  { value: 'Débito automático', label: 'Débito automático' },
+  { value: 'e check', label: 'e check' },
+  { value: 'Pago Mis cuentas', label: 'Pago Mis cuentas' },
 ];
 
 export const PROGRAMAS_EXPERIENCE_OPTIONS: FormSelectOption[] = [

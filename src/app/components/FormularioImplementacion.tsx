@@ -284,8 +284,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
-      const isEfectivo = imp.formaPago === 'efectivo';
-      const isTarjeta = imp.formaPago === 'tarjeta';
+      const isEfectivo = imp.formaPago === 'Efectivo (Contado)';
+      const isTarjeta = imp.formaPago === 'Tarjeta de crédito' || imp.formaPago === 'Tarjeta de débito';
 
       if (!isEfectivo) {
         if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';

@@ -171,7 +171,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
   const validateSingleGasto = (g: GastoItem, index: number): string | null => {
     if (!g.formaPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
     
-    if (g.formaPago === 'efectivo') {
+    if (g.formaPago === 'Efectivo (Contado)') {
       if (!g.neto || g.neto <= 0) return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
       return null;
     }
@@ -179,7 +179,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
     if (!g.facturaEmitidaA?.trim()) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
     if (!g.empresa?.trim()) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
     if (!g.empresaPrograma?.trim()) return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
-    if (g.formaPago === 'cheque' && !g.acuerdoPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
+    if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     if (!g.neto || g.neto <= 0) return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
     
     const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';
