@@ -141,14 +141,16 @@ export function AdminFinanzas() {
 
   return (
     <div className="space-y-6">
-      <ActionCard
-        title="Nuevo Formulario"
-        description="Cargar nuevo ingreso/egreso"
-        icon={Plus}
-        onClick={() => navigate('/admin-finanzas/nuevo')}
-      />
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <ActionCard
+          title="Nuevo Formulario"
+          description="Cargar nuevo ingreso/egreso"
+          icon={Plus}
+          onClick={() => navigate('/admin-finanzas/nuevo')}
+        />
 
-      <FilterToggle options={tabOptions} value={activeTab} onChange={setActiveTab} />
+        <FilterToggle options={tabOptions} value={activeTab} onChange={setActiveTab} />
+      </div>
 
       {activeTab === 'ordenes' && (
       <div className="space-y-4">
