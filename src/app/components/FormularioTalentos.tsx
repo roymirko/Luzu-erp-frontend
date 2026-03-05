@@ -172,26 +172,28 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
 
     if (dataLoadedRef.current) return;
 
-    const initEmptyForm = () => {
-      setImportes([{
-        id: crypto.randomUUID(),
-        programa: '',
-        empresaPgm: '',
-        itemOrdenPublicidadId: itemId,
-        facturaEmitidaA: '',
-        empresa: '',
-        fechaComprobante: '',
-        proveedor: '',
-        razonSocial: '',
-        condicionPago: '30',
-        numeroComprobante: '',
-        formaPago: '',
-        neto: '',
-        observaciones: '',
-        estadoPgm: 'pendiente',
-      }]);
-      dataLoadedRef.current = true;
-    };
+     const initEmptyForm = () => {
+       const isEfectivo = ordenPublicidadData?.formaPago === 'Efectivo (Contado)';
+       const facturaPorDefecto = isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.';
+       setImportes([{
+         id: crypto.randomUUID(),
+         programa: '',
+         empresaPgm: '',
+         itemOrdenPublicidadId: itemId,
+         facturaEmitidaA: facturaPorDefecto,
+         empresa: facturaPorDefecto,
+         fechaComprobante: '',
+         proveedor: '',
+         razonSocial: '',
+         condicionPago: '30',
+         numeroComprobante: '',
+         formaPago: '',
+         neto: '',
+         observaciones: '',
+         estadoPgm: 'pendiente',
+       }]);
+       dataLoadedRef.current = true;
+     };
 
     const loadGastos = (gastos: GastoTalentos[]) => {
       const sortedGastos = [...gastos].sort(
@@ -273,15 +275,24 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
     if (hasAttemptedSubmit) setErrors(validateForm());
   }, [importes, hasAttemptedSubmit, validateForm]);
 
+  useEffect(() => {
+    if (!ordenPublicidadData?.formaPago) return;
+    
+    const isEfectivo = ordenPublicidadData.formaPago === 'Efectivo (Contado)';
+    setFacturaEmitidaA(isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.');
+    setEmpresa(isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.');
+  }, [ordenPublicidadData?.formaPago]);
+
   const addImporte = () => {
-    const lastImporte = importes[importes.length - 1];
+    const isEfectivo = ordenPublicidadData?.formaPago === 'Efectivo (Contado)';
+    const facturaPorDefecto = isEfectivo ? 'LUZU TV SF' : 'LUZU TV S. A.';
     setImportes((prev) => [...prev, {
       id: crypto.randomUUID(),
       programa: '',
       empresaPgm: '',
       itemOrdenPublicidadId: itemId,
-      facturaEmitidaA: lastImporte?.facturaEmitidaA || facturaEmitidaA || '',
-      empresa: lastImporte?.empresa || empresa || '',
+      facturaEmitidaA: facturaPorDefecto,
+      empresa: facturaPorDefecto,
       fechaComprobante: new Date().toISOString().split('T')[0],
       proveedor: '',
       razonSocial: '',
