@@ -433,7 +433,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           {/* Read-only fields for edit mode */}
           {isEditing && (
             <div className="grid grid-cols-3 gap-5">
-              <div className="space-y-1">
+              <div className="space-y-1 hidden">
                 <Label className={labelClass}>Responsable</Label>
                 <Input
                   type="text"
@@ -442,11 +442,11 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
                   className={disabledSelectClass}
                 />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 hidden">
                 <Label className={labelClass}>Fecha de Registro</Label>
                 <Input type="text" value={formatDateDisplay(existingFormulario?.fechaRegistro)} disabled className={disabledSelectClass} />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 hidden">
                 <Label className={labelClass}>Sector</Label>
                 <Input type="text" value="Marketing" disabled className={disabledSelectClass} />
               </div>
