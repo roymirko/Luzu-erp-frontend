@@ -48,6 +48,11 @@ function mapFromDB(row: OrdenPublicidadWithItems): OrdenPublicidad {
     nombreCampana: row.nombre_campana || '',
     acuerdoPago: row.acuerdo_pago || '',
     tipoImporte: row.tipo_importe || 'factura',
+    formaPago: row.forma_pago || '',
+    numeroComprobante: row.numero_comprobante || '',
+    fechaComprobante: row.fecha_comprobante || '',
+    facturaEmitidaA: row.factura_emitida_a || '',
+    empresa: row.empresa || '',
     observaciones: row.observaciones || '',
     estadoOp: row.estado_op || 'pendiente',
     items: (row.items_orden_publicidad || []).map(mapItemFromDB),
@@ -75,6 +80,11 @@ function mapToDBInsert(input: CreateOrdenPublicidadInput): OrdenPublicidadInsert
     nombre_campana: input.nombreCampana,
     acuerdo_pago: input.acuerdoPago,
     tipo_importe: input.tipoImporte,
+    forma_pago: input.formaPago || null,
+    numero_comprobante: input.numeroComprobante || null,
+    fecha_comprobante: input.fechaComprobante || null,
+    factura_emitida_a: input.facturaEmitidaA || null,
+    empresa: input.empresa || null,
     observaciones: input.observaciones || null,
     creado_por: input.createdBy || null,
   };
@@ -126,7 +136,8 @@ export function validateCreate(input: CreateOrdenPublicidadInput): OrdenPublicid
   if (!input.unidadNegocio?.trim()) {
     errors.push({ field: 'unidadNegocio', message: 'La unidad de negocio es requerida' });
   }
-  if (!input.razonSocial?.trim()) {
+  // razonSocial solo es requerido si forma de pago NO es Efectivo
+  if (input.formaPago !== 'Efectivo (Contado)' && !input.razonSocial?.trim()) {
     errors.push({ field: 'razonSocial', message: 'La razón social es requerida' });
   }
   if (!input.nombreCampana?.trim()) {
@@ -215,9 +226,14 @@ export async function update(input: UpdateOrdenPublicidadInput): Promise<{ data:
   if (ordenFields.empresaAgencia !== undefined) updateData.empresa_agencia = ordenFields.empresaAgencia;
   if (ordenFields.marca !== undefined) updateData.marca = ordenFields.marca;
   if (ordenFields.nombreCampana !== undefined) updateData.nombre_campana = ordenFields.nombreCampana;
-  if (ordenFields.acuerdoPago !== undefined) updateData.acuerdo_pago = ordenFields.acuerdoPago;
-  if (ordenFields.tipoImporte !== undefined) updateData.tipo_importe = ordenFields.tipoImporte;
-  if (ordenFields.observaciones !== undefined) updateData.observaciones = ordenFields.observaciones;
+   if (ordenFields.acuerdoPago !== undefined) updateData.acuerdo_pago = ordenFields.acuerdoPago;
+   if (ordenFields.tipoImporte !== undefined) updateData.tipo_importe = ordenFields.tipoImporte;
+   if (ordenFields.formaPago !== undefined) updateData.forma_pago = ordenFields.formaPago || null;
+   if (ordenFields.numeroComprobante !== undefined) updateData.numero_comprobante = ordenFields.numeroComprobante || null;
+   if (ordenFields.fechaComprobante !== undefined) updateData.fecha_comprobante = ordenFields.fechaComprobante || null;
+   if (ordenFields.facturaEmitidaA !== undefined) updateData.factura_emitida_a = ordenFields.facturaEmitidaA || null;
+   if (ordenFields.empresa !== undefined) updateData.empresa = ordenFields.empresa || null;
+   if (ordenFields.observaciones !== undefined) updateData.observaciones = ordenFields.observaciones;
 
   const ordenResult = await ordenesRepo.update(id, updateData);
   if (ordenResult.error) {
