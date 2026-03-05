@@ -71,15 +71,33 @@ export function ProgramaCard({
   };
 
   const handleNcProgramaChange = (rowId: string, ncPrograma: string) => {
-    setImporteRows(rows => rows.map(r => {
-      if (r.id === rowId) {
+    setImporteRows(rows => {
+      const editedRowIndex = rows.findIndex(r => r.id === rowId);
+      const isEditingFirstProgram = editedRowIndex === 0;
+      
+      // Calcular el % basado en el ncPrograma del primer programa
+      const firstRowMonto = parseFloat(rows[0].monto.replace(/[^0-9.-]/g, '')) || 0;
+      const ncValue = parseFloat(ncPrograma.replace(/[^0-9.-]/g, '')) || 0;
+      const calculatedPercentage = firstRowMonto > 0 ? ((ncValue / firstRowMonto) * 100).toFixed(2) : '0';
+      
+      return rows.map((r, idx) => {
         const monto = parseFloat(r.monto.replace(/[^0-9.-]/g, '')) || 0;
-        const nc = parseFloat(ncPrograma.replace(/[^0-9.-]/g, '')) || 0;
-        const ncPorcentaje = monto > 0 ? ((nc / monto) * 100).toFixed(2) : '0';
-        return { ...r, ncPrograma, ncPorcentaje };
-      }
-      return r;
-    }));
+
+        if (r.id === rowId) {
+          // Actualizar el programa editado (primer programa)
+          return { ...r, ncPrograma, ncPorcentaje: calculatedPercentage };
+        }
+
+        if (isEditingFirstProgram) {
+          // PROPAGACIÓN: Si el primer programa fue editado, propagar % a todos los otros programas
+          // Cada programa recalcula su ncPrograma basado en su monto × % del primer programa
+          const otherNcPrograma = (monto * parseFloat(calculatedPercentage) / 100).toString();
+          return { ...r, ncPorcentaje: calculatedPercentage, ncPrograma: otherNcPrograma };
+        }
+
+        return r;
+      });
+    });
   };
 
   const calculateFeePercentage = (montoValue: number, feeProgramaValue: number): string => {
@@ -132,7 +150,12 @@ export function ProgramaCard({
         const monto = parseFloat(montoValue.replace(/[^0-9.-]/g, '')) || 0;
         const fee = parseFloat(r.feePrograma.replace(/[^0-9.-]/g, '')) || 0;
         const feePorcentaje = calculateFeePercentage(monto, fee);
-        return { ...r, monto: montoValue, feePorcentaje };
+        
+        // Recalcular ncPrograma cuando cambia monto
+        const ncPct = parseFloat(r.ncPorcentaje) || 0;
+        const ncPrograma = (monto * ncPct / 100).toString();
+        
+        return { ...r, monto: montoValue, feePorcentaje, ncPrograma };
       }
       return r;
     }));
@@ -227,22 +250,23 @@ export function ProgramaCard({
              />
            </div>
 
-          <div className="space-y-1.5">
-            <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>NC Programa</Label>
-            <Input
-              type="text"
-              value={row.ncPrograma ? formatPesosInput(row.ncPrograma) : ''}
-              onChange={(e) => {
-                const value = getNumericValue(e.target.value);
-                handleNcProgramaChange(row.id, value);
-              }}
-              placeholder="$ 0"
-              className={`h-9 text-sm ${isDark
-                ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
-                : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }`}
-            />
-          </div>
+           <div className="space-y-1.5">
+             <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>NC Programa</Label>
+             <Input
+               type="text"
+               value={row.ncPrograma ? formatPesosInput(row.ncPrograma) : ''}
+               onChange={(e) => {
+                 const value = getNumericValue(e.target.value);
+                 handleNcProgramaChange(row.id, value);
+               }}
+               placeholder="$ 0"
+               disabled={!isFirstProgram}
+               className={`h-9 text-sm ${isDark
+                 ? 'bg-[#1e1e1e] border-gray-700 text-white placeholder:text-gray-600'
+                 : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
+                 } ${!isFirstProgram ? 'opacity-60 cursor-not-allowed' : ''}`}
+             />
+           </div>
 
           <div className="space-y-1.5">
             <Label className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>%</Label>
