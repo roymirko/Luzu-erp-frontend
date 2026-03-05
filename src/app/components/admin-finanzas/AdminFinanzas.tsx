@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Eye } from 'lucide-react';
 import { ActionCard } from '@/app/components/ui/action-card';
 import { TablaComprobantes } from '@/app/components/shared/TablaComprobantes';
+import { FilterToggle } from '@/app/components/ui/filter-toggle';
 import { TableHeader } from '@/app/components/ui/table-header';
 import { Button } from '@/app/components/ui/button';
 import {
@@ -64,6 +65,22 @@ export function AdminFinanzas() {
   const [loadingOP, setLoadingOP] = useState(true);
   const [opSearch, setOpSearch] = useState('');
   const [opPage, setOpPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('ordenes');
+
+  const tabOptions = useMemo(() => [
+    { value: 'ordenes', label: 'Ordenes de Publicidad' },
+    { value: 'ingresos', label: 'Ingresos' },
+    { value: 'egresos', label: 'Egresos' },
+  ], []);
+
+  const ingresosFiltered = useMemo(
+    () => comprobantes.filter(c => c.tipoMovimiento === 'ingreso'),
+    [comprobantes]
+  );
+  const egresosFiltered = useMemo(
+    () => comprobantes.filter(c => c.tipoMovimiento === 'egreso'),
+    [comprobantes]
+  );
 
   const fetchComprobantes = useCallback(async () => {
     setLoadingComp(true);
@@ -131,7 +148,9 @@ export function AdminFinanzas() {
         onClick={() => navigate('/admin-finanzas/nuevo')}
       />
 
-      {/* OP Table */}
+      <FilterToggle options={tabOptions} value={activeTab} onChange={setActiveTab} />
+
+      {activeTab === 'ordenes' && (
       <div className="space-y-4">
         <TableHeader
           title="Órdenes de Publicidad"
@@ -209,13 +228,25 @@ export function AdminFinanzas() {
           onPageChange={setOpPage}
         />
       </div>
+      )}
 
-      <TablaComprobantes
-        comprobantes={comprobantes}
-        loading={loadingComp}
-        onRowClick={handleRowClick}
-        title="Comprobantes"
-      />
+      {activeTab === 'ingresos' && (
+        <TablaComprobantes
+          comprobantes={ingresosFiltered}
+          loading={loadingComp}
+          onRowClick={handleRowClick}
+          title="Ingresos"
+        />
+      )}
+
+      {activeTab === 'egresos' && (
+        <TablaComprobantes
+          comprobantes={egresosFiltered}
+          loading={loadingComp}
+          onRowClick={handleRowClick}
+          title="Egresos"
+        />
+      )}
     </div>
   );
 }
