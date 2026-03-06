@@ -137,11 +137,11 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
        if (formularioGastos.length > 0) {
-         const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
-           id: g.id,
-           facturaEmitidaA: g.facturaEmitidaA || '',
-           empresa: g.empresaContext || '',
-           empresaPrograma: g.empresaPrograma || '',
+          const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
+            id: g.id,
+            facturaEmitidaA: g.facturaEmitidaA || '',
+            empresa: g.empresa || '',
+            empresaPrograma: g.empresaPrograma || '',
             fechaComprobante: g.fechaFactura || '',
            razonSocial: g.razonSocial || '',
            proveedor: g.proveedor || '',
@@ -344,7 +344,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
             id: g.id,
             ...(i === 0 ? { nombreCampana, subrubro } : {}),
             proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, observaciones: g.observaciones,
-            facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa, empresaPrograma: g.empresaPrograma,
+            facturaEmitidaA: g.facturaEmitidaA, empresa: g.empresa, empresaPrograma: g.empresaPrograma,
             fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
             numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
           });
@@ -355,7 +355,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           for (const g of gastosToCreate) {
             const result = await addGastoToFormulario(formularioId, {
               proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, observaciones: g.observaciones,
-              facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa, empresaPrograma: g.empresaPrograma,
+              facturaEmitidaA: g.facturaEmitidaA, empresa: g.empresa, empresaPrograma: g.empresaPrograma,
               fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
               numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
               createdBy: currentUser?.id,
@@ -371,7 +371,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
       } else {
         const gastosToCreate = gastos.map((g) => ({
           proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, empresa: g.empresa,
-          observaciones: g.observaciones, facturaEmitidaA: g.facturaEmitidaA, empresaContext: g.empresa,
+          observaciones: g.observaciones, facturaEmitidaA: g.facturaEmitidaA, empresa: g.empresa,
           empresaPrograma: g.empresaPrograma, fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
           numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
         }));

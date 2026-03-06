@@ -163,12 +163,12 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
 
       if (formularioGastos.length > 0) {
         // Map existing gastos to GastoItem format
-        const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
-          id: g.id,
-          facturaEmitidaA: g.facturaEmitidaA || '',
-          empresa: g.empresaContext || '',
-          empresaPrograma: g.empresaPrograma || '',
-           fechaComprobante: g.fechaFactura || '',
+         const mappedGastos: GastoItem[] = formularioGastos.map((g) => ({
+           id: g.id,
+           facturaEmitidaA: g.facturaEmitidaA || '',
+           empresa: g.empresa || '',
+           empresaPrograma: g.empresaPrograma || '',
+            fechaComprobante: g.fechaFactura || '',
           razonSocial: g.razonSocial || '',
           proveedor: g.proveedor || '',
           acuerdoPago: g.acuerdoPago || '',
@@ -500,16 +500,16 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             // Only update formulario fields on the first gasto to avoid conflicts
             ...(i === 0 ? { nombreCampana, subrubro } : {}),
             proveedor: g.proveedor,
-            razonSocial: g.razonSocial,
-            neto: g.neto,
-            observaciones: g.observaciones,
-            facturaEmitidaA: g.facturaEmitidaA,
-            empresaContext: g.empresa,
-            empresaPrograma: g.empresaPrograma,
-            fechaComprobante: g.fechaComprobante,
-            acuerdoPago: g.acuerdoPago,
-            numeroFactura: g.numeroComprobante || undefined,
-            formaPago: g.formaPago,
+             razonSocial: g.razonSocial,
+             neto: g.neto,
+             observaciones: g.observaciones,
+             facturaEmitidaA: g.facturaEmitidaA,
+             empresa: g.empresa,
+             empresaPrograma: g.empresaPrograma,
+             fechaComprobante: g.fechaComprobante,
+             acuerdoPago: g.acuerdoPago,
+             numeroFactura: g.numeroComprobante || undefined,
+             formaPago: g.formaPago,
             pais: g.pais,
           });
 
@@ -525,16 +525,16 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           for (const g of gastosToCreate) {
             const result = await addGastoToFormulario(formularioId, {
               proveedor: g.proveedor,
-              razonSocial: g.razonSocial,
-              neto: g.neto,
-              observaciones: g.observaciones,
-              facturaEmitidaA: g.facturaEmitidaA,
-              empresaContext: g.empresa,
-              empresaPrograma: g.empresaPrograma,
-              fechaComprobante: g.fechaComprobante,
-              acuerdoPago: g.acuerdoPago,
-              numeroFactura: g.numeroComprobante || undefined,
-              formaPago: g.formaPago,
+               razonSocial: g.razonSocial,
+               neto: g.neto,
+               observaciones: g.observaciones,
+               facturaEmitidaA: g.facturaEmitidaA,
+               empresa: g.empresa,
+               empresaPrograma: g.empresaPrograma,
+               fechaComprobante: g.fechaComprobante,
+               acuerdoPago: g.acuerdoPago,
+               numeroFactura: g.numeroComprobante || undefined,
+               formaPago: g.formaPago,
               pais: g.pais,
               createdBy: currentUser?.id,
             });
@@ -557,18 +557,17 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       } else {
         // Create new gastos
         const gastosToCreate = gastos.map((g) => ({
-          proveedor: g.proveedor,
-          razonSocial: g.razonSocial,
-          neto: g.neto,
-          empresa: g.empresa,
-          observaciones: g.observaciones,
-          facturaEmitidaA: g.facturaEmitidaA,
-          empresaContext: g.empresa,
-          empresaPrograma: g.empresaPrograma,
-          fechaComprobante: g.fechaComprobante,
-          acuerdoPago: g.acuerdoPago,
-          numeroFactura: g.numeroComprobante || undefined,
-          formaPago: g.formaPago,
+           proveedor: g.proveedor,
+           razonSocial: g.razonSocial,
+           neto: g.neto,
+           empresa: g.empresa,
+           observaciones: g.observaciones,
+           facturaEmitidaA: g.facturaEmitidaA,
+           empresaPrograma: g.empresaPrograma,
+           fechaComprobante: g.fechaComprobante,
+           acuerdoPago: g.acuerdoPago,
+           numeroFactura: g.numeroComprobante || undefined,
+           formaPago: g.formaPago,
           pais: g.pais,
         }));
 
