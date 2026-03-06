@@ -374,7 +374,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       itemOrdenPublicidadId: itemId,
       facturaEmitidaA: facturaPorDefecto,
       empresa: facturaPorDefecto,
-      fechaComprobante: new Date().toISOString().split('T')[0],
+      fechaComprobante: '',
       proveedor: '',
       razonSocial: '',
       condicionPago: '30',

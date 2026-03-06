@@ -346,7 +346,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       itemOrdenPublicidadId: itemId,
       facturaEmitidaA: facturaPorDefecto,
       empresa: facturaPorDefecto,
-      fechaComprobante: new Date().toISOString().split('T')[0],
+      fechaComprobante: '',
       proveedor: '',
       razonSocial: '',
       condicionPago: '30',

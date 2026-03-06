@@ -118,6 +118,7 @@ export interface CreateGastoInput {
   facturaEmitidaA?: string;
   acuerdoPago?: string;
   formaPago?: string;
+  fechaComprobante?: string;
   fechaPago?: string;
   // OP-linked context
   ordenPublicidadId?: string;

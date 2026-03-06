@@ -99,7 +99,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
       facturaEmitidaA: '',
       empresa: '',
       empresaPrograma: '',
-      fechaComprobante: new Date().toISOString().split('T')[0],
+      fechaComprobante: '',
       razonSocial: '',
       proveedor: '',
       acuerdoPago: '',
@@ -142,7 +142,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
            facturaEmitidaA: g.facturaEmitidaA || '',
            empresa: g.empresaContext || '',
            empresaPrograma: g.empresaPrograma || '',
-           fechaComprobante: g.fechaComprobante || '',
+            fechaComprobante: g.fechaFactura || '',
            razonSocial: g.razonSocial || '',
            proveedor: g.proveedor || '',
            acuerdoPago: g.acuerdoPago || '',
@@ -234,7 +234,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
     setGastos((prev) =>
       prev.map((g) =>
         g.id === id
-          ? { ...g, facturaEmitidaA: '', empresa: '', empresaPrograma: '', fechaComprobante: new Date().toISOString().split('T')[0], razonSocial: '', proveedor: '', acuerdoPago: '', numeroComprobante: '', formaPago: '', /* pais: 'argentina' */ neto: 0, observaciones: '' }
+          ? { ...g, facturaEmitidaA: '', empresa: '', empresaPrograma: '', fechaComprobante: '', razonSocial: '', proveedor: '', acuerdoPago: '', numeroComprobante: '', formaPago: '', /* pais: 'argentina' */ neto: 0, observaciones: '' }
           : g
       )
     );

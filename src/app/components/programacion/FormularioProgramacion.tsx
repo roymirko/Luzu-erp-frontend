@@ -167,7 +167,7 @@ export function FormularioProgramacion({
         facturaEmitidaA: g.facturaEmitidaA || g.cliente || "",
         empresa: g.empresa || "",
         empresaPrograma: g.categoria || "",
-        fechaComprobante: g.fechaFactura ? new Date(g.fechaFactura).toISOString().split("T")[0] : "",
+        fechaComprobante: g.fechaFactura || "",
         acuerdoPago: g.acuerdoPago || "",
         numeroComprobante: g.numeroFactura || "",
         formaPago: g.formaPago || "",

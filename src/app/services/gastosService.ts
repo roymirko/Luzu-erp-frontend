@@ -131,7 +131,7 @@ function mapToInsertRow(input: CreateGastoInput): GastoInsertRow {
     entidad_cuit: null,
     tipo_comprobante: input.tipoFactura || null,
     numero_comprobante: input.numeroFactura || null,
-    fecha_comprobante: cleanDateValue(input.fechaFactura),
+    fecha_comprobante: cleanDateValue(input.fechaComprobante || input.fechaFactura),
     moneda: input.moneda || 'ARS',
     neto,
     iva_alicuota: iva,
@@ -302,11 +302,15 @@ export async function update(input: UpdateGastoInput): Promise<{ data: Gasto | n
    if (fields.facturaEmitidaA !== undefined) updateData.factura_emitida_a = fields.facturaEmitidaA;
    if (fields.acuerdoPago !== undefined) updateData.acuerdo_pago = fields.acuerdoPago;
    if (fields.formaPago !== undefined) updateData.forma_pago = fields.formaPago;
-   if (fields.fechaPago !== undefined) {
-     const cleanedDate = cleanDateField(fields.fechaPago);
-     if (cleanedDate !== undefined) updateData.fecha_pago = cleanedDate;
-   }
-  // Context columns
+    if (fields.fechaPago !== undefined) {
+      const cleanedDate = cleanDateField(fields.fechaPago);
+      if (cleanedDate !== undefined) updateData.fecha_pago = cleanedDate;
+    }
+    if (fields.fechaComprobante !== undefined) {
+      const cleanedDate = cleanDateField(fields.fechaComprobante);
+      if (cleanedDate !== undefined) updateData.fecha_comprobante = cleanedDate;
+    }
+   // Context columns
   if (fields.ordenPublicidadId !== undefined) updateData.orden_publicidad_id = fields.ordenPublicidadId;
   if (fields.itemOrdenPublicidadId !== undefined) updateData.item_orden_publicidad_id = fields.itemOrdenPublicidadId;
   if (fields.sector !== undefined) updateData.sector = fields.sector;
