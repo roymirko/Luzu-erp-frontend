@@ -162,10 +162,12 @@ export async function deleteItemById(id: string): Promise<RepositoryResult<null>
   return { data: null, error: error ? mapSupabaseError(error) : null };
 }
 
-export async function updateEstadoOp(id: string, estadoOp: string): Promise<RepositoryResult<OrdenPublicidadRow>> {
+export async function updateEstadoOp(id: string, estadoOp: string, observacionesAdmin?: string): Promise<RepositoryResult<OrdenPublicidadRow>> {
+  const updateData: Record<string, unknown> = { estado_op: estadoOp, fecha_actualizacion: new Date().toISOString() };
+  if (observacionesAdmin !== undefined) updateData.observaciones_admin = observacionesAdmin;
   const { data, error } = await supabase
     .from(TABLE_NAME)
-    .update({ estado_op: estadoOp, fecha_actualizacion: new Date().toISOString() })
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();

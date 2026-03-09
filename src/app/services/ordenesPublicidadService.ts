@@ -55,6 +55,7 @@ function mapFromDB(row: OrdenPublicidadWithItems): OrdenPublicidad {
     empresa: row.empresa || '',
     observaciones: row.observaciones || '',
     estadoOp: row.estado_op || 'pendiente',
+    observacionesAdmin: row.observaciones_admin || undefined,
     items: (row.items_orden_publicidad || []).map(mapItemFromDB),
     createdAt: new Date(row.fecha_creacion),
     updatedAt: new Date(row.fecha_actualizacion),
@@ -324,8 +325,16 @@ export async function remove(id: string): Promise<{ success: boolean; error: str
   return { success: true, error: null };
 }
 
-export async function updateEstadoOp(id: string, estado: 'pendiente' | 'aprobado' | 'rechazado'): Promise<{ success: boolean; error: string | null }> {
-  const result = await ordenesRepo.updateEstadoOp(id, estado);
+export async function updateEstadoOp(id: string, estado: 'pendiente' | 'aprobado' | 'rechazado', observacionesAdmin?: string): Promise<{ success: boolean; error: string | null }> {
+  const result = await ordenesRepo.updateEstadoOp(id, estado, observacionesAdmin);
+  if (result.error) {
+    return { success: false, error: result.error.message };
+  }
+  return { success: true, error: null };
+}
+
+export async function saveObservacionesAdmin(id: string, observacionesAdmin: string): Promise<{ success: boolean; error: string | null }> {
+  const result = await ordenesRepo.update(id, { observaciones_admin: observacionesAdmin });
   if (result.error) {
     return { success: false, error: result.error.message };
   }

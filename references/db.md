@@ -141,6 +141,8 @@ CREATE TABLE ordenes_publicidad (
   acuerdo_pago TEXT,
   tipo_importe TEXT CHECK (tipo_importe IN ('canje', 'factura')),
   observaciones TEXT,
+  estado_op TEXT CHECK (estado_op IN ('pendiente', 'aprobado', 'rechazado')) DEFAULT 'pendiente',
+  observaciones_admin TEXT,
   fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
   fecha_actualizacion TIMESTAMPTZ DEFAULT NOW(),
   creado_por TEXT

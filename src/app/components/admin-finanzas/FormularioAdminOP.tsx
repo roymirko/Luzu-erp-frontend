@@ -6,8 +6,9 @@ import { Textarea } from '@/app/components/ui/textarea';
 import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
 import { useTheme } from '@/app/contexts/ThemeContext';
-import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft, MessageSquare } from 'lucide-react';
 import * as ordenesService from '@/app/services/ordenesPublicidadService';
+import * as gastosService from '@/app/services/gastosService';
 import { formatCurrency } from '@/app/utils/format';
 import type { OrdenPublicidad, ItemOrdenPublicidad } from '@/app/types/comercial';
 
@@ -55,32 +56,75 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [orden, setOrden] = useState<OrdenPublicidad | null>(null);
+  const [hasGastos, setHasGastos] = useState(false);
+  const [showCommentForm, setShowCommentForm] = useState<'rechazo' | 'solicitar' | null>(null);
+  const [comentarios, setComentarios] = useState('');
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data, error } = await ordenesService.getById(ordenId);
-      if (error || !data) {
+      const [ordenRes, gastosRes] = await Promise.all([
+        ordenesService.getById(ordenId),
+        gastosService.getByOrdenId(ordenId),
+      ]);
+      if (ordenRes.error || !ordenRes.data) {
         toast.error('Error al cargar la orden de publicidad');
         onClose();
         return;
       }
-      setOrden(data);
+      setOrden(ordenRes.data);
+      setHasGastos((gastosRes.data?.length || 0) > 0);
       setLoading(false);
     })();
   }, [ordenId, onClose]);
 
-  const handleUpdateEstado = async (estado: 'aprobado' | 'rechazado') => {
+  const handleAprobar = async () => {
     if (!orden) return;
     setSaving(true);
-    const { success, error } = await ordenesService.updateEstadoOp(orden.id, estado);
+    const { success, error } = await ordenesService.updateEstadoOp(orden.id, 'aprobado');
     setSaving(false);
     if (error || !success) {
-      toast.error(`Error al ${estado === 'aprobado' ? 'aprobar' : 'rechazar'} la OP`);
+      toast.error('Error al aprobar la OP');
       return;
     }
-    setOrden({ ...orden, estadoOp: estado });
-    toast.success(estado === 'aprobado' ? 'OP aprobada correctamente' : 'OP rechazada');
+    setOrden({ ...orden, estadoOp: 'aprobado' });
+    toast.success('OP aprobada correctamente');
+  };
+
+  const handleRechazar = async () => {
+    if (!orden || !comentarios.trim()) {
+      toast.error('Los comentarios son obligatorios para rechazar');
+      return;
+    }
+    setSaving(true);
+    const { success, error } = await ordenesService.updateEstadoOp(orden.id, 'rechazado', comentarios.trim());
+    setSaving(false);
+    if (error || !success) {
+      toast.error('Error al rechazar la OP');
+      return;
+    }
+    setOrden({ ...orden, estadoOp: 'rechazado', observacionesAdmin: comentarios.trim() });
+    setShowCommentForm(null);
+    setComentarios('');
+    toast.success('OP rechazada');
+  };
+
+  const handleSolicitarInfo = async () => {
+    if (!orden || !comentarios.trim()) {
+      toast.error('Los comentarios son obligatorios');
+      return;
+    }
+    setSaving(true);
+    const { success, error } = await ordenesService.saveObservacionesAdmin(orden.id, comentarios.trim());
+    setSaving(false);
+    if (error || !success) {
+      toast.error('Error al guardar comentarios');
+      return;
+    }
+    setOrden({ ...orden, observacionesAdmin: comentarios.trim() });
+    setShowCommentForm(null);
+    setComentarios('');
+    toast.success('Solicitud de información enviada');
   };
 
   if (loading || !orden) {
@@ -251,10 +295,70 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
         </div>
       )}
       {isRechazado && (
-        <div className="flex justify-center">
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 border border-red-400 text-red-700 font-medium">
-            <XCircle className="h-4 w-4" /> OP Rechazada
-          </span>
+        <div className="space-y-3">
+          <div className="flex justify-center">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 border border-red-400 text-red-700 font-medium">
+              <XCircle className="h-4 w-4" /> OP Rechazada
+            </span>
+          </div>
+          {orden.observacionesAdmin && (
+            <div className={cn('rounded-lg border p-4', isDark ? 'bg-red-950/30 border-red-900' : 'bg-red-50 border-red-200')}>
+              <Label className={cn('text-xs mb-1 block', isDark ? 'text-red-400' : 'text-red-600')}>Motivo del rechazo</Label>
+              <p className={cn('text-sm', isDark ? 'text-red-300' : 'text-red-700')}>{orden.observacionesAdmin}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Observaciones admin (when pendiente and has previous comment) */}
+      {isPendiente && orden.observacionesAdmin && !showCommentForm && (
+        <div className={cn('rounded-lg border p-4', isDark ? 'bg-yellow-950/30 border-yellow-900' : 'bg-yellow-50 border-yellow-200')}>
+          <Label className={cn('text-xs mb-1 block', isDark ? 'text-yellow-400' : 'text-yellow-600')}>Comentarios de Admin</Label>
+          <p className={cn('text-sm', isDark ? 'text-yellow-300' : 'text-yellow-700')}>{orden.observacionesAdmin}</p>
+        </div>
+      )}
+
+      {/* Inline comment form (rechazo or solicitar info) */}
+      {showCommentForm && (
+        <div className={cn('rounded-lg border p-4 space-y-3', isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-white border-gray-200')}>
+          <Label className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-gray-900')}>
+            Comentarios *
+          </Label>
+          <Textarea
+            value={comentarios}
+            onChange={(e) => setComentarios(e.target.value)}
+            placeholder={showCommentForm === 'rechazo' ? 'Motivo del rechazo...' : 'Información solicitada...'}
+            className="resize-none"
+            rows={3}
+          />
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setShowCommentForm(null); setComentarios(''); }}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+            {showCommentForm === 'rechazo' ? (
+              <Button
+                size="sm"
+                onClick={handleRechazar}
+                disabled={saving || !comentarios.trim()}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Confirmar rechazo
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleSolicitarInfo}
+                disabled={saving || !comentarios.trim()}
+              >
+                Enviar
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -265,17 +369,28 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
       )}>
         {isPendiente ? (
           <>
+            {!hasGastos ? (
+              <Button
+                variant="outline"
+                onClick={() => { setShowCommentForm('rechazo'); setComentarios(''); }}
+                disabled={saving || showCommentForm === 'rechazo'}
+                className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                <XCircle className="h-4 w-4 mr-1.5" />
+                Rechazar OP
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => { setShowCommentForm('solicitar'); setComentarios(''); }}
+                disabled={saving || showCommentForm === 'solicitar'}
+              >
+                <MessageSquare className="h-4 w-4 mr-1.5" />
+                Solicitar información
+              </Button>
+            )}
             <Button
-              variant="outline"
-              onClick={() => handleUpdateEstado('rechazado')}
-              disabled={saving}
-              className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-            >
-              <XCircle className="h-4 w-4 mr-1.5" />
-              Rechazar OP
-            </Button>
-            <Button
-              onClick={() => handleUpdateEstado('aprobado')}
+              onClick={handleAprobar}
               disabled={saving}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
