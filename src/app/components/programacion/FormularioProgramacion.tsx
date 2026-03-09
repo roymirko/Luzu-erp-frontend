@@ -37,9 +37,6 @@ interface FormularioProgramacionProps {
 
 interface FormErrors {
   subrubro?: string;
-  nombreCampana?: string;
-  proveedor?: string;
-  razonSocial?: string;
 }
 
 interface GastoItem {
@@ -187,28 +184,18 @@ export function FormularioProgramacion({
     if (!subrubro?.trim()) {
       newErrors.subrubro = "Requerido";
     }
-    if (!nombreCampana?.trim()) {
-      newErrors.nombreCampana = "Requerido";
-    }
-    if (!razonSocial?.trim()) {
-      newErrors.razonSocial = "Requerido";
-    }
-    if (!proveedor?.trim()) {
-      newErrors.proveedor = "Requerido";
-    }
 
     return newErrors;
-  }, [
-    subrubro,
-    nombreCampana,
-    razonSocial,
-    proveedor,
-  ]);
+  }, [subrubro]);
 
-  const validateSingleGasto = useCallback(
+   const validateSingleGasto = useCallback(
     (g: GastoItem, index: number): string | null => {
       if (!g.formaPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
+      }
+      
+      if (!proveedor?.trim() || !razonSocial?.trim()) {
+        return `Gasto #${index + 1}: Debe seleccionar proveedor`;
       }
       
       if (g.formaPago === 'Efectivo (Contado)') {
@@ -246,7 +233,7 @@ export function FormularioProgramacion({
       
       return null;
     },
-    [],
+    [proveedor, razonSocial],
   );
 
   const validateGastos = useCallback((): string | null => {
@@ -263,7 +250,6 @@ export function FormularioProgramacion({
     }
   }, [
     subrubro,
-    nombreCampana,
     razonSocial,
     proveedor,
     hasAttemptedSubmit,
@@ -788,11 +774,6 @@ export function FormularioProgramacion({
               onChange={handleProveedorChange}
               disabled={isFormularioCerrado}
               allowCreate={!isFormularioCerrado}
-              className={cn(
-                errors.proveedor || errors.razonSocial
-                  ? "[&_input]:border-red-500"
-                  : "",
-              )}
             />
 
             {/* Gastos Items */}
