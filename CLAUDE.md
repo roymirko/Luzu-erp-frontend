@@ -47,10 +47,14 @@ Custom hook pattern: `useXxx()` hooks that throw if used outside provider.
 - `src/app/components/ui/` - shadcn/ui base components (~90 files)
 - `src/app/contexts/` - React Context providers
 - `src/app/services/` - Supabase integration layer
-- `src/app/repositories/` - Data access layer
+- `src/app/repositories/` - Data access layer (proxy wrappers)
+- `src/app/repositories/supabase/` - Supabase-direct implementations
+- `src/app/repositories/api/` - HTTP API implementations (calls Hono server)
 - `src/app/types/` - Domain models (business.ts, comercial.ts, implementacion.ts, proveedores.ts)
 - `src/app/utils/businessRules.ts` - Centralized validation logic
 - `supabase/` - Database schema and migrations
+- `server/src/db/entities/` - TypeORM entities (6 entities)
+- `server/src/routes/` - Hono API routes (7 route files)
 
 ### Path Alias
 `@` → `./src` (configured in vite.config.ts)
@@ -93,12 +97,26 @@ export const mapUserFromDB = (dbUser: any): User => ({
 - **Implementation Tracking**: Expense tracking per program/campaign
 - **Audit Logging**: Automatic logging of login, create, update, delete actions
 
+### Repository Proxy Pattern
+Repositories use a proxy pattern to switch between Supabase-direct and API backends:
+- `VITE_USE_SUPABASE=true` (default): repos call Supabase directly from browser
+- `VITE_USE_SUPABASE=false`: repos call `/api/...` on Hono server, which uses TypeORM
+- Proxy factory in `src/app/repositories/_proxy.ts` — lazy-loads the right implementation
+- Each repo file is a thin proxy wrapper re-exporting functions from `supabase/` or `api/`
+- Services remain unchanged — they import from same repo paths
+
 ## Environment Variables
 
 Required in `.env`:
 ```
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_USE_SUPABASE=true  # 'false' to use Hono server + TypeORM
+```
+
+Required in `server/.env` when using TypeORM:
+```
+DATABASE_URL=postgresql://user:pass@localhost:5432/luzu_erp
 ```
 
 ## Database Conventions

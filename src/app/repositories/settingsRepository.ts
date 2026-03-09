@@ -1,31 +1,13 @@
-import { supabase } from '../services/supabase';
+import { createRepoProxy } from './_proxy';
 
-const TABLE = 'app_settings';
+type Impl = typeof import('./supabase/settingsRepository');
 
-export interface AppSettingRow {
-  key: string;
-  value: string;
-  updated_at: string;
-  updated_by: string | null;
-}
+const p = createRepoProxy<Impl>(
+  () => import('./supabase/settingsRepository'),
+  () => import('./api/settingsRepository'),
+);
 
-export async function getAll(): Promise<{ data: AppSettingRow[]; error: string | null }> {
-  const { data, error } = await supabase.from(TABLE).select('*');
-  if (error) return { data: [], error: error.message };
-  return { data: data as AppSettingRow[], error: null };
-}
-
-export async function getByKey(key: string): Promise<{ data: AppSettingRow | null; error: string | null }> {
-  const { data, error } = await supabase.from(TABLE).select('*').eq('key', key).single();
-  if (error) return { data: null, error: error.message };
-  return { data: data as AppSettingRow, error: null };
-}
-
-export async function upsert(key: string, value: string, updatedBy?: string): Promise<{ error: string | null }> {
-  const { error } = await supabase.from(TABLE).upsert(
-    { key, value, updated_at: new Date().toISOString(), updated_by: updatedBy ?? null },
-    { onConflict: 'key' }
-  );
-  if (error) return { error: error.message };
-  return { error: null };
-}
+export type { AppSettingRow } from './supabase/settingsRepository';
+export const getAll = p.getAll;
+export const getByKey = p.getByKey;
+export const upsert = p.upsert;
