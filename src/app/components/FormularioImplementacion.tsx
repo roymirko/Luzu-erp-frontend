@@ -157,6 +157,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
       formaPago: formulario.formaPago || '',
+      facturaEmitidaA: formulario.facturaEmitidaA || '',
+      empresa: formulario.empresa || '',
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
@@ -660,24 +662,28 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           />
 
           {/* Carga de Importes Section */}
-          <CargaImportesSection
-            isDark={isDark}
-            isCerrado={isCerrado}
-            importes={importes}
-            programasConPresupuesto={ordenPublicidadData?.programasConPresupuesto || []}
-            onUpdateImporte={updateImporte}
-            onAddImporte={addImporte}
-            onRemoveImporte={removeImporte}
-            onResetImporte={resetImporte}
-            onSaveGasto={handleSaveGasto}
-            onDeleteSavedGasto={handleDeleteSavedGasto}
-            errors={errors.importes}
-            // Status props
-            isNewGasto={isNewGasto}
-            existingGastoIds={existingGastoIds}
-            estadoOP={estadoOP}
-            ordenFormaPago={ordenPublicidadData?.formaPago}
-          />
+           <CargaImportesSection
+             isDark={isDark}
+             isCerrado={isCerrado}
+             importes={importes}
+             programasConPresupuesto={ordenPublicidadData?.programasConPresupuesto || []}
+             onUpdateImporte={updateImporte}
+             onAddImporte={addImporte}
+             onRemoveImporte={removeImporte}
+             onResetImporte={resetImporte}
+             onSaveGasto={handleSaveGasto}
+             onDeleteSavedGasto={handleDeleteSavedGasto}
+             errors={errors.importes}
+             // Status props
+             isNewGasto={isNewGasto}
+             existingGastoIds={existingGastoIds}
+             estadoOP={estadoOP}
+             ordenFormaPago={ordenPublicidadData?.formaPago}
+             inheritedFacturaEmitidaA={ordenPublicidadData?.facturaEmitidaA}
+             inheritedEmpresa={ordenPublicidadData?.empresa}
+             inheritedFormaPago={ordenPublicidadData?.formaPago}
+             blockInheritedFields={ordenPublicidadData?.formaPago === 'Efectivo (Contado)'}
+           />
 
           {/* Resumen */}
           <ResumenPresupuestario

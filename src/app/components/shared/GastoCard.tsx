@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Paperclip } from 'lucide-react';
 import { FormSelect } from '@/app/components/ui/form-select';
 import { FormInput } from '@/app/components/ui/form-input';
@@ -141,6 +141,10 @@ interface GastoCardProps {
   // Campos heredados desde Comercial
   ordenFormaPago?: string; // Forma de pago desde Comercial
   facturaEmitidaAReadOnly?: boolean; // Si campos vienen bloqueados desde Comercial
+  inheritedFacturaEmitidaA?: string; // Valor heredado de factura emitida a
+  inheritedEmpresa?: string; // Valor heredado de empresa
+  inheritedFormaPago?: string; // Valor heredado de forma de pago
+  blockInheritedFields?: boolean; // Si true, bloquea campos heredados
 }
 
 export function GastoCard(props: GastoCardProps) {
@@ -187,14 +191,40 @@ export function GastoCard(props: GastoCardProps) {
     // Heredados desde Comercial
     ordenFormaPago,
     facturaEmitidaAReadOnly = false,
+    inheritedFacturaEmitidaA,
+    inheritedEmpresa,
+    inheritedFormaPago,
+    blockInheritedFields = false,
   } = props;
 
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const inheritanceAppliedRef = useRef(false);
+
+  // Heredar valores desde Comercial cuando blockInheritedFields es true
+  // Solo se ejecuta UNA VEZ cuando los valores heredados llegan y blockInheritedFields es true
+  useEffect(() => {
+    if (!blockInheritedFields || inheritanceAppliedRef.current) return;
+    
+    // Si hay valores heredados, se autopoblAn
+    if (inheritedFacturaEmitidaA || inheritedEmpresa || inheritedFormaPago) {
+      inheritanceAppliedRef.current = true;
+      if (inheritedFacturaEmitidaA) {
+        onUpdate('facturaEmitidaA', inheritedFacturaEmitidaA);
+      }
+      if (inheritedEmpresa) {
+        onUpdate('empresa', inheritedEmpresa);
+      }
+      if (inheritedFormaPago) {
+        onUpdate('formaPago', inheritedFormaPago);
+      }
+    }
+  }, [blockInheritedFields]);
 
   // Determinar si campos factura/empresa están bloqueados según forma de pago
   const isEfectivoFromComercial = ordenFormaPago === 'Efectivo (Contado)';
-  const areFacturaFieldsDisabled = isDisabled || isEfectivoFromComercial || facturaEmitidaAReadOnly;
+  const areFacturaFieldsDisabled = isDisabled || isEfectivoFromComercial || facturaEmitidaAReadOnly || blockInheritedFields;
+  const isFormaPagoDisabled = isDisabled || blockInheritedFields;
 
   // Internal collapse state for uncontrolled mode
   const [internalIsCollapsed, setInternalIsCollapsed] = useState(
@@ -239,18 +269,18 @@ export function GastoCard(props: GastoCardProps) {
         <div className="mt-5 space-y-5">
           {/* ── Grupo: Pago ── */}
           <FormRow>
-            {showFormaPago && (
-              <FormSelect
-                label="Forma de pago"
-                value={gasto.formaPago || ''}
-                onChange={(v) => onUpdate('formaPago', v)}
-                options={formaPagoOptions}
-                required
-                disabled={isDisabled}
-                error={errors.formaPago}
-                isDark={isDark}
-              />
-            )}
+             {showFormaPago && (
+               <FormSelect
+                 label="Forma de pago"
+                 value={gasto.formaPago || ''}
+                 onChange={(v) => onUpdate('formaPago', v)}
+                 options={formaPagoOptions}
+                 required
+                 disabled={isFormaPagoDisabled}
+                 error={errors.formaPago}
+                 isDark={isDark}
+               />
+             )}
             {(!showFormaPago || gasto.formaPago !== 'Efectivo (Contado)') && gasto.formaPago && (
               <FormSelect
                 label="Acuerdo de pago"

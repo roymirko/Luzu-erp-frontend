@@ -148,6 +148,8 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
       formaPago: formulario.formaPago || '',
+      facturaEmitidaA: formulario.facturaEmitidaA || '',
+      empresa: formulario.empresa || '',
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
@@ -583,6 +585,10 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
             existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
             ordenFormaPago={ordenPublicidadData?.formaPago}
+            inheritedFacturaEmitidaA={ordenPublicidadData?.facturaEmitidaA}
+            inheritedEmpresa={ordenPublicidadData?.empresa}
+            inheritedFormaPago={ordenPublicidadData?.formaPago}
+            blockInheritedFields={ordenPublicidadData?.formaPago === 'Efectivo (Contado)'}
           />
 
           <ResumenPresupuestario

@@ -35,6 +35,10 @@ interface CargaImportesSectionProps {
   estadoOP?: EstadoOP;
   // Comercial payment method to block/default factura fields
   ordenFormaPago?: string;
+  inheritedFacturaEmitidaA?: string;
+  inheritedEmpresa?: string;
+  inheritedFormaPago?: string;
+  blockInheritedFields?: boolean;
 }
 
 // Map BloqueImporte to GastoData format
@@ -82,6 +86,10 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
     existingGastoIds = new Set(),
     estadoOP = 'pendiente',
     ordenFormaPago,
+    inheritedFacturaEmitidaA,
+    inheritedEmpresa,
+    inheritedFormaPago,
+    blockInheritedFields = false,
   } = props;
 
   // Track collapsed state for each importe
@@ -209,8 +217,12 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
               showFormaPago
               programOptions={programasConPresupuesto}
               isSaving={isSaving}
-               observacionesLabel="Concepto del gasto"
+              observacionesLabel="Concepto del gasto"
               ordenFormaPago={ordenFormaPago}
+              inheritedFacturaEmitidaA={inheritedFacturaEmitidaA}
+              inheritedEmpresa={inheritedEmpresa}
+              inheritedFormaPago={inheritedFormaPago}
+              blockInheritedFields={blockInheritedFields}
             />
           );
         })}
