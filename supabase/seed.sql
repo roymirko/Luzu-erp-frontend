@@ -581,17 +581,17 @@ BEGIN
      'LUZU TV S. A.', '30', 'Transferencia (Adelantado)',
      'productora', v_ctx1, 'nadie-dice-nada', 'argentina', 'Gasto de Campaña', 'Implementación'
    );
-   INSERT INTO public.comprobantes (
-     tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
-     neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by,
-     factura_emitida_a, acuerdo_pago, forma_pago,
-     area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
-   ) VALUES (
-     'egreso', 'Ediciones Gráficas S.A.', '30798765432', 'FA', '0005', '00008888', '2024-02-15',
-     32000, 21, 6720, 38720, 'ARS', 'activo', 'pagado', 'system',
-     'LUZU TV S. A.', '45', 'e check',
-     'productora', v_ctx1, 'vuelta-y-media', 'argentina', 'Gasto de Campaña', 'Diseño y Edición'
-   );
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+      neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by,
+      factura_emitida_a, acuerdo_pago, forma_pago,
+      area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
+    ) VALUES (
+      'egreso', 'Ediciones Gráficas S.A.', '30798765432', 'FA', '0005', '00008888', '2024-02-15',
+      32000, 21, 6720, 38720, 'ARS', 'LUZU TV S. A.', 'activo', 'pagado', 'system',
+      'LUZU TV S. A.', '45', 'e check',
+      'productora', v_ctx1, 'vuelta-y-media', 'argentina', 'Gasto de Campaña', 'Diseño y Edición'
+    );
 
   INSERT INTO public.contexto_comprobante (
     area_origen, mes_gestion, unidad_negocio, categoria_negocio, rubro, sub_rubro,
