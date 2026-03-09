@@ -41,7 +41,7 @@ interface GastoItem {
   // pais: string;
   neto: number;
   observaciones: string;
-  estado: 'pendiente-pago' | 'pagado' | 'anulado';
+  estado: 'pendiente-factura' | 'pendiente-pago' | 'pagado' | 'anulado';
 }
 
 interface FormErrors {
@@ -108,7 +108,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
       // pais: 'argentina',
       neto: 0,
       observaciones: '',
-      estado: 'pendiente-pago',
+      estado: 'pendiente-factura',
     },
   ]);
 
@@ -220,7 +220,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         // pais: 'argentina',
         neto: 0,
         observaciones: '',
-        estado: 'pendiente-pago',
+        estado: 'pendiente-factura',
       },
     ]);
   };
@@ -251,7 +251,7 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
           id: crypto.randomUUID(), facturaEmitidaA: '', empresa: '', empresaPrograma: '',
           fechaComprobante: '', razonSocial: '', proveedor: '',
           acuerdoPago: '', numeroComprobante: '', formaPago: '', /* pais: 'argentina' */ neto: 0,
-          observaciones: '', estado: 'pendiente-pago',
+          observaciones: '', estado: 'pendiente-factura',
         }]);
       }
       toast.success('Gasto eliminado');

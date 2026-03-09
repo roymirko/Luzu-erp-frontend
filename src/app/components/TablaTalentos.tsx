@@ -199,7 +199,7 @@ export function TablaTalentos({ onOpen }: TablaTalentosProps = {}) {
             formId: form.id,
             itemId: item.id,
             linkedGastoId: linkedGasto?.id,
-            estado: linkedGasto ? (linkedGasto.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente de pago') : 'Pendiente de carga',
+            estado: linkedGasto ? (linkedGasto.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente de Factura') : 'Pendiente de carga',
             mesServicio: formatMesServicio(linkedGasto?.mesServicio || form.mesServicio),
             fechaRegistro: linkedGasto ? formatDateDDMMYYYY(linkedGasto.createdAt) : '-',
             responsable: linkedGasto?.responsable || form.responsable,

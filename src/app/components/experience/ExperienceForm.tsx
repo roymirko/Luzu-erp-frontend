@@ -42,7 +42,7 @@ interface GastoItem {
   pais: string;
   neto: number;
   observaciones: string;
-  estado: 'pendiente-pago' | 'pagado' | 'anulado';
+  estado: 'pendiente-factura' | 'pendiente-pago' | 'pagado' | 'anulado';
 }
 
 interface FormErrors {
@@ -119,7 +119,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       pais: 'argentina',
       neto: 0,
       observaciones: '',
-      estado: 'pendiente-pago',
+      estado: 'pendiente-factura',
     },
   ]);
 
@@ -280,7 +280,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         pais: 'argentina',
         neto: 0,
         observaciones: '',
-        estado: 'pendiente-pago',
+        estado: 'pendiente-factura',
       },
     ]);
   };
@@ -339,7 +339,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           pais: 'argentina',
           neto: 0,
           observaciones: '',
-          estado: 'pendiente-pago',
+          estado: 'pendiente-factura',
         }]);
       }
       toast.success('Gasto eliminado');

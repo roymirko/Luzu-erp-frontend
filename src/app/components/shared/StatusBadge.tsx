@@ -5,7 +5,7 @@ export type EstadoPago = 'pendiente' | 'pendiente-pago' | 'pendiente-factura' | 
 
 // Complex estado for implementacion
 export type EstadoOP = 'pendiente' | 'activo' | 'cerrado' | 'anulado';
-export type EstadoPGM = 'pendiente' | 'pendiente-pago' | 'pagado' | 'anulado';
+export type EstadoPGM = 'pendiente' | 'pendiente-factura' | 'pendiente-pago' | 'pagado' | 'anulado';
 
 // Formulario estado (for tables)
 export type EstadoFormulario = 'pendiente' | 'pendiente-carga' | 'activo' | 'abierto' | 'cerrado' | 'anulado';
@@ -76,10 +76,10 @@ const FORMULARIO_STATUS_CONFIG: Record<string, StatusConfig> = {
 const SIMPLE_STATUS_CONFIG: Record<string, StatusConfig> = {
   'pendiente': {
     bg: 'bg-[#fffae8]',
-    border: 'border-[#f76517]',
-    text: 'text-[#f76517]',
-    dot: 'bg-[#f76517]',
-    label: 'Pendiente de Pago',
+    border: 'border-[#8f6e00]',
+    text: 'text-[#8f6e00]',
+    dot: 'bg-[#8f6e00]',
+    label: 'Pendiente de Factura',
   },
   'pendiente-pago': {
     bg: 'bg-[#fffae8]',
@@ -132,10 +132,10 @@ function getComplexStatusConfig(estado: EstadoOP, estadoPago?: EstadoPGM): Statu
   if (estado === 'pendiente') {
     return {
       bg: 'bg-[#fffae8]',
-      border: 'border-[#f76517]',
-      text: 'text-[#f76517]',
-      dot: 'bg-[#f76517]',
-      label: 'Pendiente de Pago',
+      border: 'border-[#8f6e00]',
+      text: 'text-[#8f6e00]',
+      dot: 'bg-[#8f6e00]',
+      label: 'Pendiente de Factura',
     };
   }
 
@@ -158,13 +158,13 @@ function getComplexStatusConfig(estado: EstadoOP, estadoPago?: EstadoPGM): Statu
         label: 'Anulado',
       };
     }
-    // pendiente, pendiente-pago
+    // pendiente, pendiente-factura
     return {
       bg: 'bg-[#fffae8]',
-      border: 'border-[#f76517]',
-      text: 'text-[#f76517]',
-      dot: 'bg-[#f76517]',
-      label: 'Pendiente de Pago',
+      border: 'border-[#8f6e00]',
+      text: 'text-[#8f6e00]',
+      dot: 'bg-[#8f6e00]',
+      label: 'Pendiente de Factura',
     };
   }
 
@@ -198,7 +198,7 @@ export function StatusBadge({ estado, estadoPago, variant = 'default', className
     config = getComplexStatusConfig(estado as EstadoOP, estadoPago);
   } else {
     // Simple lookup for programacion/experience gastos
-    config = SIMPLE_STATUS_CONFIG[estado] || SIMPLE_STATUS_CONFIG['pendiente-pago'];
+    config = SIMPLE_STATUS_CONFIG[estado] || SIMPLE_STATUS_CONFIG['pendiente-factura'];
   }
 
   return (

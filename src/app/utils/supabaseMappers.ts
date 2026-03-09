@@ -336,7 +336,7 @@ export const mapBloqueImporteFromDB = (dbItem: any): BloqueImporte => ({
     condicionPago: dbItem.condicion_pago || '',
     neto: dbItem.neto ? String(dbItem.neto) : '',
     documentoAdjunto: dbItem.adjuntos?.[0] || undefined,
-    estadoPgm: (dbItem.estado_pago || 'pendiente-pago') as EstadoPGM
+    estadoPgm: (dbItem.estado_pago || 'pendiente-factura') as EstadoPGM
 });
 
 // Map App BloqueImporte -> DB items_gasto_implementacion row

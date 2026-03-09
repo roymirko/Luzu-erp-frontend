@@ -31,7 +31,7 @@ interface GastoItem {
   pais: string;
   neto: number;
   observaciones: string;
-  estado: 'pendiente-pago' | 'pagado' | 'anulado';
+  estado: 'pendiente-factura' | 'pendiente-pago' | 'pagado' | 'anulado';
 }
 
 interface ExistingFormulario {
@@ -88,7 +88,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
       pais: 'argentina',
       neto: 0,
       observaciones: '',
-      estado: 'pendiente-pago',
+      estado: 'pendiente-factura',
     },
   ]);
 
@@ -210,7 +210,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
         pais: 'argentina',
         neto: 0,
         observaciones: '',
-        estado: 'pendiente-pago',
+        estado: 'pendiente-factura',
       },
     ]);
   };
@@ -269,7 +269,7 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
           pais: 'argentina',
           neto: 0,
           observaciones: '',
-          estado: 'pendiente-pago',
+          estado: 'pendiente-factura',
         }]);
       }
       toast.success('Gasto eliminado');

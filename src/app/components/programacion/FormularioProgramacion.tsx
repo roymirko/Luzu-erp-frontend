@@ -53,7 +53,7 @@ interface GastoItem {
   formaPago: string;
   neto: number;
   observaciones: string;
-  estado: "pendiente-pago" | "pendiente-factura" | "pagado" | "anulado";
+  estado: "pendiente-factura" | "pendiente-pago" | "pagado" | "anulado";
 }
 
 import {
@@ -117,7 +117,7 @@ export function FormularioProgramacion({
       formaPago: "",
       neto: 0,
       observaciones: "",
-      estado: "pendiente-pago",
+      estado: "pendiente-factura",
     },
   ]);
 

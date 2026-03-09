@@ -197,7 +197,7 @@ export function ImplementacionNuevoFormulario({ formId, itemId }: Props) {
               <div className="flex items-center gap-3 text-xs">
                 <span className="inline-flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-yellow-400"></span>
-                  <span className={muted}>Pendiente de pago</span>
+                  <span className={muted}>Pendiente de Factura</span>
                 </span>
               </div>
             </div>

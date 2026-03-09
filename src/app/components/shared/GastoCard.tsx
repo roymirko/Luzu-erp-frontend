@@ -158,7 +158,7 @@ export function GastoCard(props: GastoCardProps) {
     isDisabled = false,
     isSaving = false,
     // Status
-    estado = 'pendiente-pago',
+    estado = 'pendiente-factura',
     estadoPago,
     // Field configuration
     showProveedorSelector = true,
