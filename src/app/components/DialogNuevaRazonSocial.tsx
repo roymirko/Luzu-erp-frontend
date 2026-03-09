@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
 
 interface DialogNuevaRazonSocialProps {
@@ -13,9 +12,10 @@ interface DialogNuevaRazonSocialProps {
 }
 
 export function DialogNuevaRazonSocial({ open, onOpenChange, onRazonSocialCreada }: DialogNuevaRazonSocialProps) {
-    const [nombreLegal, setNombreLegal] = useState('');
+    const [razonSocial, setRazonSocial] = useState('');
     const [cuit, setCuit] = useState('');
-    const [condicionIva, setCondicionIva] = useState('');
+    const [direccion, setDireccion] = useState('');
+    const [proveedor, setProveedor] = useState('');
 
     const formatCuit = (value: string) => {
         const numbers = value.replace(/\D/g, '');
@@ -30,26 +30,22 @@ export function DialogNuevaRazonSocial({ open, onOpenChange, onRazonSocialCreada
     };
 
     const handleGuardar = () => {
-        if (!nombreLegal.trim()) {
-            toast.error('El nombre legal es obligatorio');
+        if (!razonSocial.trim()) {
+            toast.error('La razón social es obligatoria');
             return;
         }
-        // Simple validation for CUIT length, more complex regex can be added if needed
         if (cuit.length < 13) {
             toast.error('El CUIT debe estar completo');
             return;
         }
-        if (!condicionIva) {
-            toast.error('Debe seleccionar una condición de IVA');
-            return;
-        }
 
-        onRazonSocialCreada(nombreLegal);
+        onRazonSocialCreada(razonSocial);
         toast.success('Razón Social creada correctamente (pendiente de verificación)');
 
-        setNombreLegal('');
+        setRazonSocial('');
         setCuit('');
-        setCondicionIva('');
+        setDireccion('');
+        setProveedor('');
         onOpenChange(false);
     };
 
@@ -58,22 +54,20 @@ export function DialogNuevaRazonSocial({ open, onOpenChange, onRazonSocialCreada
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Nueva Razón Social</DialogTitle>
+                    <DialogDescription>Complete los datos de la nueva razón social</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <p className="text-sm text-muted-foreground">
-                        Complete los campos para crear una nueva Razón Social.
-                    </p>
                     <div className="grid gap-2">
-                        <Label htmlFor="nombreLegal">Nombre Legal (Razón Social) *</Label>
+                        <Label htmlFor="razonSocial" className="font-semibold text-sm">Razón Social *</Label>
                         <Input
-                            id="nombreLegal"
-                            placeholder="Ingrese la razón social completa"
-                            value={nombreLegal}
-                            onChange={(e) => setNombreLegal(e.target.value)}
+                            id="razonSocial"
+                            placeholder="Ingrese la razón social"
+                            value={razonSocial}
+                            onChange={(e) => setRazonSocial(e.target.value)}
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="cuitRS">CUIT *</Label>
+                        <Label htmlFor="cuitRS" className="font-semibold text-sm">CUIT *</Label>
                         <Input
                             id="cuitRS"
                             placeholder="XX-XXXXXXXX-X"
@@ -86,24 +80,22 @@ export function DialogNuevaRazonSocial({ open, onOpenChange, onRazonSocialCreada
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label>Condición de IVA *</Label>
-                        <Select value={condicionIva} onValueChange={setCondicionIva}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Monotributo">Monotributo</SelectItem>
-                                <SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem>
-                                <SelectItem value="Exento">Exento</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Label htmlFor="direccion" className="font-semibold text-sm">Dirección</Label>
+                        <Input
+                            id="direccion"
+                            placeholder="Ingrese la dirección legal"
+                            value={direccion}
+                            onChange={(e) => setDireccion(e.target.value)}
+                        />
                     </div>
-
-                    <div className="rounded-lg p-3 bg-blue-50 border border-blue-200">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-blue-800">ℹ️ Información importante</span>
-                            <span className="text-xs text-blue-700">La Razón Social será verificada con Finanzas para alta Finegans.</span>
-                        </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="proveedor" className="font-semibold text-sm">Proveedor</Label>
+                        <Input
+                            id="proveedor"
+                            placeholder="Ingrese nombre del proveedor"
+                            value={proveedor}
+                            onChange={(e) => setProveedor(e.target.value)}
+                        />
                     </div>
                 </div>
                 <DialogFooter>

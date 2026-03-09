@@ -847,74 +847,50 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
         </div>
       <div className="relative z-50">
         <Dialog open={showAddRazonSocial} onOpenChange={setShowAddRazonSocial}>
-        <DialogContent className={`sm:max-w-md ${isDark ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-200'}`}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className={isDark ? 'text-white' : 'text-gray-900'}>
-              Nueva Razón Social
-            </DialogTitle>
-            <DialogDescription className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-              Complete los datos de la nueva razón social
-            </DialogDescription>
+            <DialogTitle>Nueva Razón Social</DialogTitle>
+            <DialogDescription>Complete los datos de la nueva razón social</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className={isDark ? 'text-gray-400' : 'text-gray-700'}>
-                Razón Social
-              </Label>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="newRazonSocial" className="font-semibold text-sm">Razón Social *</Label>
               <Input
+                id="newRazonSocial"
                 value={newRazonSocial}
                 onChange={(e) => setNewRazonSocial(e.target.value)}
                 placeholder="Ingrese la razón social"
-                className={isDark
-                  ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }
               />
             </div>
-            <div className="space-y-2">
-              <Label className={isDark ? 'text-gray-400' : 'text-gray-700'}>
-                CUIT
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="newCuit" className="font-semibold text-sm">CUIT *</Label>
               <Input
+                id="newCuit"
                 value={newCuit}
                 onChange={(e) => setNewCuit(e.target.value)}
                 placeholder="XX-XXXXXXXX-X"
-                className={isDark
-                  ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }
               />
             </div>
-            <div className="space-y-2">
-              <Label className={isDark ? 'text-gray-400' : 'text-gray-700'}>
-                Dirección
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="newDireccion" className="font-semibold text-sm">Dirección</Label>
               <Input
+                id="newDireccion"
                 value={newDireccion}
                 onChange={(e) => setNewDireccion(e.target.value)}
-                placeholder="Ingrese la dirección"
-                className={isDark
-                  ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }
+                placeholder="Ingrese la dirección legal"
               />
             </div>
-            <div className="space-y-2">
-              <Label className={isDark ? 'text-gray-400' : 'text-gray-700'}>
-                Empresa/Agencia
-              </Label>
+            <div className="grid gap-2">
+              <Label htmlFor="newEmpresaAgencia" className="font-semibold text-sm">Proveedor</Label>
               <Input
+                id="newEmpresaAgencia"
                 value={newEmpresaAgencia}
                 onChange={(e) => setNewEmpresaAgencia(e.target.value)}
-                placeholder="Ingrese la empresa o agencia"
-                className={isDark
-                  ? 'bg-[#141414] border-gray-700 text-white placeholder:text-gray-600'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'
-                }
+                placeholder="Ingrese nombre del proveedor"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
@@ -924,10 +900,6 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                 setNewDireccion('');
                 setNewEmpresaAgencia('');
               }}
-              className={isDark
-                ? 'border-gray-700 text-gray-400 hover:bg-[#141414]'
-                : 'border-gray-300 text-gray-700'
-              }
             >
               Cancelar
             </Button>
@@ -987,10 +959,7 @@ export function OrdenesPublicidadForm({ onFormularioGuardado, onCancel, formular
                 }
               }}
               disabled={isSavingClient || !newRazonSocial.trim() || !newCuit.trim()}
-              className={`${isSavingClient || !newRazonSocial.trim() || !newCuit.trim()
-                ? 'bg-gray-400 cursor-not-allowed opacity-50'
-                : 'bg-[#0070ff] hover:bg-[#0060dd]'
-                } text-white`}
+              className="bg-[#fb2c36] hover:bg-[#fb2c36]/90 text-white"
             >
               {isSavingClient ? 'Guardando...' : 'Guardar'}
             </Button>

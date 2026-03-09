@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -15,24 +15,35 @@ interface DialogNuevoProveedorProps {
 
 export function DialogNuevoProveedor({ open, onOpenChange, onProveedorCreado }: DialogNuevoProveedorProps) {
     const [razonSocial, setRazonSocial] = useState('');
-    const [empresa, setEmpresa] = useState('');
     const [cuit, setCuit] = useState('');
+    const [direccion, setDireccion] = useState('');
+    const [proveedor, setProveedor] = useState('');
+
+    const formatCuit = (value: string) => {
+        const numbers = value.replace(/\D/g, '');
+
+        if (numbers.length <= 2) {
+            return numbers;
+        } else if (numbers.length <= 10) {
+            return `${numbers.slice(0, 2)}-${numbers.slice(2)}`;
+        } else {
+            return `${numbers.slice(0, 2)}-${numbers.slice(2, 10)}-${numbers.slice(10, 11)}`;
+        }
+    };
 
     const handleGuardar = async () => {
-        const validation = proveedoresService.validateCreate({
-            razonSocial,
-            empresa: empresa || razonSocial,
-            cuit,
-        });
-
-        if (!validation.valid) {
-            validation.errors.forEach(err => toast.error(err.message));
+        if (!razonSocial.trim()) {
+            toast.error('La razón social es obligatoria');
+            return;
+        }
+        if (cuit.length < 13) {
+            toast.error('El CUIT debe estar completo');
             return;
         }
 
         const { data: created, error } = await proveedoresService.create({
             razonSocial,
-            empresa: empresa || razonSocial,
+            empresa: proveedor || razonSocial,
             cuit,
         });
 
@@ -49,8 +60,9 @@ export function DialogNuevoProveedor({ open, onOpenChange, onProveedorCreado }: 
         toast.success('Proveedor creado correctamente');
 
         setRazonSocial('');
-        setEmpresa('');
         setCuit('');
+        setDireccion('');
+        setProveedor('');
         onOpenChange(false);
     };
 
@@ -58,49 +70,49 @@ export function DialogNuevoProveedor({ open, onOpenChange, onProveedorCreado }: 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Nuevo Proveedor</DialogTitle>
+                    <DialogTitle>Nueva Razón Social</DialogTitle>
+                    <DialogDescription>Complete los datos de la nueva razón social</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <p className="text-sm text-muted-foreground">
-                        Ingrese los datos del proveedor.
-                    </p>
                     <div className="grid gap-2">
-                        <Label htmlFor="razonSocial">Razon Social *</Label>
+                        <Label htmlFor="razonSocial" className="font-semibold text-sm">Razón Social *</Label>
                         <Input
                             id="razonSocial"
-                            placeholder="Ingrese la razon social"
+                            placeholder="Ingrese la razón social"
                             value={razonSocial}
                             onChange={(e) => setRazonSocial(e.target.value)}
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="empresa">Nombre Comercial (Empresa)</Label>
-                        <Input
-                            id="empresa"
-                            placeholder="Ingrese el nombre comercial (opcional)"
-                            value={empresa}
-                            onChange={(e) => setEmpresa(e.target.value)}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="cuit">CUIT *</Label>
+                        <Label htmlFor="cuit" className="font-semibold text-sm">CUIT *</Label>
                         <Input
                             id="cuit"
                             placeholder="XX-XXXXXXXX-X"
                             maxLength={13}
                             value={cuit}
                             onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9-]/g, '');
-                                setCuit(val);
+                                const formatted = formatCuit(e.target.value);
+                                setCuit(formatted);
                             }}
                         />
                     </div>
-
-                    <div className="rounded-lg p-3 bg-blue-50 border border-blue-200">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-xs font-semibold text-blue-800">Info</span>
-                            <span className="text-xs text-blue-700">Los datos son provisorios hasta validacion de Administracion.</span>
-                        </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="direccion" className="font-semibold text-sm">Dirección</Label>
+                        <Input
+                            id="direccion"
+                            placeholder="Ingrese la dirección legal"
+                            value={direccion}
+                            onChange={(e) => setDireccion(e.target.value)}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="proveedor" className="font-semibold text-sm">Proveedor</Label>
+                        <Input
+                            id="proveedor"
+                            placeholder="Ingrese nombre del proveedor"
+                            value={proveedor}
+                            onChange={(e) => setProveedor(e.target.value)}
+                        />
                     </div>
                 </div>
                 <DialogFooter>
