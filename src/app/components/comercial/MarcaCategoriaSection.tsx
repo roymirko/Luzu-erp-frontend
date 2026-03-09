@@ -84,25 +84,19 @@ export function MarcaCategoriaSection(props: MarcaCategoriaSectionProps) {
           Nombre de Campaña
           <span className="text-red-500">*</span>
         </Label>
-        <div className="relative">
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-          <Input
-            value={nombreCampana}
-            onChange={(e) => {
-              if (e.target.value.length <= maxCharsCampana) {
-                setNombreCampana(e.target.value);
-              }
-            }}
-            placeholder="Buscar campaña"
-            list="campanas"
-            className={`pl-10 ${isDark
-              ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
-              : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
-              }`}
-          />
-          <datalist id="campanas">
-          </datalist>
-        </div>
+        <Input
+          value={nombreCampana}
+          onChange={(e) => {
+            if (e.target.value.length <= maxCharsCampana) {
+              setNombreCampana(e.target.value);
+            }
+          }}
+          placeholder="Nombre de campaña"
+          className={`${isDark
+            ? 'bg-[#141414] border-gray-800 text-white placeholder:text-gray-600 focus:border-[#fb2c36]'
+            : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#fb2c36]'
+            }`}
+        />
         <p className={`text-xs text-right ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
           {nombreCampana.length}/{maxCharsCampana}
         </p>
