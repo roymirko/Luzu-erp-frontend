@@ -369,12 +369,12 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
         if (success) toast.success(`${totalCount} gasto(s) guardado(s)`);
         else toast.error(`Error al guardar ${failedCount} de ${totalCount} gastos`);
       } else {
-        const gastosToCreate = gastos.map((g) => ({
-          proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, empresa: g.empresa,
-          observaciones: g.observaciones, facturaEmitidaA: g.facturaEmitidaA, empresa: g.empresa,
-          empresaPrograma: g.empresaPrograma, fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
-          numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
-        }));
+         const gastosToCreate = gastos.map((g) => ({
+           proveedor: g.proveedor, razonSocial: g.razonSocial, neto: g.neto, empresa: g.empresa,
+           observaciones: g.observaciones, facturaEmitidaA: g.facturaEmitidaA,
+           empresaPrograma: g.empresaPrograma, fechaComprobante: g.fechaComprobante, acuerdoPago: g.acuerdoPago,
+           numeroFactura: g.numeroComprobante || undefined, formaPago: g.formaPago, /* pais: g.pais */
+         }));
 
         const result = await addMultipleGastos({
           formulario: {

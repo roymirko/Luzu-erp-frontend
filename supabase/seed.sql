@@ -461,17 +461,17 @@ BEGIN
      'LUZU TV S. A.', '30', 'Transferencia (Adelantado)',
      'experience', v_ctx1, 'nadie-dice-nada', 'argentina', 'Gastos de Evento', 'produccion'
    );
-   INSERT INTO public.comprobantes (
-     tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
-     neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by,
-     factura_emitida_a, acuerdo_pago, forma_pago,
-     area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
-   ) VALUES (
-     'egreso', 'Logística Medios S.R.L.', '30778901234', 'FA', '0001', '00005678', '2024-01-12',
-     15000, 21, 3150, 18150, 'ARS', 'activo', 'pagado', v_user_email,
-     'LUZU TV S. A.', '5', 'Transferencia (Adelantado)',
-     'experience', v_ctx1, 'fm-luzu', 'argentina', 'Gastos de Evento', 'produccion'
-   );
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+      neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by,
+      factura_emitida_a, acuerdo_pago, forma_pago,
+      area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
+    ) VALUES (
+      'egreso', 'Logística Medios S.R.L.', '30778901234', 'FA', '0001', '00005678', '2024-01-12',
+      15000, 21, 3150, 18150, 'ARS', 'LUZU TV S. A.', 'activo', 'pagado', v_user_email,
+      'LUZU TV S. A.', '5', 'Transferencia (Adelantado)',
+      'experience', v_ctx1, 'fm-luzu', 'argentina', 'Gastos de Evento', 'produccion'
+    );
 
   INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, nombre_campana, detalle_campana, estado, created_by)
   VALUES ('experience', '2024-02', 'Lanzamiento Sponsor Tech', 'Evento de lanzamiento de producto tecnológico', 'activo', v_user_email)
@@ -488,17 +488,17 @@ BEGIN
      'LUZU TV S. A.', '45', 'e check',
      'experience', v_ctx2, 'antes-que-nadie', 'argentina', 'Gastos de Evento', 'diseno'
    );
-   INSERT INTO public.comprobantes (
-     tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
-     neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by,
-     factura_emitida_a, acuerdo_pago, forma_pago,
-     area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
-   ) VALUES (
-     'egreso', 'Equipamiento Técnico S.R.L.', '30756789012', 'FA', '0002', '00002222', '2024-02-08',
-     35000, 21, 7350, 42350, 'ARS', 'activo', 'pagado', v_user_email,
-     'LUZU TV S. A.', '30', 'Transferencia (Adelantado)',
-     'experience', v_ctx2, 'vuelta-y-media', 'argentina', 'Gastos de Evento', 'diseno'
-   );
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+      neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by,
+      factura_emitida_a, acuerdo_pago, forma_pago,
+      area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
+    ) VALUES (
+      'egreso', 'Equipamiento Técnico S.R.L.', '30756789012', 'FA', '0002', '00002222', '2024-02-08',
+      35000, 21, 7350, 42350, 'ARS', 'LUZU TV S. A.', 'activo', 'pagado', v_user_email,
+      'LUZU TV S. A.', '30', 'Transferencia (Adelantado)',
+      'experience', v_ctx2, 'vuelta-y-media', 'argentina', 'Gastos de Evento', 'diseno'
+    );
 
   INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, nombre_campana, detalle_campana, estado, created_by)
   VALUES ('experience', '2024-03', 'Stand Feria del Libro', 'Presencia en Feria del Libro Buenos Aires', 'activo', v_user_email)
@@ -542,17 +542,17 @@ BEGIN
      'LUZU TV S. A.', '30', 'Transferencia (Adelantado)',
      'experience', v_ctx4, 'podremos-hablar', 'argentina', 'Gastos de Evento', 'edicion'
    );
-   INSERT INTO public.comprobantes (
-     tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
-     neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by,
-     factura_emitida_a, acuerdo_pago, forma_pago,
-     area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
-   ) VALUES (
-     'egreso', 'Sonido Profesional S.R.L.', '30790123456', 'FA', '0004', '00006666', '2024-03-18',
-     22000, 21, 4620, 26620, 'ARS', 'activo', 'pagado', v_user_email,
-     'LUZU TV S. A.', '5', 'e check',
-     'experience', v_ctx4, 'optimo', 'argentina', 'Gastos de Evento', 'edicion'
-   );
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+      neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by,
+      factura_emitida_a, acuerdo_pago, forma_pago,
+      area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto
+    ) VALUES (
+      'egreso', 'Sonido Profesional S.R.L.', '30790123456', 'FA', '0004', '00006666', '2024-03-18',
+      22000, 21, 4620, 26620, 'ARS', 'LUZU TV S. A.', 'activo', 'pagado', v_user_email,
+      'LUZU TV S. A.', '5', 'e check',
+      'experience', v_ctx4, 'optimo', 'argentina', 'Gastos de Evento', 'edicion'
+    );
 END $$;
 
 -- ============================================

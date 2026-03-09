@@ -572,10 +572,12 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         }));
 
         const result = await addMultipleGastos({
-          mesGestion: new Date().toISOString().slice(0, 7),
-          nombreCampana,
-          subrubro,
-          createdBy: currentUser?.id,
+          formulario: {
+            mesGestion: new Date().toISOString().slice(0, 7),
+            nombreCampana,
+            subrubro,
+            createdBy: currentUser?.id,
+          },
           gastos: gastosToCreate,
         });
 
