@@ -466,13 +466,16 @@ export function ProductoraForm({ gastoId, existingFormulario, onCancel, onSave }
         }));
 
         const result = await addMultipleGastos({
-          mesGestion: new Date().toISOString().slice(0, 7),
-          unidadNegocio,
-          categoriaNegocio,
-          rubro,
-          subRubro,
-          nombreCampana,
-          createdBy: currentUser?.id,
+          formulario: {
+            areaOrigen: 'productora',
+            mesGestion: new Date().toISOString().slice(0, 7),
+            unidadNegocio,
+            categoriaNegocio,
+            rubro,
+            subRubro,
+            nombreCampana,
+            createdBy: currentUser?.id,
+          },
           gastos: gastosToCreate,
         });
 
