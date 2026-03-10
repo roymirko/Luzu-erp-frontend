@@ -3,7 +3,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useFormularios } from '../contexts/FormulariosContext';
 import { useTalentos } from '../contexts/TalentosContext';
 import { Button } from './ui/button';
-import { Pencil } from 'lucide-react';
+import { ActionCard } from './ui/action-card';
+import { Pencil, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ type ProgramaRow = {
   formId: string;
   itemId?: string;
   linkedGastoId?: string;
+  isStandalone?: boolean;
   estado: string;
   mesServicio: string;
   fechaRegistro: string;
@@ -71,9 +73,11 @@ const InfoRow = ({ label, value }: { label: string; value?: string | number }) =
 
 interface TablaTalentosProps {
   onOpen?: (formId: string, itemId?: string) => void;
+  onOpenStandalone?: (gastoId: string) => void;
+  onNew?: () => void;
 }
 
-export function TablaTalentos({ onOpen }: TablaTalentosProps = {}) {
+export function TablaTalentos({ onOpen, onOpenStandalone, onNew }: TablaTalentosProps = {}) {
   const { isDark } = useTheme();
   const { formularios } = useFormularios();
   const { gastos, getGastoById } = useTalentos();
@@ -164,7 +168,46 @@ export function TablaTalentos({ onOpen }: TablaTalentosProps = {}) {
       }];
     });
 
-    return fromFormularios.filter((row) => {
+    const formIds = new Set(formularios.map(f => f.id));
+    const standaloneRaw = gastos.filter(g => !g.ordenPublicidadId || !formIds.has(g.ordenPublicidadId));
+
+    // Group standalone gastos by nombreCampana so they appear as one row
+    const groupedByName = new Map<string, typeof standaloneRaw>();
+    for (const g of standaloneRaw) {
+      const key = g.nombreCampana || g.id;
+      const group = groupedByName.get(key) || [];
+      group.push(g);
+      groupedByName.set(key, group);
+    }
+
+    const standaloneGastos = Array.from(groupedByName.values()).map((group) => {
+      const first = group[0];
+      const netoTotal = group.reduce((sum, g) => sum + (g.neto || 0), 0);
+      return {
+        id: first.id,
+        formId: '',
+        itemId: undefined,
+        isStandalone: true,
+        estado: first.estado === 'pendiente' ? 'Pendiente' : first.estado === 'activo' ? 'Activo' : first.estado === 'cerrado' ? 'Cerrado' : 'Anulado',
+        mesServicio: formatMesServicio(first.mesServicio),
+        fechaRegistro: formatDateDDMMYYYY(first.createdAt),
+        responsable: first.responsable || '-',
+        unidadNegocio: first.unidadNegocio || '-',
+        categoriaNegocio: first.categoriaNegocio || 'N/A',
+        marca: first.marca || '-',
+        ordenPublicidad: '-',
+        presupuesto: 0,
+        dineroDisponible: 0,
+        cantidadProgramas: group.length,
+        sector: first.sector || '-',
+        rubro: first.rubro || '-',
+        subRubro: first.subRubro || '-',
+        nombreCampana: first.nombreCampana || '-',
+        netoTotal,
+      };
+    });
+
+    return [...fromFormularios, ...standaloneGastos].filter((row) => {
       if (!searchTerm) return true;
       const s = searchTerm.toLowerCase();
       return (
@@ -220,7 +263,39 @@ export function TablaTalentos({ onOpen }: TablaTalentosProps = {}) {
         });
     });
 
-    return fromFormularios.filter((row) => {
+    const formItemIds = new Set(fromFormularios.map(r => r.linkedGastoId).filter(Boolean));
+
+    const standaloneImportes = gastos
+      .filter(g => !formItemIds.has(g.id))
+      .map((gasto) => {
+        const netoGasto = gasto.neto || 0;
+        return {
+          id: gasto.id,
+          formId: '',
+          itemId: undefined,
+          linkedGastoId: gasto.id,
+          isStandalone: true,
+          estado: gasto.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente de Factura',
+          mesServicio: formatMesServicio(gasto.mesServicio),
+          fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
+          responsable: gasto.responsable || '-',
+          unidadNegocio: gasto.unidadNegocio || '-',
+          categoriaNegocio: gasto.categoriaNegocio || 'N/A',
+          marca: gasto.marca || '-',
+          empresaPrograma: gasto.sector || '-',
+          ordenPublicidad: gasto.ordenPublicidad || '-',
+          presupuesto: 0,
+          dineroDisponible: 0,
+          sector: 'Talentos',
+          rubro: gasto.rubro || 'Gasto de venta',
+          subRubro: gasto.subRubro || 'Talentos',
+          nombreCampana: gasto.nombreCampana || '-',
+          acuerdoPago: gasto.condicionPago || '-',
+          neto: netoGasto,
+        };
+      });
+
+    return [...fromFormularios, ...standaloneImportes].filter((row) => {
       if (!searchTerm) return true;
       const s = searchTerm.toLowerCase();
       return (
@@ -251,6 +326,15 @@ export function TablaTalentos({ onOpen }: TablaTalentosProps = {}) {
 
   return (
     <div className="space-y-6">
+      {onNew && (
+        <ActionCard
+          title="Nuevo Formulario"
+          description="Crear gasto de talentos"
+          icon={Plus}
+          onClick={onNew}
+        />
+      )}
+
       <TableHeader
         title="Detalle de gastos - Talentos"
         searchValue={searchTerm}
@@ -281,9 +365,17 @@ export function TablaTalentos({ onOpen }: TablaTalentosProps = {}) {
             currentRows.map((row) => (
               <DataTableRow key={row.id} onClick={() => {
                 if (viewMode === 'programa') {
-                  setSelectedRow(row as ProgramaRow);
+                  if (row.isStandalone) {
+                    onOpenStandalone?.(row.linkedGastoId!);
+                  } else {
+                    setSelectedRow(row as ProgramaRow);
+                  }
                 } else {
-                  onOpen?.(row.formId, row.itemId);
+                  if (row.isStandalone) {
+                    onOpenStandalone?.(row.id);
+                  } else {
+                    onOpen?.(row.formId, row.itemId);
+                  }
                 }
               }}>
                 <DataTableCell>

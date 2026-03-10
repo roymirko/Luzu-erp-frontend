@@ -247,6 +247,20 @@ function AppContent() {
         { label: "Talentos", path: null },
       ];
     }
+    if (path === "/talentos/nuevo") {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Talentos", path: "/talentos" },
+        { label: "Nuevo Formulario", path: null },
+      ];
+    }
+    if (path.startsWith("/talentos/editar/")) {
+      return [
+        { label: "Inicio", path: null },
+        { label: "Talentos", path: "/talentos" },
+        { label: "Editar Gasto", path: null },
+      ];
+    }
     if (path.startsWith("/talentos/gasto/")) {
       return [
         { label: "Inicio", path: null },
@@ -567,9 +581,11 @@ function AppContent() {
               <Route path="/implementacion" element={<ImplementacionPage />} />
               <Route path="/implementacion/gasto/:formId" element={<GastoImplementacionPage />} />
               <Route path="/implementacion/gasto/:formId/:itemId" element={<GastoImplementacionPage />} />
-              <Route path="/talentos" element={<TalentosPage />} />
-              <Route path="/talentos/gasto/:formId" element={<GastoTalentosPage />} />
-              <Route path="/talentos/gasto/:formId/:itemId" element={<GastoTalentosPage />} />
+               <Route path="/talentos" element={<TalentosPage />} />
+               <Route path="/talentos/nuevo" element={<NuevoGastoTalentosPage />} />
+               <Route path="/talentos/editar/:gastoId" element={<EditarGastoTalentosPage />} />
+               <Route path="/talentos/gasto/:formId" element={<GastoTalentosPage />} />
+               <Route path="/talentos/gasto/:formId/:itemId" element={<GastoTalentosPage />} />
               <Route path="/tecnica" element={<TecnicaPage />} />
               <Route path="/tecnica/nuevo" element={<NuevoGastoTecnicaPage />} />
               <Route path="/tecnica/editar/:gastoId" element={<EditarGastoTecnicaPage />} />
@@ -689,6 +705,8 @@ function TalentosPage() {
           navigate(`/talentos/gasto/${formId}`);
         }
       }}
+      onOpenStandalone={(gastoId) => navigate(`/talentos/editar/${gastoId}`)}
+      onNew={() => navigate("/talentos/nuevo")}
     />
   );
 }
@@ -700,6 +718,24 @@ function GastoTalentosPage() {
     <FormularioTalentos
       formId={formId}
       itemId={itemId}
+      onClose={() => navigate("/talentos")}
+    />
+  );
+}
+
+function NuevoGastoTalentosPage() {
+  const navigate = useNavigate();
+  return (
+    <FormularioTalentos onClose={() => navigate("/talentos")} />
+  );
+}
+
+function EditarGastoTalentosPage() {
+  const navigate = useNavigate();
+  const { gastoId } = useParams();
+  return (
+    <FormularioTalentos
+      gastoId={gastoId}
       onClose={() => navigate("/talentos")}
     />
   );

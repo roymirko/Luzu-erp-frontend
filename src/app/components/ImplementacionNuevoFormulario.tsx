@@ -158,7 +158,7 @@ export function ImplementacionNuevoFormulario({ formId, itemId }: Props) {
             <Input placeholder="Gasto de venta" className={isDark ? 'bg-[#1e1e1e] border-gray-800 text-white' : ''} />
           </div>
           <div>
-            <Label className={muted}>Sub rubro</Label>
+            <Label className={muted}>Subrubro</Label>
             <Input placeholder="Producción" className={isDark ? 'bg-[#1e1e1e] border-gray-800 text-white' : ''} />
           </div>
           <div>

@@ -663,12 +663,12 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="space-y-6 sm:space-y-8">
           <FormHeader
-            isDark={isDark}
-            title="Información de campaña"
-            subtitle="Detalle de la orden y registro de importes de técnica"
-            isCerrado={isCerrado}
-            estadoLabel={estadoOP}
-          />
+             isDark={isDark}
+             title={isStandalone ? 'Cargar Datos' : 'Información de campaña'}
+             subtitle={isStandalone ? 'Complete la información del nuevo formulario de Técnica' : 'Detalle de la orden y registro de importes de técnica'}
+             isCerrado={isCerrado}
+             estadoLabel={estadoOP}
+           />
 
           {isStandalone ? (
             <div className={cn(
@@ -700,13 +700,13 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
                   isDark={isDark}
                 />
                 <FormSelect
-                  label="Sub rubro"
-                  value={subRubro}
-                  onChange={setSubRubro}
-                  options={SUBRUBROS_TECNICA_OPTIONS}
-                  required
-                  isDark={isDark}
-                  error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
+                   label="Subrubro"
+                   value={subRubro}
+                   onChange={setSubRubro}
+                   options={SUBRUBROS_TECNICA_OPTIONS}
+                   required
+                   isDark={isDark}
+                   error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
                 />
                 <div className="sm:col-span-2">
                   <FormInput

@@ -16,8 +16,16 @@ import {
   type BloqueImporte,
   type EstadoOP,
 } from './implementacion';
+import { FormSelect } from './ui/form-select';
+import { FormInput } from './ui/form-input';
 import type { CreateGastoTalentosInput, GastoTalentos } from '../types/talentos';
-import { TALENTOS_DEFAULTS } from '@/app/utils/implementacionConstants';
+import {
+  TALENTOS_DEFAULTS,
+  UNIDADES_NEGOCIO_OPTIONS,
+  CATEGORIAS_NEGOCIO_OPTIONS,
+  SUBRUBROS_TALENTOS_OPTIONS,
+  PROGRAMAS_LUZU,
+} from '@/app/utils/implementacionConstants';
 
 interface FormularioTalentosProps {
   gastoId?: string;
@@ -64,9 +72,13 @@ function bloqueToCreateInput(
     defaultItemOrdenPublicidadId?: string;
     rubro?: string;
     subRubro?: string;
+    nombreCampana?: string;
+    unidadNegocio?: string;
+    categoriaNegocio?: string;
   }
 ): CreateGastoTalentosInput {
   return {
+    areaOrigen: 'talentos',
     proveedor: bloque.proveedor,
     razonSocial: bloque.razonSocial,
     fechaFactura: bloque.fechaComprobante,
@@ -83,12 +95,16 @@ function bloqueToCreateInput(
     condicionPago: bloque.condicionPago,
     formaPago: bloque.formaPago,
     numeroFactura: bloque.numeroComprobante || undefined,
+    nombreCampana: shared.nombreCampana,
+    unidadNegocio: shared.unidadNegocio,
+    categoriaNegocio: shared.categoriaNegocio,
   };
 }
 
 export function FormularioTalentos({ gastoId, formId, itemId, onClose }: FormularioTalentosProps) {
   const { isDark } = useTheme();
   const {
+    gastos: allGastos,
     addGasto,
     addMultipleGastos,
     updateGasto,
@@ -100,8 +116,29 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
   const { formularios } = useFormularios();
   const { currentUser } = useData();
 
-  const ordenPublicidadData = useMemo(() => {
-    if (!formId) return null;
+   const ordenPublicidadData = useMemo(() => {
+     if (!formId) {
+       return {
+         ordenPublicidad: '',
+         unidadNegocio: '',
+         categoriaNegocio: '',
+         acuerdoPago: '',
+         presupuesto: 0,
+         programasConPresupuesto: PROGRAMAS_LUZU.map((p) => ({
+           value: p,
+           label: p,
+           limite: 0,
+           itemId: '',
+         })),
+         responsable: '',
+         marca: '',
+         mesServicio: '',
+         formaPago: '',
+         facturaEmitidaA: '',
+         empresa: '',
+       };
+     }
+
     const formulario = formularios.find((f) => f.id === formId);
     if (!formulario) return null;
 
@@ -153,6 +190,8 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
+  const isStandalone = !formId;
+
   const [facturaEmitidaA, setFacturaEmitidaA] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [importes, setImportes] = useState<BloqueImporte[]>([]);
@@ -160,6 +199,12 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>(EMPTY_ERRORS);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
+  // Standalone mode fields
+  const [unidadNegocio, setUnidadNegocio] = useState('');
+  const [categoriaNegocio, setCategoriaNegocio] = useState('');
+  const [subRubro, setSubRubro] = useState('');
+  const [nombreCampana, setNombreCampana] = useState('');
 
   const dataLoadedRef = useRef(false);
   const lastLoadedItemIdRef = useRef<string | undefined>(undefined);
@@ -198,26 +243,44 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
      };
 
     const loadGastos = (gastos: GastoTalentos[]) => {
-      const sortedGastos = [...gastos].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-      const first = sortedGastos[0];
-      setFacturaEmitidaA(first.facturaEmitidaA);
-      setEmpresa(first.empresa);
-      setEstadoOP(first.estado);
-      setImportes(sortedGastos.map(gastoToBloqueImporte));
-      loadedGastoIdsRef.current = new Set(sortedGastos.map(g => g.id));
-      dataLoadedRef.current = true;
-    };
+       const sortedGastos = [...gastos].sort(
+         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+       );
+       const first = sortedGastos[0];
+       setFacturaEmitidaA(first.facturaEmitidaA);
+       setEmpresa(first.empresa);
+       setEstadoOP(first.estado);
+       setImportes(sortedGastos.map(gastoToBloqueImporte));
+       loadedGastoIdsRef.current = new Set(sortedGastos.map(g => g.id));
+       dataLoadedRef.current = true;
+     };
+
+    if (isStandalone && !gastoId) {
+      initEmptyForm();
+      return;
+    }
 
     if (gastoId) {
       const existingGasto = getGastoById(gastoId);
       if (existingGasto) {
-        setFacturaEmitidaA(existingGasto.facturaEmitidaA);
-        setEmpresa(existingGasto.empresa);
-        setEstadoOP(existingGasto.estado);
-        setImportes([gastoToBloqueImporte(existingGasto)]);
-        loadedGastoIdsRef.current = new Set([existingGasto.id]);
+        // Standalone: load ALL gastos with same nombreCampana (they were created together)
+        if (!existingGasto.ordenPublicidadId && existingGasto.nombreCampana) {
+          const relatedGastos = allGastos.filter(g =>
+            !g.ordenPublicidadId && g.nombreCampana === existingGasto.nombreCampana
+          );
+          loadGastos(relatedGastos.length > 0 ? relatedGastos : [existingGasto]);
+          setUnidadNegocio(existingGasto.unidadNegocio || '');
+          setCategoriaNegocio(existingGasto.categoriaNegocio || '');
+          setSubRubro(existingGasto.subRubro || '');
+          setNombreCampana(existingGasto.nombreCampana || '');
+        } else {
+          // OP-linked or no campaign: load just this gasto
+          setFacturaEmitidaA(existingGasto.facturaEmitidaA);
+          setEmpresa(existingGasto.empresa);
+          setEstadoOP(existingGasto.estado);
+          setImportes([gastoToBloqueImporte(existingGasto)]);
+          loadedGastoIdsRef.current = new Set([existingGasto.id]);
+        }
         dataLoadedRef.current = true;
       }
     } else if (formId && itemId) {
@@ -229,7 +292,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
       if (existingGastos.length > 0) loadGastos(existingGastos);
       else initEmptyForm();
     }
-  }, [gastoId, formId, itemId, getGastoById, getGastosByItemOrdenId, getGastosByOrdenId]);
+  }, [gastoId, formId, itemId, isStandalone, allGastos, getGastoById, getGastosByItemOrdenId, getGastosByOrdenId]);
 
   const isCerrado = estadoOP === 'cerrado' || estadoOP === 'anulado';
   const existingGastoIds = loadedGastoIdsRef.current;
@@ -238,6 +301,12 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
 
   const validateForm = useCallback((): FormErrors => {
     const newErrors: FormErrors = { cargaDatos: {}, importes: {} };
+
+    // Validaciones en modo standalone
+    if (isStandalone) {
+      if (!subRubro) newErrors.cargaDatos.subRubro = 'Requerido';
+      if (!nombreCampana) newErrors.cargaDatos.nombreCampana = 'Requerido';
+    }
 
     for (const imp of importes) {
       const importeErrors: Record<string, string> = {};
@@ -271,7 +340,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
     }
 
     return newErrors;
-  }, [importes]);
+  }, [importes, isStandalone, subRubro, nombreCampana]);
 
   useEffect(() => {
     if (hasAttemptedSubmit) setErrors(validateForm());
@@ -391,6 +460,15 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
     );
   };
 
+  // In standalone mode, resolve ordenPublicidadId from the item's parent formulario
+  const resolveOrdenId = useCallback((importeItemId?: string): string | undefined => {
+    if (!isStandalone || !importeItemId) return formId;
+    const ownerForm = formularios.find(f =>
+      f.importeRows?.some(row => row.id === importeItemId)
+    );
+    return ownerForm?.id || formId;
+  }, [isStandalone, formId, formularios]);
+
   const handleSaveGasto = async (importe: BloqueImporte, index: number): Promise<boolean> => {
     const isExisting = loadedGastoIdsRef.current.has(importe.id);
 
@@ -419,12 +497,15 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
         }
         toast.error(`Error al actualizar gasto #${index + 1}`);
         return false;
-      } else {
+       } else {
         const input = bloqueToCreateInput(importe, {
-          ordenPublicidadId: formId,
+          ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
           defaultItemOrdenPublicidadId: itemId,
           rubro: TALENTOS_DEFAULTS.rubro,
-          subRubro: TALENTOS_DEFAULTS.subRubro,
+          subRubro: isStandalone ? subRubro : TALENTOS_DEFAULTS.subRubro,
+          nombreCampana: isStandalone ? nombreCampana : undefined,
+          unidadNegocio: isStandalone ? unidadNegocio : undefined,
+          categoriaNegocio: isStandalone ? categoriaNegocio : undefined,
         });
 
         const created = await addGasto(input);
@@ -466,7 +547,10 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
         ordenPublicidadId: formId,
         defaultItemOrdenPublicidadId: itemId,
         rubro: TALENTOS_DEFAULTS.rubro,
-        subRubro: TALENTOS_DEFAULTS.subRubro,
+        subRubro: isStandalone ? subRubro : TALENTOS_DEFAULTS.subRubro,
+        nombreCampana: isStandalone ? nombreCampana : undefined,
+        unidadNegocio: isStandalone ? unidadNegocio : undefined,
+        categoriaNegocio: isStandalone ? categoriaNegocio : undefined,
       };
 
       const loadedIds = loadedGastoIdsRef.current;
@@ -500,7 +584,10 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
 
       if (importesToCreate.length > 0) {
         const inputs: CreateGastoTalentosInput[] = importesToCreate.map((imp) =>
-          bloqueToCreateInput(imp, sharedFields)
+          bloqueToCreateInput(imp, {
+            ...sharedFields,
+            ordenPublicidadId: resolveOrdenId(imp.itemOrdenPublicidadId),
+          })
         );
         const created = await addMultipleGastos(inputs);
         createCount = created.length;
@@ -551,23 +638,75 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
         <div className="space-y-6 sm:space-y-8">
           <FormHeader
             isDark={isDark}
-            title="Información de campaña - Talentos"
-            subtitle="Detalle de la orden y registro de importes de talentos"
+            title={isStandalone ? 'Cargar Datos' : 'Información de campaña'}
+            subtitle={isStandalone ? 'Complete la información del nuevo formulario de Talentos' : 'Detalle de la orden y registro de importes de talentos'}
             isCerrado={isCerrado}
             estadoLabel={estadoOP}
           />
 
-          <CampaignInfoCard
-            isDark={isDark}
-            ordenPublicidad={ordenPublicidadData?.ordenPublicidad || ''}
-            presupuesto={String(ordenPublicidadData?.presupuesto || 0)}
-            mesServicio={ordenPublicidadData?.mesServicio}
-            unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
-            categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
-            marca={ordenPublicidadData?.marca}
-            rubro={TALENTOS_DEFAULTS.rubro}
-            subRubro={TALENTOS_DEFAULTS.subRubro}
-          />
+          {isStandalone ? (
+            <div className={cn(
+              'rounded-lg border p-6 space-y-4',
+              isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
+            )}>
+              <h2 className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-gray-900')}>
+                Datos de la campaña
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormSelect
+                  label="Unidad de negocio"
+                  value={unidadNegocio}
+                  onChange={setUnidadNegocio}
+                  options={UNIDADES_NEGOCIO_OPTIONS}
+                  isDark={isDark}
+                />
+                <FormSelect
+                  label="Categoría de negocio"
+                  value={categoriaNegocio}
+                  onChange={setCategoriaNegocio}
+                  options={CATEGORIAS_NEGOCIO_OPTIONS}
+                  isDark={isDark}
+                />
+                <FormInput
+                  label="Rubro de gasto"
+                  value={TALENTOS_DEFAULTS.rubro}
+                  disabled
+                  isDark={isDark}
+                />
+                <FormSelect
+                   label="Subrubro"
+                   value={subRubro}
+                   onChange={setSubRubro}
+                   options={SUBRUBROS_TALENTOS_OPTIONS}
+                   required
+                   isDark={isDark}
+                   error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
+                 />
+                <div className="sm:col-span-2">
+                  <FormInput
+                    label="Proyecto"
+                    value={nombreCampana}
+                    onChange={setNombreCampana}
+                    required
+                    isDark={isDark}
+                    error={hasAttemptedSubmit ? errors.cargaDatos.nombreCampana : undefined}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <CampaignInfoCard
+              isDark={isDark}
+              ordenPublicidad={ordenPublicidadData?.ordenPublicidad || ''}
+              presupuesto={String(ordenPublicidadData?.presupuesto || 0)}
+              mesServicio={ordenPublicidadData?.mesServicio}
+              unidadNegocio={ordenPublicidadData?.unidadNegocio || ''}
+              categoriaNegocio={ordenPublicidadData?.categoriaNegocio || ''}
+              marca={ordenPublicidadData?.marca}
+              rubro={TALENTOS_DEFAULTS.rubro}
+              subRubro={TALENTOS_DEFAULTS.subRubro}
+            />
+          )}
 
           <CargaImportesSection
             isDark={isDark}
