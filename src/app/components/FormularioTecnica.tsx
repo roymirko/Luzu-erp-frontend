@@ -670,56 +670,48 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
              estadoLabel={estadoOP}
            />
 
-          {isStandalone ? (
-            <div className={cn(
-              'rounded-lg border p-6 space-y-4',
-              isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
-            )}>
-              <h2 className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-gray-900')}>
-                Datos de la campaña
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormSelect
-                  label="Unidad de negocio"
-                  value={unidadNegocio}
-                  onChange={setUnidadNegocio}
-                  options={UNIDADES_NEGOCIO_OPTIONS}
-                  isDark={isDark}
-                />
-                <FormSelect
-                  label="Categoría de negocio"
-                  value={categoriaNegocio}
-                  onChange={setCategoriaNegocio}
-                  options={CATEGORIAS_NEGOCIO_OPTIONS}
-                  isDark={isDark}
-                />
-                <FormInput
-                  label="Rubro de gasto"
-                  value={TECNICA_DEFAULTS.rubro}
-                  disabled
-                  isDark={isDark}
-                />
-                <FormSelect
-                   label="Subrubro"
-                   value={subRubro}
-                   onChange={setSubRubro}
-                   options={SUBRUBROS_TECNICA_OPTIONS}
-                   required
+            {isStandalone ? (
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <FormSelect
+                   label="Unidad de negocio"
+                   value={unidadNegocio}
+                   onChange={setUnidadNegocio}
+                   options={UNIDADES_NEGOCIO_OPTIONS}
                    isDark={isDark}
-                   error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
-                />
-                <div className="sm:col-span-2">
-                  <FormInput
-                    label="Proyecto"
-                    value={nombreCampana}
-                    onChange={setNombreCampana}
+                 />
+                 <FormSelect
+                   label="Categoría de negocio"
+                   value={categoriaNegocio}
+                   onChange={setCategoriaNegocio}
+                   options={CATEGORIAS_NEGOCIO_OPTIONS}
+                   isDark={isDark}
+                 />
+                 <FormInput
+                   label="Rubro de gasto"
+                   value={TECNICA_DEFAULTS.rubro}
+                   disabled
+                   isDark={isDark}
+                 />
+                 <FormSelect
+                    label="Subrubro"
+                    value={subRubro}
+                    onChange={setSubRubro}
+                    options={SUBRUBROS_TECNICA_OPTIONS}
                     required
                     isDark={isDark}
-                    error={hasAttemptedSubmit ? errors.cargaDatos.nombreCampana : undefined}
-                  />
-                </div>
-              </div>
-            </div>
+                    error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
+                 />
+                 <div className="sm:col-span-2">
+                   <FormInput
+                     label="Proyecto"
+                     value={nombreCampana}
+                     onChange={setNombreCampana}
+                     required
+                     isDark={isDark}
+                     error={hasAttemptedSubmit ? errors.cargaDatos.nombreCampana : undefined}
+                   />
+                 </div>
+               </div>
           ) : (
             <CampaignInfoCard
               isDark={isDark}
@@ -756,15 +748,14 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
             blockInheritedFields={ordenPublicidadData?.formaPago === 'Efectivo (Contado)'}
           />
 
-          {!isStandalone && (
-            <ResumenPresupuestario
-              isDark={isDark}
-              asignado={asignado}
-              ejecutado={totalEjecutado}
-              disponible={disponible}
-              excedido={excedido}
-            />
-          )}
+          <ResumenPresupuestario
+            isDark={isDark}
+            asignado={asignado}
+            ejecutado={totalEjecutado}
+            disponible={disponible}
+            excedido={excedido}
+            isStandalone={isStandalone}
+          />
 
           <FormFooter saving={saving} onCancel={onClose} onSave={handleGuardar} />
         </div>

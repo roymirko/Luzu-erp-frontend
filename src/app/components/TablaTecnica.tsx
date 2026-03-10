@@ -280,14 +280,20 @@ export function TablaTecnica({ onOpen, onOpenStandalone, onNew }: TablaTecnicaPr
               {searchTerm ? 'No se encontraron resultados' : 'Sin gastos registrados'}
             </DataTableEmpty>
           ) : (
-            currentRows.map((row) => (
-              <DataTableRow key={row.id} onClick={() => {
-                if (viewMode === 'programa') {
-                  setSelectedRow(row as ProgramaRow);
-                } else {
-                  onOpen?.(row.formId, row.itemId);
-                }
-              }}>
+             currentRows.map((row) => (
+               <DataTableRow key={row.id} onClick={() => {
+                 if (viewMode === 'programa') {
+                   setSelectedRow(row as ProgramaRow);
+                 } else {
+                   // For standalone gastos (no formId), use onOpenStandalone
+                   if (!row.formId && row.linkedGastoId) {
+                     onOpenStandalone?.(row.linkedGastoId);
+                   } else {
+                     // For linked gastos, use onOpen
+                     onOpen?.(row.formId, row.itemId);
+                   }
+                 }
+               }}>
                 <DataTableCell>
                   <StatusBadge label={getStatusLabel(row.estado)} variant={getStatusVariant(row.estado)} />
                 </DataTableCell>
