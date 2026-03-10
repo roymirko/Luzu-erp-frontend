@@ -20,26 +20,24 @@ import { formatDateDDMMYYYY, formatMesServicio } from '../utils/dateFormatters';
 
 const ITEMS_PER_PAGE = 10;
 
-// Vista por Orden de Publicidad (agrupado)
-const COLUMNS_ORDEN = [
-  'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
-  'Categoría de negocio', 'Marca', 'Orden de Publicidad', 'Presupuesto', 'Dinero Disponible', 'Cant. de programas',
-  'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Neto Total', 'Acciones'
+// Vista por Gasto (individual)
+const COLUMNS_GASTO = [
+  'Estado', 'Mes de servicio', 'Orden de Publicidad', 'Unidad de negocio',
+  'Empresa/Programa', 'Proveedor', 'Neto', 'Acciones'
 ];
 
-// Vista por Programa (individual)
+// Vista por Programa (agrupado)
 const COLUMNS_PROGRAMA = [
-  'Estado', 'Mes de servicio', 'Fecha de registro', 'Responsable', 'Unidad de negocio',
-  'Categoría de negocio', 'Marca', 'Empresa/Programa', 'Detalle de Publicidad', 'Presupuesto', 'Dinero Disponible',
-  'Sector', 'Rubro de gasto', 'Sub rubro', 'Nombre de campaña', 'Acuerdo de pago', 'Neto', 'Acciones'
+  'Estado', 'Mes de servicio', 'Orden de Publicidad', 'Empresa/Programa', 'Cant. de gastos',
+  'Asignado', 'Ejecutado', 'Dinero disponible', 'Acciones'
 ];
 
 const VIEW_MODE_OPTIONS = [
+  { value: 'gasto', label: 'Gasto' },
   { value: 'programa', label: 'Programa' },
-  { value: 'orden', label: 'Orden de Publicidad' },
 ];
 
-type ViewMode = 'orden' | 'programa';
+type ViewMode = 'gasto' | 'programa';
 
 type ProgramaRow = {
   id: string;
@@ -48,20 +46,14 @@ type ProgramaRow = {
   linkedGastoId?: string;
   estado: string;
   mesServicio: string;
-  fechaRegistro: string;
-  responsable: string;
-  unidadNegocio: string;
-  categoriaNegocio: string;
-  marca: string;
-  empresaPrograma: string;
   ordenPublicidad: string;
-  presupuesto: number;
-  sector: string;
-  rubro: string;
-  subRubro: string;
-  nombreCampana: string;
-  acuerdoPago: string;
+  empresaPrograma: string;
+  proveedor?: string;
   neto: number;
+  cantidadGastos?: number;
+  asignado?: number;
+  ejecutado?: number;
+  disponible?: number;
 };
 
 const InfoRow = ({ label, value }: { label: string; value?: string | number }) => (
@@ -81,7 +73,7 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
   const { gastos, getGastoById } = useImplementacion();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('orden');
+  const [viewMode, setViewMode] = useState<ViewMode>('gasto');
   const [selectedRow, setSelectedRow] = useState<ProgramaRow | null>(null);
 
   // Get linked gasto details when a row is selected
@@ -129,219 +121,97 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
     }
   };
 
-  // Rows for "Orden de Publicidad" view (grouped)
-  const rowsOrden = useMemo(() => {
-    const fromFormularios = formularios.flatMap((form) => {
-      if (!Array.isArray(form.importeRows)) return [] as any[];
-
-      // Group by orden de publicidad
-      const itemsWithImpl = form.importeRows.filter((item) => {
-        const v = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
-        return !isNaN(v) && v > 0;
-      });
-
-      if (itemsWithImpl.length === 0) return [];
-
-      const linkedGastos = gastos.filter(g =>
-        g.ordenPublicidadId === form.id
-      );
-
-      const totalPresupuesto = itemsWithImpl.reduce((sum, item) => {
-        return sum + parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
-      }, 0);
-
-      const totalNeto = linkedGastos.reduce((sum, g) => sum + (g.neto || 0), 0);
-
-      // Get fecha de registro from first saved gasto (earliest createdAt)
-      const fechaRegistro = linkedGastos.length > 0
-        ? formatDateDDMMYYYY(linkedGastos.reduce((earliest, g) =>
-            new Date(g.createdAt) < new Date(earliest.createdAt) ? g : earliest
-          ).createdAt)
-        : '-';
-
-      return [{
-        id: form.id,
-        formId: form.id,
-        itemId: undefined,
-        estado: linkedGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
-        mesServicio: formatMesServicio(form.mesServicio),
-        fechaRegistro,
-        responsable: form.responsable,
-        unidadNegocio: form.unidadNegocio,
-        categoriaNegocio: form.categoriaNegocio || 'N/A',
-        marca: form.marca || '-',
-        ordenPublicidad: form.ordenPublicidad,
-        presupuesto: totalPresupuesto,
-        dineroDisponible: totalPresupuesto - totalNeto,
-        cantidadProgramas: itemsWithImpl.length,
-        sector: 'Implementación',
-        rubro: 'Gasto de venta',
-        subRubro: '-',
-        nombreCampana: form.nombreCampana || '-',
-        netoTotal: totalNeto,
-      }];
-    });
-
-    // Add standalone gastos not linked to formularios
-    const formIds = new Set(formularios.map(f => f.id));
-    const standaloneGastos = gastos
-      .filter(g => !g.ordenPublicidadId || !formIds.has(g.ordenPublicidadId))
+  // Rows for "Gasto" view (individual)
+  const rowsGasto = useMemo(() => {
+    return gastos
       .map((gasto) => {
-        const netoTotal = gasto.importes?.reduce((sum: number, imp: any) => sum + (parseFloat(imp.neto) || 0), 0) || gasto.neto || 0;
-        const presupuesto = gasto.neto || 0;
+        const formulario = formularios.find(f => f.id === gasto.ordenPublicidadId);
+        
         return {
           id: gasto.id,
-          formId: gasto.id,
-          itemId: undefined,
+          formId: gasto.ordenPublicidadId || '',
+          linkedGastoId: gasto.id,
           estado: gasto.estado === 'pendiente' ? 'Pendiente' : gasto.estado === 'activo' ? 'Activo' : gasto.estado === 'cerrado' ? 'Cerrado' : 'Anulado',
           mesServicio: formatMesServicio(gasto.mesServicio),
-          fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
-          responsable: gasto.responsable || '-',
-          unidadNegocio: gasto.unidadNegocio || '-',
-          categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-          marca: gasto.marca || '-',
-          ordenPublicidad: gasto.ordenPublicidad || '-',
-          presupuesto,
-          dineroDisponible: presupuesto - netoTotal,
-          cantidadProgramas: gasto.importes?.length || 1,
-          sector: gasto.sector || '-',
-          rubro: gasto.rubro || '-',
-          subRubro: gasto.subRubro || '-',
-          nombreCampana: gasto.nombreCampana || '-',
-          netoTotal,
+          ordenPublicidad: formulario?.ordenPublicidad || gasto.ordenPublicidad || '-',
+          unidadNegocio: gasto.unidadNegocio || formulario?.unidadNegocio || '-',
+          empresaPrograma: gasto.empresaPrograma || '-',
+          proveedor: gasto.proveedor || '-',
+          neto: gasto.neto || 0,
         };
+      })
+      .filter((row) => {
+        if (!searchTerm) return true;
+        const s = searchTerm.toLowerCase();
+        return (
+          row.ordenPublicidad?.toLowerCase().includes(s) ||
+          row.empresaPrograma?.toLowerCase().includes(s) ||
+          row.unidadNegocio?.toLowerCase().includes(s) ||
+          row.proveedor?.toLowerCase().includes(s)
+        );
       });
+  }, [gastos, formularios, searchTerm]);
 
-    return [...fromFormularios, ...standaloneGastos].filter((row) => {
-      if (!searchTerm) return true;
-      const s = searchTerm.toLowerCase();
-      return (
-        row.ordenPublicidad?.toLowerCase().includes(s) ||
-        row.responsable?.toLowerCase().includes(s) ||
-        row.unidadNegocio?.toLowerCase().includes(s) ||
-        row.nombreCampana?.toLowerCase().includes(s)
-      );
-    });
-  }, [formularios, gastos, searchTerm]);
-
-  // Rows for "Programa" view (individual gastos)
+  // Rows for "Programa" view (grouped by program)
   const rowsPrograma = useMemo(() => {
-    const fromFormularios = formularios.flatMap((form) => {
-      if (!Array.isArray(form.importeRows)) return [] as any[];
-      return form.importeRows
-        .filter((item) => {
-          const v = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
-          return !isNaN(v) && v > 0;
-        })
-        .map((item) => {
-          const linkedGasto = gastos.find(g =>
-            g.ordenPublicidadId === form.id &&
-            g.itemOrdenPublicidadId === item.id
-          );
+    const programasMap = new Map<string, {
+      formulario: any;
+      item: any;
+      gastos: any[];
+    }>();
 
-          const presupuestoImpl = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, ''));
-          const netoGastado = linkedGasto?.neto || 0;
-
-          return {
-            id: linkedGasto ? linkedGasto.id : `${form.id}-${item.id}`,
-            formId: form.id,
-            itemId: item.id,
-            linkedGastoId: linkedGasto?.id,
-            estado: linkedGasto ? (linkedGasto.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente de Factura') : 'Pendiente de carga',
-            mesServicio: formatMesServicio(linkedGasto?.mesServicio || form.mesServicio),
-            fechaRegistro: linkedGasto ? formatDateDDMMYYYY(linkedGasto.createdAt) : '-',
-            responsable: linkedGasto?.responsable || form.responsable,
-            unidadNegocio: form.unidadNegocio,
-            categoriaNegocio: form.categoriaNegocio || 'N/A',
-            marca: linkedGasto?.marca || form.marca || '-',
-            empresaPrograma: item.programa || '-',
-            ordenPublicidad: form.ordenPublicidad,
-            presupuesto: presupuestoImpl,
-            dineroDisponible: presupuestoImpl - netoGastado,
-            sector: 'Implementación',
-            rubro: linkedGasto?.rubro || 'Gasto de venta',
-            subRubro: linkedGasto?.subRubro || '-',
-            nombreCampana: form.nombreCampana || '-',
-            acuerdoPago: linkedGasto?.acuerdoPago || '-',
-            neto: netoGastado,
-          };
+    // Build map of programs with their associated gastos
+    formularios.forEach((form) => {
+      form.importeRows?.forEach((item) => {
+        if (!item.programa) return;
+        const key = `${form.id}-${item.id}`;
+        const itemGastos = gastos.filter(g => 
+          g.ordenPublicidadId === form.id && 
+          g.itemOrdenPublicidadId === item.id
+        );
+        
+        programasMap.set(key, {
+          formulario: form,
+          item,
+          gastos: itemGastos
         });
+      });
     });
 
-    // Add standalone gastos importes
-    const formItemIds = new Set(fromFormularios.map(r => r.linkedGastoId).filter(Boolean));
+    const programa_rows = Array.from(programasMap.values()).map(({ formulario, item, gastos: itemGastos }) => {
+      const presupuesto = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, '')) || 0;
+      const ejecutado = itemGastos.reduce((sum, g) => sum + (g.neto || 0), 0);
+      const disponible = presupuesto - ejecutado;
 
-    const standaloneImportes = gastos
-      .filter(g => !formItemIds.has(g.id))
-      .flatMap((gasto) => {
-        if (gasto.importes && gasto.importes.length > 0) {
-          return gasto.importes.map((imp: any) => {
-            const netoImp = parseFloat(imp.neto) || 0;
-            return {
-              id: imp.id,
-              formId: gasto.id,
-              itemId: imp.id,
-              linkedGastoId: gasto.id,
-              estado: imp.estadoPgm === 'pagado' ? 'Pagado' : 'Pendiente de Factura',
-              mesServicio: formatMesServicio(gasto.mesServicio),
-              fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
-              responsable: gasto.responsable || '-',
-              unidadNegocio: gasto.unidadNegocio || '-',
-              categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-              marca: gasto.marca || '-',
-              empresaPrograma: imp.empresaPgm || imp.programa || '-',
-              ordenPublicidad: gasto.ordenPublicidad || '-',
-              presupuesto: netoImp,
-              dineroDisponible: 0, // Standalone gastos: presupuesto = neto, so disponible = 0
-              sector: gasto.sector || '-',
-              rubro: gasto.rubro || '-',
-              subRubro: gasto.subRubro || '-',
-              nombreCampana: gasto.nombreCampana || '-',
-              acuerdoPago: imp.condicionPago || gasto.acuerdoPago || '-',
-              neto: netoImp,
-            };
-          });
-        }
-        const netoGasto = gasto.neto || 0;
-        return [{
-          id: gasto.id,
-          formId: gasto.id,
-          itemId: undefined,
-          linkedGastoId: gasto.id,
-          estado: gasto.estadoPago === 'pagado' ? 'Pagado' : 'Pendiente de Factura',
-          mesServicio: formatMesServicio(gasto.mesServicio),
-          fechaRegistro: formatDateDDMMYYYY(gasto.createdAt),
-          responsable: gasto.responsable || '-',
-          unidadNegocio: gasto.unidadNegocio || '-',
-          categoriaNegocio: gasto.categoriaNegocio || 'N/A',
-          marca: gasto.marca || '-',
-          empresaPrograma: '-',
-          ordenPublicidad: gasto.ordenPublicidad || '-',
-          presupuesto: netoGasto,
-          dineroDisponible: 0, // Standalone gastos: presupuesto = neto, so disponible = 0
-          sector: gasto.sector || '-',
-          rubro: gasto.rubro || '-',
-          subRubro: gasto.subRubro || '-',
-          nombreCampana: gasto.nombreCampana || '-',
-          acuerdoPago: gasto.acuerdoPago || '-',
-          neto: netoGasto,
-        }];
-      });
+      return {
+        id: `${formulario.id}-${item.id}`,
+        formId: formulario.id,
+        itemId: item.id,
+        linkedGastoId: itemGastos.length > 0 ? itemGastos[0].id : undefined,
+        estado: itemGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
+        mesServicio: formatMesServicio(formulario.mesServicio),
+        ordenPublicidad: formulario.ordenPublicidad,
+        empresaPrograma: item.programa || '-',
+        cantidadGastos: itemGastos.length,
+        asignado: presupuesto,
+        ejecutado: ejecutado,
+        disponible: disponible,
+        neto: ejecutado,
+      };
+    });
 
-    return [...fromFormularios, ...standaloneImportes].filter((row) => {
+    return programa_rows.filter((row) => {
       if (!searchTerm) return true;
       const s = searchTerm.toLowerCase();
       return (
         row.ordenPublicidad?.toLowerCase().includes(s) ||
-        row.empresaPrograma?.toLowerCase().includes(s) ||
-        row.responsable?.toLowerCase().includes(s) ||
-        row.nombreCampana?.toLowerCase().includes(s)
+        row.empresaPrograma?.toLowerCase().includes(s)
       );
     });
   }, [formularios, gastos, searchTerm]);
 
-  const rows = viewMode === 'orden' ? rowsOrden : rowsPrograma;
-  const columns = viewMode === 'orden' ? COLUMNS_ORDEN : COLUMNS_PROGRAMA;
+  const rows = viewMode === 'gasto' ? rowsGasto : rowsPrograma;
+  const columns = viewMode === 'gasto' ? COLUMNS_GASTO : COLUMNS_PROGRAMA;
 
   const totalPages = Math.max(1, Math.ceil(rows.length / ITEMS_PER_PAGE));
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -398,36 +268,23 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
                   <StatusBadge label={getStatusLabel(row.estado)} variant={getStatusVariant(row.estado)} />
                 </DataTableCell>
                 <DataTableCell>{row.mesServicio}</DataTableCell>
-                <DataTableCell>{row.fechaRegistro}</DataTableCell>
-                <DataTableCell>{row.responsable}</DataTableCell>
-                <DataTableCell>{row.unidadNegocio}</DataTableCell>
-                <DataTableCell>{row.categoriaNegocio}</DataTableCell>
-                <DataTableCell>{row.marca}</DataTableCell>
 
-                {viewMode === 'orden' ? (
+                {viewMode === 'gasto' ? (
                   <>
                     <DataTableCell>{row.ordenPublicidad}</DataTableCell>
-                    <DataTableCell>{formatPesos(row.presupuesto)}</DataTableCell>
-                    <DataTableCell>{formatPesos(row.dineroDisponible)}</DataTableCell>
-                    <DataTableCell>{row.cantidadProgramas}</DataTableCell>
-                    <DataTableCell muted>{row.sector}</DataTableCell>
-                    <DataTableCell muted>{row.rubro}</DataTableCell>
-                    <DataTableCell muted>{row.subRubro}</DataTableCell>
-                    <DataTableCell muted>{row.nombreCampana}</DataTableCell>
-                    <DataTableCell>{formatPesos(row.netoTotal)}</DataTableCell>
+                    <DataTableCell>{row.unidadNegocio}</DataTableCell>
+                    <DataTableCell>{row.empresaPrograma}</DataTableCell>
+                    <DataTableCell>{row.proveedor}</DataTableCell>
+                    <DataTableCell>{formatPesos(row.neto)}</DataTableCell>
                   </>
                 ) : (
                   <>
-                    <DataTableCell>{row.empresaPrograma}</DataTableCell>
                     <DataTableCell>{row.ordenPublicidad}</DataTableCell>
-                    <DataTableCell>{formatPesos(row.presupuesto)}</DataTableCell>
-                    <DataTableCell>{formatPesos(row.dineroDisponible)}</DataTableCell>
-                    <DataTableCell muted>{row.sector}</DataTableCell>
-                    <DataTableCell muted>{row.rubro}</DataTableCell>
-                    <DataTableCell muted>{row.subRubro}</DataTableCell>
-                    <DataTableCell muted>{row.nombreCampana}</DataTableCell>
-                    <DataTableCell>{row.acuerdoPago}</DataTableCell>
-                    <DataTableCell>{formatPesos(row.neto)}</DataTableCell>
+                    <DataTableCell>{row.empresaPrograma}</DataTableCell>
+                    <DataTableCell>{row.cantidadGastos}</DataTableCell>
+                    <DataTableCell>{formatPesos(row.asignado)}</DataTableCell>
+                    <DataTableCell>{formatPesos(row.ejecutado)}</DataTableCell>
+                    <DataTableCell>{formatPesos(row.disponible)}</DataTableCell>
                   </>
                 )}
 
@@ -461,19 +318,30 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
       <Dialog open={!!selectedRow} onOpenChange={(open) => !open && setSelectedRow(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Detalle del Gasto</DialogTitle>
+            <DialogTitle>Detalle del {viewMode === 'gasto' ? 'Gasto' : 'Programa'}</DialogTitle>
           </DialogHeader>
 
           <div className="grid grid-cols-2 gap-4 py-4">
-            {/* Datos de la orden */}
             <InfoRow label="Estado" value={selectedRow?.estado} />
-            <InfoRow label="Programa" value={selectedRow?.empresaPrograma} />
-            <InfoRow label="Orden Publicidad" value={selectedRow?.ordenPublicidad} />
-            <InfoRow label="Presupuesto" value={formatPesos(selectedRow?.presupuesto || 0)} />
-            <InfoRow label="Neto" value={formatPesos(selectedRow?.neto || 0)} />
-            <InfoRow label="Responsable" value={selectedRow?.responsable} />
             <InfoRow label="Mes Servicio" value={selectedRow?.mesServicio} />
-            <InfoRow label="Acuerdo Pago" value={selectedRow?.acuerdoPago} />
+            <InfoRow label="Orden Publicidad" value={selectedRow?.ordenPublicidad} />
+            <InfoRow label="Empresa/Programa" value={selectedRow?.empresaPrograma} />
+            
+            {viewMode === 'gasto' && (
+              <>
+                <InfoRow label="Proveedor" value={selectedRow?.proveedor} />
+                <InfoRow label="Neto" value={formatPesos(selectedRow?.neto || 0)} />
+              </>
+            )}
+
+            {viewMode === 'programa' && (
+              <>
+                <InfoRow label="Cant. de gastos" value={selectedRow?.cantidadGastos} />
+                <InfoRow label="Asignado" value={formatPesos(selectedRow?.asignado || 0)} />
+                <InfoRow label="Ejecutado" value={formatPesos(selectedRow?.ejecutado || 0)} />
+                <InfoRow label="Dinero disponible" value={formatPesos(selectedRow?.disponible || 0)} />
+              </>
+            )}
 
             {/* Datos del gasto cargado */}
             {selectedGasto && (
