@@ -1,0 +1,322 @@
+-- ============================================
+-- LUZU ERP - Seed Data (PostgreSQL standalone)
+-- Requires schema.sql to be run first
+-- ============================================
+
+-- 1. ROLES
+INSERT INTO public.roles (name, description, permissions)
+VALUES
+  ('Administrador', 'Control total del sistema, puede crear, editar y eliminar usuarios y áreas',
+   '[
+      {"resource": "users", "actions": ["create", "read", "update", "delete"]},
+      {"resource": "areas", "actions": ["create", "read", "update", "delete"]},
+      {"resource": "roles", "actions": ["read"]},
+      {"resource": "logs", "actions": ["read"]},
+      {"resource": "forms", "actions": ["create", "read", "update", "delete"]},
+      {"resource": "tasks", "actions": ["create", "read", "update", "delete"]}
+    ]'::jsonb),
+  ('Editor', 'Puede editar contenido y gestionar tareas, pero no usuarios ni áreas',
+   '[
+      {"resource": "users", "actions": ["read"]},
+      {"resource": "areas", "actions": ["read"]},
+      {"resource": "forms", "actions": ["create", "read", "update"]},
+      {"resource": "tasks", "actions": ["create", "read", "update", "delete"]}
+    ]'::jsonb),
+  ('Visualizador', 'Solo puede ver información, sin permisos de edición',
+   '[
+      {"resource": "users", "actions": ["read"]},
+      {"resource": "areas", "actions": ["read"]},
+      {"resource": "forms", "actions": ["read"]},
+      {"resource": "tasks", "actions": ["read"]}
+    ]'::jsonb)
+ON CONFLICT (name) DO NOTHING;
+
+-- 1b. APP SETTINGS
+INSERT INTO public.app_settings (key, value) VALUES
+  ('finnegans_client_id', ''),
+  ('finnegans_client_secret', '')
+ON CONFLICT (key) DO NOTHING;
+
+-- 2. USUARIOS (password: admin123 — bcrypt hash)
+INSERT INTO public.usuarios (email, first_name, last_name, active, creado_por, metadata, password_hash)
+VALUES
+  ('admin@luzutv.com.ar', 'Admin', 'Luzu', true, 'system', '{"position": "Administrador"}'::jsonb, '$2a$06$3IzGdBcB.fX3Fc7FPmvqJOTbZq06zc2uwaZuG4oEElgbHKfzzqeQG'),
+  ('gaby@luzutv.com.ar', 'Gabriela', 'Riero', true, 'system', '{"position": "CEO"}'::jsonb, '$2a$06$3IzGdBcB.fX3Fc7FPmvqJOTbZq06zc2uwaZuG4oEElgbHKfzzqeQG'),
+  ('gestion@luzutv.com.ar', 'Felicitas', 'Carelli', true, 'system', '{"position": "Project Manager"}'::jsonb, '$2a$06$3IzGdBcB.fX3Fc7FPmvqJOTbZq06zc2uwaZuG4oEElgbHKfzzqeQG')
+ON CONFLICT (email) DO NOTHING;
+
+-- 3. AREAS
+INSERT INTO public.areas (name, code, description, active, creado_por, metadata)
+VALUES
+  ('Comercial', 'COM', 'Gestión de propuestas y estrategias comerciales', true, 'system', '{"color": "#fb2c36", "icon": "Briefcase"}'::jsonb),
+  ('Implementación', 'IMP', 'Implementación y gestión de proyectos técnicos', true, 'system', '{"color": "#3b82f6", "icon": "Settings"}'::jsonb),
+  ('Dir. de Programación', 'PRG', 'Planificación y dirección de programación de contenidos', true, 'system', '{"color": "#10b981", "icon": "TrendingUp"}'::jsonb),
+  ('Master', 'MST', 'Super administradores del sistema', true, 'system', '{"color": "#8b5cf6", "icon": "Users"}'::jsonb)
+ON CONFLICT (code) DO NOTHING;
+
+-- 4. USER-AREA-ROLE ASSIGNMENTS
+DO $$
+DECLARE
+  v_role_admin uuid;
+  v_user_admin uuid; v_user_gaby uuid; v_user_feli uuid;
+  v_area_com uuid; v_area_imp uuid; v_area_prg uuid; v_area_mst uuid;
+BEGIN
+  SELECT id INTO v_role_admin FROM public.roles WHERE name = 'Administrador';
+  SELECT id INTO v_user_admin FROM public.usuarios WHERE email = 'admin@luzutv.com.ar';
+  SELECT id INTO v_user_gaby FROM public.usuarios WHERE email = 'gaby@luzutv.com.ar';
+  SELECT id INTO v_user_feli FROM public.usuarios WHERE email = 'gestion@luzutv.com.ar';
+  SELECT id INTO v_area_com FROM public.areas WHERE code = 'COM';
+  SELECT id INTO v_area_imp FROM public.areas WHERE code = 'IMP';
+  SELECT id INTO v_area_prg FROM public.areas WHERE code = 'PRG';
+  SELECT id INTO v_area_mst FROM public.areas WHERE code = 'MST';
+
+  IF v_user_admin IS NOT NULL AND v_role_admin IS NOT NULL THEN
+    INSERT INTO public.usuario_area_roles (usuario_id, area_id, rol_id, assigned_by) VALUES
+      (v_user_admin, v_area_com, v_role_admin, 'system'),
+      (v_user_admin, v_area_imp, v_role_admin, 'system'),
+      (v_user_admin, v_area_prg, v_role_admin, 'system'),
+      (v_user_admin, v_area_mst, v_role_admin, 'system')
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  IF v_user_gaby IS NOT NULL AND v_role_admin IS NOT NULL THEN
+    INSERT INTO public.usuario_area_roles (usuario_id, area_id, rol_id, assigned_by) VALUES
+      (v_user_gaby, v_area_com, v_role_admin, 'system'),
+      (v_user_gaby, v_area_imp, v_role_admin, 'system'),
+      (v_user_gaby, v_area_prg, v_role_admin, 'system'),
+      (v_user_gaby, v_area_mst, v_role_admin, 'system')
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  IF v_user_feli IS NOT NULL AND v_role_admin IS NOT NULL THEN
+    INSERT INTO public.usuario_area_roles (usuario_id, area_id, rol_id, assigned_by) VALUES
+      (v_user_feli, v_area_com, v_role_admin, 'system'),
+      (v_user_feli, v_area_imp, v_role_admin, 'system'),
+      (v_user_feli, v_area_prg, v_role_admin, 'system')
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
+
+-- 5. ENTIDADES
+INSERT INTO public.entidades (razon_social, cuit, tipo_entidad, condicion_iva, empresa, direccion, activo, created_by) VALUES
+  ('Producciones Audiovisuales S.A.', '30712345678', 'proveedor', 'responsable_inscripto', 'Producciones Audiovisuales', 'Av. Corrientes 1234, CABA', true, 'system'),
+  ('Media Tech Argentina S.R.L.', '30723456789', 'proveedor', 'responsable_inscripto', 'Media Tech', 'Av. del Libertador 5678, CABA', true, 'system'),
+  ('Servicios de Contenido Digital S.A.', '30734567890', 'proveedor', 'responsable_inscripto', 'Contenido Digital', 'Av. Santa Fe 910, CABA', true, 'system'),
+  ('Talentos y Producción S.A.', '30745678901', 'proveedor', 'responsable_inscripto', 'Talentos', 'Av. Cabildo 1112, CABA', true, 'system'),
+  ('Equipamiento Técnico S.R.L.', '30756789012', 'proveedor', 'monotributista', 'Equipamiento', 'Av. Belgrano 1314, CABA', true, 'system'),
+  ('Estudio Creativo Buenos Aires S.A.', '30767890123', 'proveedor', 'responsable_inscripto', 'Estudio Creativo', 'Av. Rivadavia 2000, CABA', true, 'system'),
+  ('Logística Medios S.R.L.', '30778901234', 'proveedor', 'monotributista', 'Logística Medios', 'Av. Callao 500, CABA', true, 'system'),
+  ('Post Producción Argentina S.A.', '30789012345', 'proveedor', 'responsable_inscripto', 'Post Producción', 'Av. Córdoba 3000, CABA', true, 'system'),
+  ('Sonido Profesional S.R.L.', '30790123456', 'proveedor', 'monotributista', 'Sonido Pro', 'Av. Pueyrredón 800, CABA', true, 'system'),
+  ('Iluminación y Escenografía S.A.', '30801234567', 'proveedor', 'responsable_inscripto', 'Iluminación', 'Av. Las Heras 1500, CABA', true, 'system')
+ON CONFLICT (cuit) DO NOTHING;
+
+-- 6. ORDENES DE PUBLICIDAD + ITEMS
+DO $$
+DECLARE
+  v_orden1 uuid; v_orden2 uuid; v_orden3 uuid;
+  v_orden4 uuid; v_orden5 uuid; v_orden6 uuid;
+BEGIN
+  INSERT INTO public.ordenes_publicidad (fecha, mes_servicio, responsable, orden_publicidad, total_venta, unidad_negocio, razon_social, marca, nombre_campana, tipo_importe, acuerdo_pago)
+  VALUES ('2024-01-15', '2024-01', 'Gabriela Riero', 'OP-2024-001', '150000', 'Media', 'Coca Cola Argentina', 'Coca Cola', 'Verano 2024', 'factura', '30 días')
+  RETURNING id INTO v_orden1;
+  INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica) VALUES
+    (v_orden1, 'Nadie Dice Nada', '50000', '10000', '5000', '2000'),
+    (v_orden1, 'Antes Que Nadie', '50000', '8000', '4000', '1500'),
+    (v_orden1, 'Se Fue Larga', '50000', '7000', '3000', '1000');
+
+  INSERT INTO public.ordenes_publicidad (fecha, mes_servicio, responsable, orden_publicidad, total_venta, unidad_negocio, razon_social, marca, nombre_campana, tipo_importe, acuerdo_pago)
+  VALUES ('2024-01-20', '2024-01', 'Gabriela Riero', 'OP-2024-002', '80000', 'Digital', 'Telefónica de Argentina', 'Movistar', 'Conectados', 'factura', '45 días')
+  RETURNING id INTO v_orden2;
+  INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica) VALUES
+    (v_orden2, 'Nadie Dice Nada', '40000', '6000', '3000', '1000'),
+    (v_orden2, 'Patria y Familia', '40000', '5000', '2500', '800');
+
+  INSERT INTO public.ordenes_publicidad (fecha, mes_servicio, responsable, orden_publicidad, total_venta, unidad_negocio, razon_social, marca, nombre_campana, tipo_importe, acuerdo_pago)
+  VALUES ('2024-02-01', '2024-02', 'Gabriela Riero', 'OP-2024-003', '200000', 'Media', 'Mercado Libre', 'MercadoPago', 'Cashback', 'factura', '30 días')
+  RETURNING id INTO v_orden3;
+  INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica) VALUES
+    (v_orden3, 'Nadie Dice Nada', '80000', '15000', '8000', '3000'),
+    (v_orden3, 'La Novela', '60000', '10000', '5000', '2000'),
+    (v_orden3, 'Algo de Música', '60000', '10000', '5000', '2000');
+
+  INSERT INTO public.ordenes_publicidad (fecha, mes_servicio, responsable, orden_publicidad, total_venta, unidad_negocio, razon_social, marca, nombre_campana, tipo_importe, acuerdo_pago)
+  VALUES ('2024-02-10', '2024-02', 'Gabriela Riero', 'OP-2024-004', '120000', 'Streaming', 'YPF S.A.', 'YPF', 'Energía Argentina', 'factura', '60 días')
+  RETURNING id INTO v_orden4;
+  INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica) VALUES
+    (v_orden4, 'Antes Que Nadie', '60000', '9000', '4000', '1500'),
+    (v_orden4, 'Se Fue Larga', '60000', '9000', '4000', '1500');
+
+  INSERT INTO public.ordenes_publicidad (fecha, mes_servicio, responsable, orden_publicidad, total_venta, unidad_negocio, razon_social, marca, nombre_campana, tipo_importe, acuerdo_pago)
+  VALUES ('2024-03-01', '2024-03', 'Gabriela Riero', 'OP-2024-005', '180000', 'Media', 'Cervecería Quilmes', 'Quilmes', 'Amigos', 'factura', '30 días')
+  RETURNING id INTO v_orden5;
+  INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica) VALUES
+    (v_orden5, 'Nadie Dice Nada', '70000', '12000', '6000', '2500'),
+    (v_orden5, 'Patria y Familia', '55000', '8000', '4000', '1500'),
+    (v_orden5, 'La Novela', '55000', '8000', '4000', '1500');
+
+  INSERT INTO public.ordenes_publicidad (fecha, mes_servicio, responsable, orden_publicidad, total_venta, unidad_negocio, razon_social, marca, nombre_campana, tipo_importe, acuerdo_pago)
+  VALUES ('2024-03-15', '2024-03', 'Gabriela Riero', 'OP-2024-006', '90000', 'Digital', 'Banco Galicia', 'Galicia', 'Digital', 'factura', '45 días')
+  RETURNING id INTO v_orden6;
+  INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica) VALUES
+    (v_orden6, 'Algo de Música', '45000', '7000', '3500', '1200'),
+    (v_orden6, 'Antes Que Nadie', '45000', '7000', '3500', '1200');
+END $$;
+
+-- 7. PROGRAMACION (contexto_comprobante + comprobantes)
+DO $$
+DECLARE
+  v_ctx1 uuid; v_ctx2 uuid; v_ctx3 uuid; v_ctx4 uuid;
+BEGIN
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by)
+  VALUES ('programacion', '2024-01', 'Media', 'Nadie Dice Nada', 'Gabriela Riero', 'Campaña NDD Enero', 'activo', 'system')
+  RETURNING id INTO v_ctx1;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, categoria, monto_prog, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Producciones Audiovisuales S.A.', '30712345678', 25000, 21, 5250, 30250, 'ARS', 'LUZU TV S. A.', 'activo', 'creado', 'system', 'LUZU TV S. A.', '30', 'Transferencia (Adelantado)', 'programacion', v_ctx1, 'FM Luzu', 30250, 'Gasto de programación', 'Entretenimiento'),
+    ('egreso', 'Equipamiento Técnico S.R.L.', '30756789012', 18000, 21, 3780, 21780, 'ARS', 'LUZU TV S. A.', 'activo', 'pagado', 'system', 'LUZU TV S. A.', '45', 'e check', 'programacion', v_ctx1, 'Antes Que Nadie', 21780, 'Gasto de programación', 'Entretenimiento');
+
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by)
+  VALUES ('programacion', '2024-01', 'Media', 'Antes Que Nadie', 'Gabriela Riero', 'Campaña AQN Enero', 'activo', 'system')
+  RETURNING id INTO v_ctx2;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, categoria, monto_prog, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Talentos y Producción S.A.', '30745678901', 35000, 21, 7350, 42350, 'ARS', 'LUZU TV S. A.', 'activo', 'creado', 'system', 'LUZU TV S. A.', '30', 'Transferencia (Adelantado)', 'programacion', v_ctx2, 'Nadie Dice Nada', 42350, 'Gasto de programación', 'Noticias'),
+    ('egreso', 'Post Producción Argentina S.A.', '30789012345', 22000, 21, 4620, 26620, 'ARS', 'LUZU TV S. A.', 'activo', 'pagado', 'system', 'LUZU TV S. A.', '60', 'Efectivo (Contado)', 'programacion', v_ctx2, 'Patria y Familia', 26620, 'Gasto de programación', 'Noticias');
+
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by)
+  VALUES ('programacion', '2024-02', 'Media', 'Se Fue Larga', 'Gabriela Riero', 'Campaña SFL Febrero', 'activo', 'system')
+  RETURNING id INTO v_ctx3;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, categoria, monto_prog, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Sonido Profesional S.R.L.', '30790123456', 28000, 21, 5880, 33880, 'ARS', 'LUZU TV S. A.', 'activo', 'creado', 'system', 'LUZU TV S. A.', '45', 'Transferencia (Adelantado)', 'programacion', v_ctx3, 'Se Fue Larga', 33880, 'Gasto de programación', 'Deportes'),
+    ('egreso', 'Iluminación y Escenografía S.A.', '30801234567', 32000, 21, 6720, 38720, 'ARS', 'LUZU TV S. A.', 'activo', 'creado', 'system', 'LUZU TV S. A.', '30', 'e check', 'programacion', v_ctx3, 'La Novela', 38720, 'Gasto de programación', 'Deportes');
+
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, unidad_negocio, programa, ejecutivo, detalle_campana, estado, created_by)
+  VALUES ('programacion', '2024-02', 'Media', 'Patria y Familia', 'Gabriela Riero', 'Campaña PyF Febrero', 'activo', 'system')
+  RETURNING id INTO v_ctx4;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, categoria, monto_prog, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Servicios de Contenido Digital S.A.', '30734567890', 45000, 21, 9450, 54450, 'ARS', 'LUZU TV S. A.', 'activo', 'creado', 'system', 'LUZU TV S. A.', '30', 'Transferencia (Adelantado)', 'programacion', v_ctx4, 'Algo Va A Picar', 54450, 'Gasto de programación', 'Entretenimiento'),
+    ('egreso', 'Logística Medios S.R.L.', '30778901234', 15000, 21, 3150, 18150, 'ARS', 'LUZU TV S. A.', 'activo', 'pagado', 'system', 'LUZU TV S. A.', '5', 'Efectivo (Contado)', 'programacion', v_ctx4, 'Los No Talentos', 18150, 'Gasto de programación', 'Entretenimiento');
+END $$;
+
+-- 8. IMPLEMENTACION (OP-linked)
+DO $$
+DECLARE
+  v_orden1 uuid; v_orden3 uuid; v_orden5 uuid;
+  v_item1 uuid; v_item3 uuid; v_item5 uuid;
+  v_prog1 text; v_prog3 text; v_prog5 text;
+BEGIN
+  SELECT id INTO v_orden1 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-001';
+  SELECT id, programa INTO v_item1, v_prog1 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden1 LIMIT 1;
+  SELECT id INTO v_orden3 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-003';
+  SELECT id, programa INTO v_item3, v_prog3 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden3 LIMIT 1;
+  SELECT id INTO v_orden5 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-005';
+  SELECT id, programa INTO v_item5, v_prog5 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden5 LIMIT 1;
+
+  IF v_orden1 IS NOT NULL THEN
+    INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by, factura_emitida_a, forma_pago, area_origen, orden_publicidad_id, item_orden_publicidad_id, sector, rubro_contexto, sub_rubro_contexto, condicion_pago) VALUES
+      ('egreso', 'Producciones Audiovisuales S.A.', '30712345678', 30000, 21, 6300, 36300, 'ARS', 'LUZU TV S. A.', 'Producción audiovisual campaña Verano 2024', 'activo', 'creado', 'system', 'LUZU TV S. A.', 'Transferencia (Adelantado)', 'implementacion', v_orden1, v_item1, v_prog1, 'Gasto de venta', 'Producción', '30'),
+      ('egreso', 'Media Tech Argentina S.R.L.', '30723456789', 20000, 21, 4200, 24200, 'ARS', 'LUZU TV S. A.', 'Servicios técnicos de streaming', 'activo', 'pagado', 'system', 'LUZU TV S. A.', 'e check', 'implementacion', v_orden1, v_item1, v_prog1, 'Gasto de venta', 'Técnico', '30');
+  END IF;
+
+  IF v_orden3 IS NOT NULL THEN
+    INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by, factura_emitida_a, forma_pago, area_origen, orden_publicidad_id, item_orden_publicidad_id, sector, rubro_contexto, sub_rubro_contexto, condicion_pago) VALUES
+      ('egreso', 'Talentos y Producción S.A.', '30745678901', 45000, 21, 9450, 54450, 'ARS', 'LUZU TV S. A.', 'Talentos para campaña Cashback', 'activo', 'creado', 'system', 'LUZU TV S. A.', 'Transferencia (Adelantado)', 'implementacion', v_orden3, v_item3, v_prog3, 'Gasto de venta', 'Talentos', '45'),
+      ('egreso', 'Equipamiento Técnico S.R.L.', '30756789012', 25000, 21, 5250, 30250, 'ARS', 'LUZU TV S. A.', 'Equipamiento técnico para grabación', 'activo', 'creado', 'system', 'LUZU TV S. A.', 'Efectivo (Contado)', 'implementacion', v_orden3, v_item3, v_prog3, 'Gasto de venta', 'Equipamiento', '30');
+  END IF;
+
+  IF v_orden5 IS NOT NULL THEN
+    INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by, factura_emitida_a, forma_pago, area_origen, orden_publicidad_id, item_orden_publicidad_id, sector, rubro_contexto, sub_rubro_contexto, condicion_pago) VALUES
+      ('egreso', 'Estudio Creativo Buenos Aires S.A.', '30767890123', 38000, 21, 7980, 45980, 'ARS', 'LUZU TV S. A.', 'Diseño creativo campaña Amigos', 'activo', 'creado', 'system', 'LUZU TV S. A.', 'Transferencia (Adelantado)', 'implementacion', v_orden5, v_item5, v_prog5, 'Gasto de venta', 'Creatividad', '30'),
+      ('egreso', 'Post Producción Argentina S.A.', '30789012345', 22000, 21, 4620, 26620, 'ARS', 'LUZU TV S. A.', 'Post producción spots publicitarios', 'activo', 'pagado', 'system', 'LUZU TV S. A.', 'e check', 'implementacion', v_orden5, v_item5, v_prog5, 'Gasto de venta', 'Post Producción', '45');
+  END IF;
+END $$;
+
+-- 8b. TECNICA (OP-linked)
+DO $$
+DECLARE
+  v_orden1 uuid; v_orden3 uuid;
+  v_item1 uuid; v_item3 uuid;
+  v_prog1 text; v_prog3 text;
+BEGIN
+  SELECT id INTO v_orden1 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-001';
+  SELECT id, programa INTO v_item1, v_prog1 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden1 LIMIT 1;
+  SELECT id INTO v_orden3 FROM public.ordenes_publicidad WHERE orden_publicidad = 'OP-2024-003';
+  SELECT id, programa INTO v_item3, v_prog3 FROM public.items_orden_publicidad WHERE orden_publicidad_id = v_orden3 LIMIT 1;
+
+  IF v_orden1 IS NOT NULL THEN
+    INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by, factura_emitida_a, forma_pago, area_origen, orden_publicidad_id, item_orden_publicidad_id, sector, rubro_contexto, sub_rubro_contexto, condicion_pago) VALUES
+      ('egreso', 'Servicios Técnicos del Sur S.A.', '30798765432', 35000, 21, 7350, 42350, 'ARS', 'LUZU TV S. A.', 'Implementación técnica campaña Verano', 'activo', 'creado', 'system', 'LUZU TV S. A.', 'Transferencia (Adelantado)', 'tecnica', v_orden1, v_item1, v_prog1, 'Gasto de venta', 'Implementacion', '30'),
+      ('egreso', 'Productora Visual S.R.L.', '30787654321', 28000, 21, 5880, 33880, 'ARS', 'LUZU TV S. A.', 'Producción técnica set de grabación', 'activo', 'pagado', 'system', 'LUZU TV S. A.', 'e check', 'tecnica', v_orden1, v_item1, v_prog1, 'Gasto de venta', 'Produccion', '30');
+  END IF;
+
+  IF v_orden3 IS NOT NULL THEN
+    INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by, factura_emitida_a, forma_pago, area_origen, orden_publicidad_id, item_orden_publicidad_id, sector, rubro_contexto, sub_rubro_contexto, condicion_pago) VALUES
+      ('egreso', 'Diseño Digital Argentina S.A.', '30776543210', 18000, 21, 3780, 21780, 'ARS', 'LUZU TV S. A.', 'Diseño y edición campaña Cashback', 'activo', 'creado', 'system', 'LUZU TV S. A.', 'Transferencia (Adelantado)', 'tecnica', v_orden3, v_item3, v_prog3, 'Gasto de venta', 'Diseno y Edicion', '45'),
+      ('egreso', 'Equipamiento Studio S.R.L.', '30765432109', 42000, 21, 8820, 50820, 'ARS', 'LUZU TV S. A.', 'Mejora equipamiento estudio principal', 'activo', 'creado', 'system', 'LUZU TV S. A.', 'Efectivo (Contado)', 'tecnica', v_orden3, v_item3, v_prog3, 'Gasto de venta', 'Mejora Inmueble/Equipamiento', '30');
+  END IF;
+END $$;
+
+-- 9. EXPERIENCE (formulario-linked)
+DO $$
+DECLARE
+  v_ctx1 uuid; v_ctx2 uuid; v_ctx3 uuid; v_ctx4 uuid;
+BEGIN
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, nombre_campana, detalle_campana, estado, created_by)
+  VALUES ('experience', '2024-01', 'Experiencia Verano Luzu', 'Activaciones en playas y eventos de verano', 'activo', 'gaby@luzutv.com.ar')
+  RETURNING id INTO v_ctx1;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Producciones Audiovisuales S.A.', '30712345678', 'FA', '0001', '00001234', '2024-01-10', 40000, 21, 8400, 48400, 'ARS', 'activo', 'creado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '30', 'Transferencia (Adelantado)', 'experience', v_ctx1, 'nadie-dice-nada', 'argentina', 'Gastos de Evento', 'produccion'),
+    ('egreso', 'Logística Medios S.R.L.', '30778901234', 'FA', '0001', '00005678', '2024-01-12', 15000, 21, 3150, 18150, 'ARS', 'activo', 'pagado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '5', 'Transferencia (Adelantado)', 'experience', v_ctx1, 'fm-luzu', 'argentina', 'Gastos de Evento', 'produccion');
+
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, nombre_campana, detalle_campana, estado, created_by)
+  VALUES ('experience', '2024-02', 'Lanzamiento Sponsor Tech', 'Evento de lanzamiento de producto tecnológico', 'activo', 'gaby@luzutv.com.ar')
+  RETURNING id INTO v_ctx2;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Iluminación y Escenografía S.A.', '30801234567', 'FA', '0002', '00001111', '2024-02-05', 55000, 21, 11550, 66550, 'ARS', 'activo', 'creado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '45', 'e check', 'experience', v_ctx2, 'antes-que-nadie', 'argentina', 'Gastos de Evento', 'diseno'),
+    ('egreso', 'Equipamiento Técnico S.R.L.', '30756789012', 'FA', '0002', '00002222', '2024-02-08', 35000, 21, 7350, 42350, 'ARS', 'activo', 'pagado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '30', 'Transferencia (Adelantado)', 'experience', v_ctx2, 'vuelta-y-media', 'argentina', 'Gastos de Evento', 'diseno');
+
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, nombre_campana, detalle_campana, estado, created_by)
+  VALUES ('experience', '2024-03', 'Stand Feria del Libro', 'Presencia en Feria del Libro Buenos Aires', 'activo', 'gaby@luzutv.com.ar')
+  RETURNING id INTO v_ctx3;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Estudio Creativo Buenos Aires S.A.', '30767890123', 'FA', '0003', '00003333', '2024-03-01', 70000, 21, 14700, 84700, 'ARS', 'activo', 'creado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '60', 'Transferencia (Adelantado)', 'experience', v_ctx3, 'seria-increible', 'argentina', 'Gastos de Evento', 'tecnica'),
+    ('egreso', 'Talentos y Producción S.A.', '30745678901', 'FA', '0003', '00004444', '2024-03-05', 28000, 21, 5880, 33880, 'ARS', 'activo', 'creado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '30', 'Efectivo (Contado)', 'experience', v_ctx3, 'patria-y-familia', 'argentina', 'Gastos de Evento', 'tecnica');
+
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, nombre_campana, detalle_campana, estado, created_by)
+  VALUES ('experience', '2024-03', 'Activación Maratón BA', 'Activación en Maratón de Buenos Aires', 'activo', 'gaby@luzutv.com.ar')
+  RETURNING id INTO v_ctx4;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Media Tech Argentina S.R.L.', '30723456789', 'FA', '0004', '00005555', '2024-03-15', 45000, 21, 9450, 54450, 'ARS', 'activo', 'creado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '30', 'Transferencia (Adelantado)', 'experience', v_ctx4, 'podremos-hablar', 'argentina', 'Gastos de Evento', 'edicion'),
+    ('egreso', 'Sonido Profesional S.R.L.', '30790123456', 'FA', '0004', '00006666', '2024-03-18', 22000, 21, 4620, 26620, 'ARS', 'activo', 'pagado', 'gaby@luzutv.com.ar', 'LUZU TV S. A.', '5', 'e check', 'experience', v_ctx4, 'optimo', 'argentina', 'Gastos de Evento', 'edicion');
+END $$;
+
+-- 9b. PRODUCTORA (formulario-linked)
+DO $$
+DECLARE
+  v_ctx1 uuid; v_ctx2 uuid;
+BEGIN
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, unidad_negocio, categoria_negocio, rubro, sub_rubro, nombre_campana, detalle_campana, estado, created_by)
+  VALUES ('productora', '2024-02', 'Productora', 'Media', 'Gasto de Campaña', 'Implementación', 'Lanzamiento Marca X', 'Producción audiovisual para lanzamiento', 'activo', 'system')
+  RETURNING id INTO v_ctx1;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Productora Visual S.R.L.', '30712345678', 'FA', '0005', '00007777', '2024-02-10', 85000, 21, 17850, 102850, 'ARS', 'activo', 'creado', 'system', 'LUZU TV S. A.', '30', 'Transferencia (Adelantado)', 'productora', v_ctx1, 'nadie-dice-nada', 'argentina', 'Gasto de Campaña', 'Implementación'),
+    ('egreso', 'Ediciones Gráficas S.A.', '30798765432', 'FA', '0005', '00008888', '2024-02-15', 32000, 21, 6720, 38720, 'ARS', 'activo', 'pagado', 'system', 'LUZU TV S. A.', '45', 'e check', 'productora', v_ctx1, 'vuelta-y-media', 'argentina', 'Gasto de Campaña', 'Diseño y Edición');
+
+  INSERT INTO public.contexto_comprobante (area_origen, mes_gestion, unidad_negocio, categoria_negocio, rubro, sub_rubro, nombre_campana, detalle_campana, estado, created_by)
+  VALUES ('productora', '2024-03', 'Experience', 'PEM - Proyectos especiales Marketing', 'Gasto de Evento', 'Técnica', 'Streaming Festival', 'Producción técnica para streaming en vivo', 'activo', 'system')
+  RETURNING id INTO v_ctx2;
+  INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, estado, estado_pago, created_by, factura_emitida_a, acuerdo_pago, forma_pago, area_origen, contexto_comprobante_id, empresa_programa, pais, rubro_contexto, sub_rubro_contexto) VALUES
+    ('egreso', 'Streaming Pro S.R.L.', '30756789012', 'FA', '0006', '00009999', '2024-03-01', 120000, 21, 25200, 145200, 'ARS', 'activo', 'creado', 'system', 'LUZU TV S. A.', '60', 'Transferencia (Adelantado)', 'productora', v_ctx2, 'antes-que-nadie', 'argentina', 'Gasto de Evento', 'Técnica');
+END $$;
+
+-- 10. INGRESOS
+INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by) VALUES
+  ('ingreso', 'Coca Cola Argentina', '30500001234', 'FA', '0001', '00000001', '2024-01-20', 150000, 21, 31500, 181500, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Verano 2024', 'activo', 'pagado', 'system'),
+  ('ingreso', 'Telefónica de Argentina', '30500005678', 'FA', '0001', '00000002', '2024-01-25', 80000, 21, 16800, 96800, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Conectados', 'activo', 'creado', 'system'),
+  ('ingreso', 'Mercado Libre', '30500009012', 'FA', '0001', '00000003', '2024-02-05', 200000, 21, 42000, 242000, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Cashback', 'activo', 'aprobado', 'system'),
+  ('ingreso', 'YPF S.A.', '30500003456', 'FA', '0001', '00000004', '2024-02-15', 120000, 21, 25200, 145200, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Energía Argentina', 'activo', 'creado', 'system'),
+  ('ingreso', 'Cervecería Quilmes', '30500007890', 'FA', '0001', '00000005', '2024-03-05', 180000, 21, 37800, 217800, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Amigos', 'activo', 'pagado', 'system'),
+  ('ingreso', 'Banco Galicia', '30500002345', 'FA', '0001', '00000006', '2024-03-20', 90000, 21, 18900, 108900, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Digital', 'activo', 'requiere_info', 'system'),
+  ('ingreso', 'Telefónica de Argentina', '30500005678', 'NCA', '0001', '00000001', '2024-02-01', -10000, 21, -2100, -12100, 'ARS', 'LUZU TV S. A.', 'Ajuste por bonificación acordada', 'activo', 'aprobado', 'system');
+
+INSERT INTO public.comprobantes (tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante, neto, iva_alicuota, iva_monto, total, moneda, cotizacion, empresa, concepto, estado, estado_pago, created_by) VALUES
+  ('ingreso', 'Netflix Inc.', '30-71234567-9', 'FE', '0001', '00000001', '2024-03-10', 5000, 0, 0, 5000, 'USD', 850.00, 'LUZU TV S. A.', 'Branded content internacional', 'activo', 'creado', 'system');

@@ -57,9 +57,6 @@ export class OrdenPublicidad {
   @Column({ type: 'text', nullable: true })
   estado_op!: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  observaciones_admin!: string | null;
-
   @Column({ type: 'timestamptz', default: () => 'now()' })
   fecha_creacion!: string;
 

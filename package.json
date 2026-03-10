@@ -6,7 +6,9 @@
   "scripts": {
     "build": "vite build && cd server && npm install",
     "dev": "vite",
+    "dev:full": "bash scripts/dev.sh",
     "start": "cd server && npm run start",
+    "prod": "bash scripts/prod.sh",
     "server": "cd server && npm run dev",
     "server:start": "cd server && npm run start",
     "seed": "cd server && npm run seed",

@@ -2,7 +2,7 @@ import { Entity, PrimaryColumn, Column } from 'typeorm';
 
 @Entity('app_settings')
 export class AppSetting {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'text' })
   key!: string;
 
   @Column({ type: 'text' })

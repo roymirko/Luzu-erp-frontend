@@ -1,70 +1,60 @@
+import 'reflect-metadata';
 import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
-import bcrypt from 'bcrypt';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'admin123';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const sqlDir = join(__dirname, '../sql');
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(1);
+// Cloud SQL SSL workaround
+if (process.env.DATABASE_URL?.includes('ssl=true')) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const args = process.argv.slice(2);
+const resetMode = args.includes('--reset');
 
-async function seed() {
-  console.log('Seeding admin user...');
+async function run() {
+  const { AppDataSource } = await import('../src/db/data-source.js');
+  await AppDataSource.initialize();
+  console.log('Connected to database');
 
-  const email = 'admin@luzutv.com.ar';
-  const passwordHash = await bcrypt.hash(adminPassword, 12);
+  const qr = AppDataSource.createQueryRunner();
 
-  // Check if user exists
-  const { data: existing } = await supabase
-    .from('usuarios')
-    .select('id')
-    .ilike('email', email)
-    .maybeSingle();
-
-  if (existing) {
-    // Update password and user_type
-    const { error } = await supabase
-      .from('usuarios')
-      .update({
-        password_hash: passwordHash,
-        user_type: 'administrador',
-        active: true
-      })
-      .eq('id', existing.id);
-
-    if (error) {
-      console.error('Failed to update admin:', error);
-      process.exit(1);
-    }
-    console.log('Admin user updated:', email);
-  } else {
-    // Create new admin
-    const { error } = await supabase
-      .from('usuarios')
-      .insert({
-        email: email,
-        first_name: 'Admin',
-        last_name: 'Luzu',
-        password_hash: passwordHash,
-        user_type: 'administrador',
-        active: true,
-        creado_por: 'system'
-      });
-
-    if (error) {
-      console.error('Failed to create admin:', error);
-      process.exit(1);
-    }
-    console.log('Admin user created:', email);
+  if (resetMode) {
+    console.log('Running schema (full reset)...');
+    const schema = readFileSync(join(sqlDir, 'schema.sql'), 'utf-8');
+    await qr.query(schema);
+    console.log('Schema created');
   }
 
-  console.log('Password:', adminPassword);
-  console.log('Done!');
+  console.log('Running seed...');
+  const seed = readFileSync(join(sqlDir, 'seed.sql'), 'utf-8');
+  await qr.query(seed);
+  console.log('Seed complete');
+
+  // Summary
+  const counts = await Promise.all([
+    qr.query('SELECT count(*) FROM usuarios'),
+    qr.query('SELECT count(*) FROM ordenes_publicidad'),
+    qr.query('SELECT count(*) FROM comprobantes'),
+    qr.query('SELECT count(*) FROM entidades'),
+    qr.query('SELECT count(*) FROM contexto_comprobante'),
+  ]);
+  console.log(`\nSummary:`);
+  console.log(`  Usuarios: ${counts[0][0].count}`);
+  console.log(`  Ordenes: ${counts[1][0].count}`);
+  console.log(`  Comprobantes: ${counts[2][0].count}`);
+  console.log(`  Entidades: ${counts[3][0].count}`);
+  console.log(`  Contextos: ${counts[4][0].count}`);
+  console.log(`\nDefault password: ${process.env.ADMIN_DEFAULT_PASSWORD || 'admin123'}`);
+
+  await qr.release();
+  await AppDataSource.destroy();
 }
 
-seed();
+run().catch(err => {
+  console.error('Failed:', err);
+  process.exit(1);
+});

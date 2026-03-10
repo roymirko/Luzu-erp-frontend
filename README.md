@@ -61,13 +61,31 @@ npm install
 
 ### Running the Application
 
-Start the development server:
+There are two backend modes: **Supabase** (default) and **Hono + TypeORM** (direct PostgreSQL).
+
+#### Option A: Supabase (default)
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173` (or the port shown in your terminal).
+#### Option B: Hono + TypeORM (no Supabase)
+
+1. Set `VITE_USE_SUPABASE=false` in `.env`
+2. Add `DATABASE_URL` to `server/.env`:
+   ```
+   DATABASE_URL=postgresql://user:pass@localhost:5432/your_db
+   ```
+3. Start the Hono server:
+   ```bash
+   cd server && npm install && npm run dev
+   ```
+4. In a separate terminal, start the frontend:
+   ```bash
+   npm run dev
+   ```
+
+The frontend proxies `/api/*` requests to the Hono server on port 3001. All repository calls go through the API instead of Supabase.
 
 ### Building for Production
 
