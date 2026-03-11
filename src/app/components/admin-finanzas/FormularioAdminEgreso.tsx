@@ -24,25 +24,18 @@ import type {
 } from '@/app/types/comprobantes';
 import {
   ESTADO_PAGO_LABELS,
-  FORMA_PAGO_LABELS,
   AREA_ORIGEN_LABELS,
   isComprobanteLocked,
 } from '@/app/types/comprobantes';
+import {
+  FORMAS_PAGO_OPTIONS,
+  ACUERDOS_PAGO_OPTIONS,
+} from '@/app/utils/implementacionConstants';
 
 interface FormularioAdminEgresoProps {
   comprobanteId: string;
   onClose: () => void;
 }
-
-const FORMA_PAGO_OPTIONS: FormaPago[] = ['transferencia', 'cheque', 'efectivo', 'tarjeta', 'otro'];
-
-const ACUERDO_PAGO_OPTIONS = [
-  { value: '0', label: 'Contado' },
-  { value: '30', label: '30 días' },
-  { value: '60', label: '60 días' },
-  { value: '90', label: '90 días' },
-  { value: '120', label: '120 días' },
-];
 
 function formatDate(date: Date | undefined): string {
   if (!date) return '';
@@ -101,7 +94,14 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
   }, [comprobanteId]);
 
   const handleChange = (field: keyof typeof form, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      // Si cambia formaPago a "Efectivo (Contado)", limpiar acuerdoPago
+      if (field === 'formaPago' && value === 'Efectivo (Contado)') {
+        next.acuerdoPago = '';
+      }
+      return next;
+    });
   };
 
   const handleGuardar = async (nuevoEstado: EstadoPago) => {
@@ -159,6 +159,7 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
 
   const locked = isComprobanteLocked(comprobante.estadoPago);
   const isCerrado = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
+  const shouldShowAcuerdoPago = form.formaPago !== 'Efectivo (Contado)' && form.formaPago !== '';
 
   // Build context card data
   const contextItems = buildContextItems(comprobante);
@@ -267,25 +268,27 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
                 <Select value={form.formaPago} onValueChange={(v) => handleChange('formaPago', v)} disabled={locked}>
                   <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    {FORMA_PAGO_OPTIONS.map((fp) => (
-                      <SelectItem key={fp} value={fp}>{FORMA_PAGO_LABELS[fp]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Acuerdo de pago
-                </Label>
-                <Select value={form.acuerdoPago} onValueChange={(v) => handleChange('acuerdoPago', v)} disabled={locked}>
-                  <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {ACUERDO_PAGO_OPTIONS.map((opt) => (
+                    {FORMAS_PAGO_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              {shouldShowAcuerdoPago && (
+                <div className="space-y-1.5">
+                  <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
+                    Acuerdo de pago
+                  </Label>
+                  <Select value={form.acuerdoPago} onValueChange={(v) => handleChange('acuerdoPago', v)} disabled={locked}>
+                    <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                    <SelectContent>
+                      {ACUERDOS_PAGO_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Row 3: Fecha comprobante, N° comprobante */}

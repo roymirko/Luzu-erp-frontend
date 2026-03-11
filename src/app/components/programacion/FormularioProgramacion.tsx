@@ -100,6 +100,7 @@ export function FormularioProgramacion({
   // Section 2: Carga de importes - shared proveedor for all gastos
   const [razonSocial, setRazonSocial] = useState("");
   const [proveedor, setProveedor] = useState("");
+  const [entidadCuit, setEntidadCuit] = useState("");
 
   // Section 2: Gastos (repeatable)
   const [gastos, setGastos] = useState<GastoItem[]>([
@@ -157,6 +158,7 @@ export function FormularioProgramacion({
       setNombreCampana(firstGasto.programa || "");
       setRazonSocial(firstGasto.razonSocial || "");
       setProveedor(firstGasto.proveedor || "");
+      setEntidadCuit(firstGasto.entidadCuit || "");
 
       // Map ALL gastos from this formulario and track their IDs
       const loadedGastos = formularioGastos.map((g) => ({
@@ -249,9 +251,14 @@ export function FormularioProgramacion({
   const handleProveedorChange = (data: {
     proveedor: string;
     razonSocial: string;
+    proveedorId?: string | null;
+    proveedorData?: any;
   }) => {
     setProveedor(data.proveedor);
     setRazonSocial(data.razonSocial);
+    if (data.proveedorData?.cuit) {
+      setEntidadCuit(data.proveedorData.cuit);
+    }
   };
 
   const removeGastoItem = (id: string) => {
@@ -375,6 +382,7 @@ export function FormularioProgramacion({
         const result = await addGastoToFormulario(existingGasto.formularioId, {
           proveedor,
           razonSocial,
+          entidadCuit,
           neto: gasto.neto,
           empresa: gasto.empresa,
           observaciones: gasto.observaciones,

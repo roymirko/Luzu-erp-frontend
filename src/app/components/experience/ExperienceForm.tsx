@@ -36,6 +36,7 @@ interface GastoItem {
   fechaComprobante: string;
   razonSocial: string;
   proveedor: string;
+  entidadCuit?: string;
   acuerdoPago: string;
   numeroComprobante: string;
   formaPago: string;
@@ -113,6 +114,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       fechaComprobante: '',
       razonSocial: '',
       proveedor: '',
+      entidadCuit: '',
       acuerdoPago: '',
       numeroComprobante: '',
       formaPago: '',
@@ -171,6 +173,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             fechaComprobante: g.fechaFactura || '',
           razonSocial: g.razonSocial || '',
           proveedor: g.proveedor || '',
+          entidadCuit: g.entidadCuit || '',
           acuerdoPago: g.acuerdoPago || '',
           numeroComprobante: g.numeroFactura || '',
           formaPago: g.formaPago || '',
@@ -247,11 +250,16 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
     return null;
   };
 
-  const handleGastoProveedorChange = (gastoId: string, data: { proveedor: string; razonSocial: string }) => {
+  const handleGastoProveedorChange = (gastoId: string, data: { proveedor: string; razonSocial: string; proveedorData?: any }) => {
     setGastos((prev) =>
       prev.map((g) =>
         g.id === gastoId
-          ? { ...g, proveedor: data.proveedor, razonSocial: data.razonSocial }
+          ? { 
+              ...g, 
+              proveedor: data.proveedor, 
+              razonSocial: data.razonSocial,
+              entidadCuit: data.proveedorData?.cuit || ''
+            }
           : g
       )
     );
@@ -268,6 +276,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         fechaComprobante: '',
         razonSocial: '',
         proveedor: '',
+        entidadCuit: '',
         acuerdoPago: '',
         numeroComprobante: '',
         formaPago: '',
@@ -299,6 +308,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       fechaComprobante: '',
               razonSocial: '',
               proveedor: '',
+              entidadCuit: '',
               acuerdoPago: '',
               numeroComprobante: '',
               formaPago: '',
@@ -327,6 +337,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           fechaComprobante: '',
           razonSocial: '',
           proveedor: '',
+          entidadCuit: '',
           acuerdoPago: '',
           numeroComprobante: '',
           formaPago: '',
@@ -382,6 +393,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           facturaEmitidaA: gasto.facturaEmitidaA,
           proveedor: gasto.proveedor,
           razonSocial: gasto.razonSocial,
+          entidadCuit: gasto.entidadCuit,
           acuerdoPago: gasto.acuerdoPago,
           numeroFactura: gasto.numeroComprobante || undefined,
           formaPago: gasto.formaPago,
@@ -411,6 +423,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
           fechaComprobante: gasto.fechaComprobante,
           razonSocial: gasto.razonSocial,
           proveedor: gasto.proveedor,
+          entidadCuit: gasto.entidadCuit,
           acuerdoPago: gasto.acuerdoPago,
           numeroFactura: gasto.numeroComprobante || undefined,
           formaPago: gasto.formaPago,
@@ -495,6 +508,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             ...(i === 0 ? { nombreCampana, subrubro } : {}),
             proveedor: g.proveedor,
              razonSocial: g.razonSocial,
+             entidadCuit: g.entidadCuit,
              neto: g.neto,
              observaciones: g.observaciones,
              facturaEmitidaA: g.facturaEmitidaA,
@@ -520,6 +534,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
             const result = await addGastoToFormulario(formularioId, {
               proveedor: g.proveedor,
                razonSocial: g.razonSocial,
+               entidadCuit: g.entidadCuit,
                neto: g.neto,
                observaciones: g.observaciones,
                facturaEmitidaA: g.facturaEmitidaA,
@@ -553,6 +568,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
         const gastosToCreate = gastos.map((g) => ({
            proveedor: g.proveedor,
            razonSocial: g.razonSocial,
+           entidadCuit: g.entidadCuit,
            neto: g.neto,
            empresa: g.empresa,
            observaciones: g.observaciones,
@@ -736,6 +752,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
               const gastoData: GastoData = {
                 ...gasto,
                 neto: String(gasto.neto || 0),
+                entidadCuit: gasto.entidadCuit,
               };
 
               // Filter program options to exclude already selected
@@ -763,6 +780,7 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
                       updateGastoItem(gasto.id, field as keyof GastoItem, value);
                     }
                   }}
+                  onProveedorChange={(data) => handleGastoProveedorChange(gasto.id, data)}
                   onCancel={() => {
                     if (isGastoNew) {
                       if (gastos.length > 1) {

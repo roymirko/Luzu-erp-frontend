@@ -27,6 +27,7 @@ export function mapFromDB(row: GastoFullRow): Gasto {
     // Core comprobante → gasto fields
     proveedor: row.entidad_nombre,
     razonSocial: row.entidad_nombre || '',
+    entidadCuit: row.entidad_cuit || undefined,
     tipoFactura: row.tipo_comprobante || undefined,
     numeroFactura: row.numero_comprobante || undefined,
     fechaFactura: row.fecha_comprobante || undefined,
@@ -128,7 +129,7 @@ function mapToInsertRow(input: CreateGastoInput): GastoInsertRow {
   return {
     tipo_movimiento: 'egreso',
     entidad_nombre: input.proveedor,
-    entidad_cuit: null,
+    entidad_cuit: input.entidadCuit || null,
     tipo_comprobante: input.tipoFactura || null,
     numero_comprobante: input.numeroFactura || null,
     fecha_comprobante: cleanDateValue(input.fechaComprobante || input.fechaFactura),
@@ -265,6 +266,7 @@ export async function update(input: UpdateGastoInput): Promise<{ data: Gasto | n
    // Core comprobante fields
    if (fields.proveedor !== undefined) updateData.entidad_nombre = fields.proveedor;
    if (fields.razonSocial !== undefined) updateData.entidad_nombre = fields.razonSocial;
+   if (fields.entidadCuit !== undefined) updateData.entidad_cuit = fields.entidadCuit || null;
    if (fields.tipoFactura !== undefined) updateData.tipo_comprobante = fields.tipoFactura;
    if (fields.numeroFactura !== undefined) updateData.numero_comprobante = fields.numeroFactura;
    if (fields.fechaFactura !== undefined) {

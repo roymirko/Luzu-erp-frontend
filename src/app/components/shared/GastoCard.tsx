@@ -59,6 +59,7 @@ export interface GastoData {
   fechaComprobante: string;
   razonSocial: string;
   proveedor: string;
+  entidadCuit?: string;
   acuerdoPago: string;
   numeroComprobante?: string;
   formaPago?: string;
@@ -368,7 +369,7 @@ export function GastoCard(props: GastoCardProps) {
             )}
           </FormRow>
 
-          {/* ── Grupo: Proveedor ── */}
+           {/* ── Grupo: Proveedor ── */}
            {showProveedorSelector && (
              <div className="space-y-2">
                <ProveedorSelector
@@ -380,6 +381,9 @@ export function GastoCard(props: GastoCardProps) {
                  onChange={(next) => {
                    onUpdate('proveedor', next.proveedor);
                    onUpdate('razonSocial', next.razonSocial);
+                   if (next.proveedorData?.cuit) {
+                     onUpdate('entidadCuit', next.proveedorData.cuit);
+                   }
                  }}
                  disabled={isDisabled}
                  allowCreate={!isDisabled}
