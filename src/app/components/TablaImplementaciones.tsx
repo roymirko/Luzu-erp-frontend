@@ -154,51 +154,33 @@ export function TablaImplementaciones({ onOpen }: TablaImplementacionesProps = {
 
   // Rows for "Programa" view (grouped by program)
   const rowsPrograma = useMemo(() => {
-    const programasMap = new Map<string, {
-      formulario: any;
-      item: any;
-      gastos: any[];
-    }>();
-
-    // Build map of programs with their associated gastos
-    formularios.forEach((form) => {
-      form.importeRows?.forEach((item) => {
-        if (!item.programa) return;
-        const key = `${form.id}-${item.id}`;
+    const programa_rows = formularios.flatMap((formulario) => 
+      (formulario.importeRows || []).map((item) => {
+        const presupuesto = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, '')) || 0;
         const itemGastos = gastos.filter(g => 
-          g.ordenPublicidadId === form.id && 
+          g.ordenPublicidadId === formulario.id && 
           g.itemOrdenPublicidadId === item.id
         );
-        
-        programasMap.set(key, {
-          formulario: form,
-          item,
-          gastos: itemGastos
-        });
-      });
-    });
+        const ejecutado = itemGastos.reduce((sum, g) => sum + (g.neto || 0), 0);
+        const disponible = presupuesto - ejecutado;
 
-    const programa_rows = Array.from(programasMap.values()).map(({ formulario, item, gastos: itemGastos }) => {
-      const presupuesto = parseFloat(String(item.implementacion || '0').replace(/[^0-9.-]/g, '')) || 0;
-      const ejecutado = itemGastos.reduce((sum, g) => sum + (g.neto || 0), 0);
-      const disponible = presupuesto - ejecutado;
-
-      return {
-        id: `${formulario.id}-${item.id}`,
-        formId: formulario.id,
-        itemId: item.id,
-        linkedGastoId: itemGastos.length > 0 ? itemGastos[0].id : undefined,
-        estado: itemGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
-        mesServicio: formatMesServicio(formulario.mesServicio),
-        ordenPublicidad: formulario.ordenPublicidad,
-        empresaPrograma: item.programa || '-',
-        cantidadGastos: itemGastos.length,
-        asignado: presupuesto,
-        ejecutado: ejecutado,
-        disponible: disponible,
-        neto: ejecutado,
-      };
-    });
+        return {
+          id: `${formulario.id}-${item.id}`,
+          formId: formulario.id,
+          itemId: item.id,
+          linkedGastoId: itemGastos.length > 0 ? itemGastos[0].id : undefined,
+          estado: itemGastos.length > 0 ? 'Activo' : 'Pendiente de carga',
+          mesServicio: formatMesServicio(formulario.mesServicio),
+          ordenPublicidad: formulario.ordenPublicidad,
+          empresaPrograma: item.programa || '-',
+          cantidadGastos: itemGastos.length,
+          asignado: presupuesto,
+          ejecutado: 0,
+          disponible: presupuesto,
+          neto: ejecutado,
+        };
+      })
+    );
 
     return programa_rows.filter((row) => {
       if (!searchTerm) return true;
