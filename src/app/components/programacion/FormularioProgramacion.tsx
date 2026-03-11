@@ -188,14 +188,10 @@ export function FormularioProgramacion({
     return newErrors;
   }, [subrubro]);
 
-   const validateSingleGasto = useCallback(
+    const validateSingleGasto = useCallback(
     (g: GastoItem, index: number): string | null => {
       if (!g.formaPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
-      }
-      
-      if (!proveedor?.trim() || !razonSocial?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar proveedor`;
       }
       
       if (g.formaPago === 'Efectivo (Contado)') {
@@ -205,16 +201,10 @@ export function FormularioProgramacion({
         return null;
       }
       
-      if (!g.facturaEmitidaA?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
-      }
-      if (!g.empresa?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar una empresa`;
-      }
       if (!g.empresaPrograma?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
       }
-      if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) {
+      if (!g.acuerdoPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
       }
       if (!g.neto || g.neto <= 0) {
@@ -347,12 +337,6 @@ export function FormularioProgramacion({
 
   // Save a single gasto to the database
   const handleSaveGasto = async (gasto: GastoItem, index: number): Promise<boolean> => {
-    // Validate proveedor and razonSocial (shared fields)
-    if (!proveedor || !razonSocial) {
-      toast.error('Debe seleccionar un proveedor antes de guardar');
-      return false;
-    }
-
     const isExisting = loadedGastoIdsRef.current.has(gasto.id);
     console.log('[FormProgramacion] Guardando gasto individual:', gasto.id, 'isExisting:', isExisting);
 
@@ -774,6 +758,7 @@ export function FormularioProgramacion({
               onChange={handleProveedorChange}
               disabled={isFormularioCerrado}
               allowCreate={!isFormularioCerrado}
+              required={false}
             />
 
             {/* Gastos Items */}

@@ -314,9 +314,6 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
       const isTarjeta = imp.formaPago === 'Tarjeta de crédito' || imp.formaPago === 'Tarjeta de débito';
 
       if (!isEfectivo) {
-        if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
-        if (!imp.empresa) importeErrors.empresa = 'Debe seleccionar una empresa';
-        
         // Validación cruzada: Si hay uno, debe estar el otro
         const tieneNumero = imp.numeroComprobante && imp.numeroComprobante.trim() !== '';
         const tieneFecha = imp.fechaComprobante && imp.fechaComprobante.trim() !== '';
@@ -329,7 +326,6 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
         }
       }
       if (!imp.empresaPgm) importeErrors.empresaPgm = 'Requerido';
-      if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) importeErrors.proveedor = 'Debe seleccionar proveedor y razón social';
       if (!imp.formaPago) importeErrors.formaPago = 'Requerido';
       if (!isEfectivo && !isTarjeta && !imp.condicionPago) importeErrors.condicionPago = 'Requerido';
       if (!imp.neto) importeErrors.neto = 'Requerido';

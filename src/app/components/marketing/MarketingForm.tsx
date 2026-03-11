@@ -176,10 +176,8 @@ export function MarketingForm({ gastoId, existingFormulario, onCancel, onSave }:
       return null;
     }
     
-    if (!g.facturaEmitidaA?.trim()) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
-    if (!g.empresa?.trim()) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
     if (!g.empresaPrograma?.trim()) return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
-    if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
+    if (!g.acuerdoPago?.trim()) return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     if (!g.neto || g.neto <= 0) return `Gasto #${index + 1}: Debe ingresar un importe neto válido`;
     
     const tieneNumero = g.numeroComprobante && g.numeroComprobante.trim() !== '';

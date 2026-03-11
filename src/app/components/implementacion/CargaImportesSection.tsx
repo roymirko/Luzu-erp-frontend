@@ -117,10 +117,8 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
   const validateImporte = (imp: BloqueImporte, index: number): string | null => {
     const isEfectivo = imp.formaPago === 'Efectivo (Contado)';
     const isTarjeta = imp.formaPago === 'Tarjeta de crédito' || imp.formaPago === 'Tarjeta de débito';
+    
     if (!isEfectivo) {
-      if (!imp.facturaEmitidaA) return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
-      if (!imp.empresa) return `Gasto #${index + 1}: Debe seleccionar una empresa`;
-      
       // Validación cruzada: Si hay uno, debe estar el otro
       const tieneNumero = imp.numeroComprobante && imp.numeroComprobante.trim() !== '';
       const tieneFecha = imp.fechaComprobante && imp.fechaComprobante.trim() !== '';
@@ -133,7 +131,6 @@ export function CargaImportesSection(props: CargaImportesSectionProps) {
       }
     }
     if (!imp.empresaPgm) return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
-    if (!isEfectivo && !isTarjeta && (!imp.proveedor || !imp.razonSocial)) return `Gasto #${index + 1}: Debe seleccionar proveedor`;
     if (!imp.formaPago) return `Gasto #${index + 1}: Debe seleccionar forma de pago`;
     if (!isEfectivo && !isTarjeta && !imp.condicionPago) return `Gasto #${index + 1}: Debe seleccionar acuerdo de pago`;
     if (!imp.neto) return `Gasto #${index + 1}: Debe ingresar un importe`;

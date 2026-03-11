@@ -318,26 +318,26 @@ export function GastoCard(props: GastoCardProps) {
               </FormRow>
 
                <FormRow>
-                 <FormSelect
-                   label="Factura emitida a"
-                   value={gasto.facturaEmitidaA}
-                   onChange={(v) => onUpdate('facturaEmitidaA', v)}
-                   options={facturaOptions}
-                   required={!areFacturaFieldsDisabled}
-                   disabled={areFacturaFieldsDisabled}
-                   error={errors.facturaEmitidaA}
-                   isDark={isDark}
-                 />
-                 <FormSelect
-                   label="Empresa"
-                   value={gasto.empresa}
-                   onChange={(v) => onUpdate('empresa', v)}
-                   options={empresaOptions}
-                   required={!areFacturaFieldsDisabled}
-                   disabled={areFacturaFieldsDisabled}
-                   error={errors.empresa}
-                   isDark={isDark}
-                 />
+               <FormSelect
+                    label="Factura emitida a"
+                    value={gasto.facturaEmitidaA}
+                    onChange={(v) => onUpdate('facturaEmitidaA', v)}
+                    options={facturaOptions}
+                    required={false}
+                    disabled={areFacturaFieldsDisabled}
+                    error={errors.facturaEmitidaA}
+                    isDark={isDark}
+                  />
+                  <FormSelect
+                    label="Empresa"
+                    value={gasto.empresa}
+                    onChange={(v) => onUpdate('empresa', v)}
+                    options={empresaOptions}
+                    required={false}
+                    disabled={areFacturaFieldsDisabled}
+                    error={errors.empresa}
+                    isDark={isDark}
+                  />
                </FormRow>
             </>
           )}
@@ -369,27 +369,27 @@ export function GastoCard(props: GastoCardProps) {
           </FormRow>
 
           {/* ── Grupo: Proveedor ── */}
-          {showProveedorSelector && (
-            <div className="space-y-2">
-              <ProveedorSelector
-                value={{
-                  proveedor: gasto.proveedor,
-                  razonSocial: gasto.razonSocial,
-                  proveedorId: null,
-                }}
-                onChange={(next) => {
-                  onUpdate('proveedor', next.proveedor);
-                  onUpdate('razonSocial', next.razonSocial);
-                }}
-                disabled={isDisabled}
-                allowCreate={!isDisabled}
-                required={gasto.formaPago && gasto.formaPago !== 'Efectivo (Contado)'}
-              />
-              {errors.proveedor && (
-                <p className="text-sm text-red-500">{errors.proveedor}</p>
-              )}
-            </div>
-          )}
+           {showProveedorSelector && (
+             <div className="space-y-2">
+               <ProveedorSelector
+                 value={{
+                   proveedor: gasto.proveedor,
+                   razonSocial: gasto.razonSocial,
+                   proveedorId: null,
+                 }}
+                 onChange={(next) => {
+                   onUpdate('proveedor', next.proveedor);
+                   onUpdate('razonSocial', next.razonSocial);
+                 }}
+                 disabled={isDisabled}
+                 allowCreate={!isDisabled}
+                 required={false}
+               />
+               {errors.proveedor && (
+                 <p className="text-sm text-red-500">{errors.proveedor}</p>
+               )}
+             </div>
+           )}
 
           {/* ── Grupo: Importes ── */}
           <FormRow>

@@ -216,16 +216,10 @@ export function ExperienceForm({ gastoId, existingFormulario, onCancel, onSave }
       return null;
     }
     
-    if (!g.facturaEmitidaA?.trim()) {
-      return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
-    }
-    if (!g.empresa?.trim()) {
-      return `Gasto #${index + 1}: Debe seleccionar una empresa`;
-    }
     if (!g.empresaPrograma?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
     }
-    if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) {
+    if (!g.acuerdoPago?.trim()) {
       return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
     }
     if (!g.neto || g.neto <= 0) {
