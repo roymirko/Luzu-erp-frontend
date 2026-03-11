@@ -248,20 +248,21 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
   }
 
   return (
-    <div className="pb-24">
-      <div className="max-w-[620px] mx-auto py-8 space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
-            Revisión de ingreso
-          </h1>
-          <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
-            Revisá la información del ingreso antes de avanzar. Verificá que los datos sean correctos y estén completos.
-          </p>
-        </div>
+    <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="space-y-6 sm:space-y-8 pb-24">
+          {/* Header */}
+          <div>
+            <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
+              Revisión de ingreso
+            </h1>
+            <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
+              Revisá la información del ingreso antes de avanzar. Verificá que los datos sean correctos y estén completos.
+            </p>
+          </div>
 
-        {/* OP Selector */}
-        <div className={cn(
+          {/* OP Selector */}
+          <div className={cn(
           'rounded-lg border p-6',
           isDark ? 'border-gray-800 bg-[#141414]' : 'border-gray-200 bg-white',
         )}>
@@ -271,10 +272,10 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
             </Label>
             <OrdenPublicidadSelector value={form.ordenPublicidadIdIngreso} onChange={handleOpSelect} disabled={locked} />
           </div>
-        </div>
+          </div>
 
-        {/* Context Card (from OP) */}
-        {contextItems.length > 0 && (
+          {/* Context Card (from OP) */}
+          {contextItems.length > 0 && (
           <div className={cn(
             'rounded-lg border p-6',
             isDark ? 'border-gray-800 bg-[#141414]' : 'border-gray-200 bg-white',
@@ -581,6 +582,7 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
               Volver
             </Button>
           )}
+        </div>
         </div>
       </div>
     </div>

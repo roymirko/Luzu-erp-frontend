@@ -167,15 +167,17 @@ export function FormularioNuevoComprobante({
   const s = formStyles(isDark);
 
   return (
-    <div>
-      <FormHeader
-        isDark={isDark}
-        title={`Nuevo ${form.tipoMovimiento === 'ingreso' ? 'Ingreso' : 'Egreso'}`}
-        isCerrado={false}
-      />
+    <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="space-y-6 sm:space-y-8">
+          <FormHeader
+            isDark={isDark}
+            title={`Nuevo ${form.tipoMovimiento === 'ingreso' ? 'Ingreso' : 'Egreso'}`}
+            isCerrado={false}
+          />
 
-      {/* Tipo de Movimiento */}
-      <Card className={cn("mb-6", isDark && "bg-[#141414] border-gray-800")}>
+          {/* Tipo de Movimiento */}
+          <Card className={cn("mb-6", isDark && "bg-[#141414] border-gray-800")}>
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -343,6 +345,8 @@ export function FormularioNuevoComprobante({
       </Card>
 
       <FormFooter saving={saving} onCancel={onClose} onSave={handleGuardar} />
+        </div>
+      </div>
     </div>
   );
 }

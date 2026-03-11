@@ -75,6 +75,8 @@ function bloqueToCreateInput(
     unidadNegocio?: string;
     categoriaNegocio?: string;
     nombreCampana?: string;
+    acuerdoPago?: string;
+    empresaPrograma?: string;
   }
 ): CreateGastoTecnicaInput {
   return {
@@ -97,6 +99,8 @@ function bloqueToCreateInput(
     unidadNegocio: shared.unidadNegocio,
     categoriaNegocio: shared.categoriaNegocio,
     nombreCampana: shared.nombreCampana,
+    acuerdoPago: shared.acuerdoPago,
+    empresaPrograma: shared.empresaPrograma,
   };
 }
 
@@ -481,23 +485,25 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
     const isExisting = loadedGastoIdsRef.current.has(importe.id);
 
     try {
-      if (isExisting) {
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
+       if (isExisting) {
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: ordenPublicidadData?.acuerdoPago,
+           empresaPrograma: importe.empresaPgm,
+         });
 
         if (success) {
           toast.success(`Gasto #${index + 1} actualizado`);
@@ -507,13 +513,15 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
           return false;
         }
       } else {
-        const input: CreateGastoTecnicaInput = bloqueToCreateInput(importe, {
-          ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
-          defaultItemOrdenPublicidadId: itemId,
-          rubro: TECNICA_DEFAULTS.rubro,
-          subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
-          ...(isStandalone ? { unidadNegocio, categoriaNegocio, nombreCampana } : {}),
-        });
+         const input: CreateGastoTecnicaInput = bloqueToCreateInput(importe, {
+           ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
+           defaultItemOrdenPublicidadId: itemId,
+           rubro: TECNICA_DEFAULTS.rubro,
+           subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
+           ...(isStandalone ? { unidadNegocio, categoriaNegocio, nombreCampana } : {}),
+           acuerdoPago: ordenPublicidadData?.acuerdoPago,
+           empresaPrograma: importe.empresaPgm,
+         });
 
         const created = await addGasto(input);
         if (created) {

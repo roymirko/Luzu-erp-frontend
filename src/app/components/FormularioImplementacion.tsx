@@ -66,6 +66,8 @@ function bloqueToCreateInput(
     defaultItemOrdenPublicidadId?: string;
     rubro?: string;
     subRubro?: string;
+    acuerdoPago?: string;
+    empresaPrograma?: string;
   }
 ): CreateGastoImplementacionInput {
   return {
@@ -86,6 +88,8 @@ function bloqueToCreateInput(
     condicionPago: bloque.condicionPago,
     formaPago: bloque.formaPago,
     numeroFactura: bloque.numeroComprobante || undefined,
+    acuerdoPago: shared.acuerdoPago,
+    empresaPrograma: shared.empresaPrograma,
   };
 }
 
@@ -481,6 +485,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           defaultItemOrdenPublicidadId: itemId,
           rubro: IMPLEMENTACION_DEFAULTS.rubro,
           subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+          acuerdoPago: ordenPublicidadData?.acuerdoPago,
+          empresaPrograma: importe.empresaPgm,
         });
 
         const created = await addGasto(input);

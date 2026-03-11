@@ -75,6 +75,8 @@ function bloqueToCreateInput(
     nombreCampana?: string;
     unidadNegocio?: string;
     categoriaNegocio?: string;
+    acuerdoPago?: string;
+    empresaPrograma?: string;
   }
 ): CreateGastoTalentosInput {
   return {
@@ -98,6 +100,8 @@ function bloqueToCreateInput(
     nombreCampana: shared.nombreCampana,
     unidadNegocio: shared.unidadNegocio,
     categoriaNegocio: shared.categoriaNegocio,
+    acuerdoPago: shared.acuerdoPago,
+    empresaPrograma: shared.empresaPrograma,
   };
 }
 
@@ -469,23 +473,25 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
     const isExisting = loadedGastoIdsRef.current.has(importe.id);
 
     try {
-      if (isExisting) {
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
+       if (isExisting) {
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: ordenPublicidadData?.acuerdoPago,
+           empresaPrograma: importe.empresaPgm,
+         });
 
         if (success) {
           toast.success(`Gasto #${index + 1} actualizado`);
@@ -493,16 +499,18 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
         }
         toast.error(`Error al actualizar gasto #${index + 1}`);
         return false;
-       } else {
-        const input = bloqueToCreateInput(importe, {
-          ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
-          defaultItemOrdenPublicidadId: itemId,
-          rubro: TALENTOS_DEFAULTS.rubro,
-          subRubro: isStandalone ? subRubro : TALENTOS_DEFAULTS.subRubro,
-          nombreCampana: isStandalone ? nombreCampana : undefined,
-          unidadNegocio: isStandalone ? unidadNegocio : undefined,
-          categoriaNegocio: isStandalone ? categoriaNegocio : undefined,
-        });
+        } else {
+         const input = bloqueToCreateInput(importe, {
+           ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
+           defaultItemOrdenPublicidadId: itemId,
+           rubro: TALENTOS_DEFAULTS.rubro,
+           subRubro: isStandalone ? subRubro : TALENTOS_DEFAULTS.subRubro,
+           nombreCampana: isStandalone ? nombreCampana : undefined,
+           unidadNegocio: isStandalone ? unidadNegocio : undefined,
+           categoriaNegocio: isStandalone ? categoriaNegocio : undefined,
+           acuerdoPago: ordenPublicidadData?.acuerdoPago,
+           empresaPrograma: importe.empresaPgm,
+         });
 
         const created = await addGasto(input);
         if (created) {
