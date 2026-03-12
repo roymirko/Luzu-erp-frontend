@@ -620,29 +620,29 @@ END $$;
 DO $$
 BEGIN
    INSERT INTO public.comprobantes (
-     tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
-     neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, created_by
-   ) VALUES
-     ('ingreso', 'Coca Cola Argentina', '30500001234', 'FA', '0001', '00000001', '2024-01-20',
-      150000, 21, 31500, 181500, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Verano 2024', 'activo', 'pagado', 'system'),
-     ('ingreso', 'Telefónica de Argentina', '30500005678', 'FA', '0001', '00000002', '2024-01-25',
-      80000, 21, 16800, 96800, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Conectados', 'activo', 'creado', 'system'),
-     ('ingreso', 'Mercado Libre', '30500009012', 'FA', '0001', '00000003', '2024-02-05',
-      200000, 21, 42000, 242000, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Cashback', 'activo', 'aprobado', 'system'),
-     ('ingreso', 'YPF S.A.', '30500003456', 'FA', '0001', '00000004', '2024-02-15',
-      120000, 21, 25200, 145200, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Energía Argentina', 'activo', 'creado', 'system'),
-     ('ingreso', 'Cervecería Quilmes', '30500007890', 'FA', '0001', '00000005', '2024-03-05',
-      180000, 21, 37800, 217800, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Amigos', 'activo', 'pagado', 'system'),
-     ('ingreso', 'Banco Galicia', '30500002345', 'FA', '0001', '00000006', '2024-03-20',
-      90000, 21, 18900, 108900, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Digital', 'activo', 'requiere_info', 'system'),
-     ('ingreso', 'Telefónica de Argentina', '30500005678', 'NCA', '0001', '00000001', '2024-02-01',
-      -10000, 21, -2100, -12100, 'ARS', 'LUZU TV S. A.', 'Ajuste por bonificación acordada', 'activo', 'aprobado', 'system');
+      tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+      neto, iva_alicuota, iva_monto, total, moneda, empresa, concepto, estado, estado_pago, forma_pago, acuerdo_pago, created_by
+    ) VALUES
+      ('ingreso', 'Coca Cola Argentina', '30500001234', 'FA', '0001', '00000001', '2024-01-20',
+       150000, 21, 31500, 181500, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Verano 2024', 'activo', 'pagado', 'Transferencia (Adelantado)', '30', 'system'),
+      ('ingreso', 'Telefónica de Argentina', '30500005678', 'FA', '0001', '00000002', '2024-01-25',
+       80000, 21, 16800, 96800, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Conectados', 'activo', 'creado', 'Tarjeta de crédito', '45', 'system'),
+      ('ingreso', 'Mercado Libre', '30500009012', 'FA', '0001', '00000003', '2024-02-05',
+       200000, 21, 42000, 242000, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Cashback', 'activo', 'aprobado', 'e check', '60', 'system'),
+      ('ingreso', 'YPF S.A.', '30500003456', 'FA', '0001', '00000004', '2024-02-15',
+       120000, 21, 25200, 145200, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Energía Argentina', 'activo', 'creado', 'Efectivo (Contado)', null, 'system'),
+      ('ingreso', 'Cervecería Quilmes', '30500007890', 'FA', '0001', '00000005', '2024-03-05',
+       180000, 21, 37800, 217800, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Amigos', 'activo', 'pagado', 'Débito automático', '30', 'system'),
+      ('ingreso', 'Banco Galicia', '30500002345', 'FA', '0001', '00000006', '2024-03-20',
+       90000, 21, 18900, 108900, 'ARS', 'LUZU TV S. A.', 'Servicios publicitarios Campaña Digital', 'activo', 'requiere_info', 'Tarjeta de débito', '45', 'system'),
+      ('ingreso', 'Telefónica de Argentina', '30500005678', 'NCA', '0001', '00000001', '2024-02-01',
+       -10000, 21, -2100, -12100, 'ARS', 'LUZU TV S. A.', 'Ajuste por bonificación acordada', 'activo', 'aprobado', 'Pago Mis cuentas', '60', 'system');
 
-   INSERT INTO public.comprobantes (
-     tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
-     neto, iva_alicuota, iva_monto, total, moneda, cotizacion, empresa, concepto, estado, estado_pago, created_by
-   ) VALUES (
-     'ingreso', 'Netflix Inc.', '30-71234567-9', 'FE', '0001', '00000001', '2024-03-10',
-     5000, 0, 0, 5000, 'USD', 850.00, 'LUZU TV S. A.', 'Branded content internacional', 'activo', 'creado', 'system'
-   );
+    INSERT INTO public.comprobantes (
+      tipo_movimiento, entidad_nombre, entidad_cuit, tipo_comprobante, punto_venta, numero_comprobante, fecha_comprobante,
+      neto, iva_alicuota, iva_monto, total, moneda, cotizacion, empresa, concepto, estado, estado_pago, forma_pago, acuerdo_pago, created_by
+    ) VALUES (
+      'ingreso', 'Netflix Inc.', '30-71234567-9', 'FE', '0001', '00000001', '2024-03-10',
+      5000, 0, 0, 5000, 'USD', 850.00, 'LUZU TV S. A.', 'Branded content internacional', 'activo', 'creado', 'Efectivo (Contado)', null, 'system'
+    );
 END $$;

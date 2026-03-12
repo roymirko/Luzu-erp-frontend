@@ -143,7 +143,12 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
 
   const handleOpSelect = (op: OrdenPublicidad | null) => {
     setSelectedOp(op);
-    setForm(prev => ({ ...prev, ordenPublicidadIdIngreso: op?.id || '' }));
+    setForm(prev => ({
+      ...prev,
+      ordenPublicidadIdIngreso: op?.id || '',
+      formaPago: op?.formaPago || '',
+      acuerdoPago: op?.acuerdoPago || '',
+    }));
   };
 
   const totalACobrar = useMemo(() => {
