@@ -11,6 +11,22 @@ import type {
 } from '../types/comprobantes';
 import { isComprobanteLocked } from '../types/comprobantes';
 
+// Mapeo de labels a values para acuerdoPago (para convertir datos guardados incorrectamente)
+const ACUERDO_PAGO_LABEL_TO_VALUE: Record<string, string> = {
+  '30 días': '30',
+  '45 días': '45',
+  '60 días': '60',
+};
+
+// Función para normalizar acuerdoPago: convierte labels a values
+function normalizeAcuerdoPago(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  // Si ya es un value conocido, devolverlo
+  if (['30', '45', '60'].includes(value)) return value;
+  // Si es un label, convertirlo a value
+  return ACUERDO_PAGO_LABEL_TO_VALUE[value] ?? undefined;
+}
+
 function mapFromDB(row: ComprobanteRow): Comprobante {
   return {
     id: row.id,
@@ -56,7 +72,7 @@ function mapFromDB(row: ComprobanteRow): Comprobante {
     fechaEnvio: row.fecha_envio ? new Date(row.fecha_envio) : undefined,
     ordenPublicidadIdIngreso: row.orden_publicidad_id_ingreso ?? undefined,
     facturaEmitidaA: row.factura_emitida_a ?? undefined,
-    acuerdoPago: row.acuerdo_pago ?? undefined,
+    acuerdoPago: normalizeAcuerdoPago(row.acuerdo_pago ?? undefined),
     // Flattened context
     areaOrigen: row.area_origen ?? undefined,
     contextoComprobanteId: row.contexto_comprobante_id ?? undefined,
@@ -311,7 +327,7 @@ function mapFromDBWithContext(row: ComprobanteFullRow): ComprobanteWithContext {
     opRazonSocial: row.op_razon_social ?? undefined,
     opMarca: row.op_marca ?? undefined,
     opMesServicio: row.op_mes_servicio ?? undefined,
-    opAcuerdoPago: row.op_acuerdo_pago ?? undefined,
+    opAcuerdoPago: normalizeAcuerdoPago(row.op_acuerdo_pago ?? undefined),
     // OP joined (ingresos)
     ingresoOpId: row.ingreso_op_id ?? undefined,
     ingresoOpNumero: row.ingreso_op_numero ?? undefined,

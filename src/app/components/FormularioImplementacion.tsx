@@ -51,6 +51,7 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
     condicionPago: gasto.condicionPago || '30',
     numeroComprobante: gasto.numeroFactura || '',
     formaPago: gasto.formaPago || '',
+    acuerdoPago: gasto.acuerdoPago || '',
     neto: String(gasto.neto),
     observaciones: gasto.observaciones || '',
     documentoAdjunto: gasto.adjuntos?.[0],
@@ -66,6 +67,8 @@ function bloqueToCreateInput(
     defaultItemOrdenPublicidadId?: string;
     rubro?: string;
     subRubro?: string;
+    acuerdoPago?: string;
+    empresaPrograma?: string;
   }
 ): CreateGastoImplementacionInput {
   return {
@@ -86,6 +89,8 @@ function bloqueToCreateInput(
     condicionPago: bloque.condicionPago,
     formaPago: bloque.formaPago,
     numeroFactura: bloque.numeroComprobante || undefined,
+    acuerdoPago: bloque.acuerdoPago || shared.acuerdoPago,
+    empresaPrograma: shared.empresaPrograma,
   };
 }
 
@@ -157,6 +162,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
       formaPago: formulario.formaPago || '',
+      facturaEmitidaA: formulario.facturaEmitidaA || '',
+      empresa: formulario.empresa || '',
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
@@ -290,9 +297,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
       const isTarjeta = imp.formaPago === 'Tarjeta de crédito' || imp.formaPago === 'Tarjeta de débito';
 
       if (!isEfectivo) {
-        if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
-        if (!imp.empresa) importeErrors.empresa = 'Debe seleccionar una empresa';
-        
         // Validación cruzada: Si hay uno, debe estar el otro
         const tieneNumero = imp.numeroComprobante && imp.numeroComprobante.trim() !== '';
         const tieneFecha = imp.fechaComprobante && imp.fechaComprobante.trim() !== '';
@@ -305,9 +309,6 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         }
       }
       if (!imp.empresaPgm) importeErrors.empresaPgm = 'Requerido';
-      if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) {
-        importeErrors.proveedor = 'Debe seleccionar proveedor y razón social';
-      }
       if (!imp.formaPago) importeErrors.formaPago = 'Requerido';
       if (!isEfectivo && !isTarjeta && !imp.condicionPago) {
         importeErrors.condicionPago = 'Requerido';
@@ -454,25 +455,26 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     try {
       if (isExisting) {
         // Update existing gasto
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: importe.acuerdoPago,
+         });
 
-        if (success) {
-          toast.success(`Gasto #${index + 1} actualizado`);
+         if (success) {
+           toast.success(`Gasto #${index + 1} actualizado`);
           return true;
         } else {
           toast.error(`Error al actualizar gasto #${index + 1}`);
@@ -485,6 +487,8 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           defaultItemOrdenPublicidadId: itemId,
           rubro: IMPLEMENTACION_DEFAULTS.rubro,
           subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+          acuerdoPago: ordenPublicidadData?.acuerdoPago,
+          empresaPrograma: importe.empresaPgm,
         });
 
         const created = await addGasto(input);
@@ -531,6 +535,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         defaultItemOrdenPublicidadId: itemId,
         rubro: IMPLEMENTACION_DEFAULTS.rubro,
         subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+        acuerdoPago: ordenPublicidadData?.acuerdoPago,
       };
 
       console.log('[Implementacion] Guardando con sharedFields:', sharedFields);
@@ -552,24 +557,25 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
       // Update existing gastos
       for (const importe of importesToUpdate) {
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
-        if (success) {
-          updateCount++;
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: importe.acuerdoPago,
+         });
+         if (success) {
+           updateCount++;
         } else {
           hasError = true;
         }
@@ -660,24 +666,28 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
           />
 
           {/* Carga de Importes Section */}
-          <CargaImportesSection
-            isDark={isDark}
-            isCerrado={isCerrado}
-            importes={importes}
-            programasConPresupuesto={ordenPublicidadData?.programasConPresupuesto || []}
-            onUpdateImporte={updateImporte}
-            onAddImporte={addImporte}
-            onRemoveImporte={removeImporte}
-            onResetImporte={resetImporte}
-            onSaveGasto={handleSaveGasto}
-            onDeleteSavedGasto={handleDeleteSavedGasto}
-            errors={errors.importes}
-            // Status props
-            isNewGasto={isNewGasto}
-            existingGastoIds={existingGastoIds}
-            estadoOP={estadoOP}
-            ordenFormaPago={ordenPublicidadData?.formaPago}
-          />
+           <CargaImportesSection
+             isDark={isDark}
+             isCerrado={isCerrado}
+             importes={importes}
+             programasConPresupuesto={ordenPublicidadData?.programasConPresupuesto || []}
+             onUpdateImporte={updateImporte}
+             onAddImporte={addImporte}
+             onRemoveImporte={removeImporte}
+             onResetImporte={resetImporte}
+             onSaveGasto={handleSaveGasto}
+             onDeleteSavedGasto={handleDeleteSavedGasto}
+             errors={errors.importes}
+             // Status props
+             isNewGasto={isNewGasto}
+             existingGastoIds={existingGastoIds}
+             estadoOP={estadoOP}
+             ordenFormaPago={ordenPublicidadData?.formaPago}
+             inheritedFacturaEmitidaA={ordenPublicidadData?.facturaEmitidaA}
+             inheritedEmpresa={ordenPublicidadData?.empresa}
+             inheritedFormaPago={ordenPublicidadData?.formaPago}
+             blockInheritedFields={ordenPublicidadData?.formaPago === 'Efectivo (Contado)'}
+           />
 
           {/* Resumen */}
           <ResumenPresupuestario

@@ -19,6 +19,7 @@ import { FormFooter } from '@/app/components/shared/FormFooter';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import * as comprobantesService from '@/app/services/comprobantesService';
+import { FORMAS_PAGO_OPTIONS } from '@/app/utils/implementacionConstants';
 import type { TipoMovimiento, TipoComprobante, Moneda, FormaPago } from '@/app/types/comprobantes';
 import { TIPO_COMPROBANTE_LABELS, FORMA_PAGO_LABELS, calcularDesdeTotal } from '@/app/types/comprobantes';
 
@@ -30,8 +31,6 @@ interface FormularioNuevoComprobanteProps {
 const TIPO_COMPROBANTE_OPTIONS: TipoComprobante[] = [
   'FA', 'FB', 'FC', 'FE', 'NCA', 'NCB', 'NCC', 'NDA', 'NDB', 'NDC', 'REC', 'TKT', 'OTR'
 ];
-
-const FORMA_PAGO_OPTIONS: FormaPago[] = ['transferencia', 'cheque', 'efectivo', 'tarjeta', 'otro'];
 
 interface FormState {
   tipoMovimiento: TipoMovimiento;
@@ -167,15 +166,17 @@ export function FormularioNuevoComprobante({
   const s = formStyles(isDark);
 
   return (
-    <div>
-      <FormHeader
-        isDark={isDark}
-        title={`Nuevo ${form.tipoMovimiento === 'ingreso' ? 'Ingreso' : 'Egreso'}`}
-        isCerrado={false}
-      />
+    <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="space-y-6 sm:space-y-8">
+          <FormHeader
+            isDark={isDark}
+            title={`Nuevo ${form.tipoMovimiento === 'ingreso' ? 'Ingreso' : 'Egreso'}`}
+            isCerrado={false}
+          />
 
-      {/* Tipo de Movimiento */}
-      <Card className={cn("mb-6", isDark && "bg-[#141414] border-gray-800")}>
+          {/* Tipo de Movimiento */}
+          <Card className={cn("mb-6", isDark && "bg-[#141414] border-gray-800")}>
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -298,10 +299,10 @@ export function FormularioNuevoComprobante({
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className={s.label}>Forma de Pago</Label>
+              <Label className={s.label}>Forma de Pago <span className="text-red-500">*</span></Label>
               <Select value={form.formaPago} onValueChange={(v) => handleChange('formaPago', v)}>
                 <SelectTrigger className={s.selectTrigger}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                <SelectContent>{FORMA_PAGO_OPTIONS.map((fp) => <SelectItem key={fp} value={fp}>{FORMA_PAGO_LABELS[fp]}</SelectItem>)}</SelectContent>
+                <SelectContent>{FORMAS_PAGO_OPTIONS.map((opt) => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <FormDatePicker label={`Fecha de ${form.tipoMovimiento === 'ingreso' ? 'Cobro' : 'Pago'}`} value={form.fechaPago} onChange={(v) => handleChange('fechaPago', v)} />
@@ -343,6 +344,8 @@ export function FormularioNuevoComprobante({
       </Card>
 
       <FormFooter saving={saving} onCancel={onClose} onSave={handleGuardar} />
+        </div>
+      </div>
     </div>
   );
 }

@@ -4,18 +4,13 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/app/components/ui/select';
+import { FormSelect } from '@/app/components/ui/form-select';
 import { FormDatePicker } from '@/app/components/ui/form-date-picker';
 import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { CheckCircle, AlertCircle, CreditCard, ArrowLeft, Paperclip } from 'lucide-react';
+import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import * as comprobantesService from '@/app/services/comprobantesService';
 import type {
   ComprobanteWithContext,
@@ -24,25 +19,18 @@ import type {
 } from '@/app/types/comprobantes';
 import {
   ESTADO_PAGO_LABELS,
-  FORMA_PAGO_LABELS,
   AREA_ORIGEN_LABELS,
   isComprobanteLocked,
 } from '@/app/types/comprobantes';
+import {
+  FORMAS_PAGO_OPTIONS,
+  ACUERDOS_PAGO_OPTIONS,
+} from '@/app/utils/implementacionConstants';
 
 interface FormularioAdminEgresoProps {
   comprobanteId: string;
   onClose: () => void;
 }
-
-const FORMA_PAGO_OPTIONS: FormaPago[] = ['transferencia', 'cheque', 'efectivo', 'tarjeta', 'otro'];
-
-const ACUERDO_PAGO_OPTIONS = [
-  { value: '0', label: 'Contado' },
-  { value: '30', label: '30 días' },
-  { value: '60', label: '60 días' },
-  { value: '90', label: '90 días' },
-  { value: '120', label: '120 días' },
-];
 
 function formatDate(date: Date | undefined): string {
   if (!date) return '';
@@ -67,7 +55,8 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
     acuerdoPago: '',
     fechaComprobante: '',
     numeroComprobante: '',
-    entidadNombre: '',
+    proveedor: '',
+    razonSocial: '',
     entidadCuit: '',
     neto: '',
     observaciones: '',
@@ -83,25 +72,34 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
         return;
       }
       setComprobante(data);
-      setForm({
+      const newForm = {
         facturaEmitidaA: data.facturaEmitidaA || data.entidadNombre || '',
         empresa: data.empresa || '',
-        empresaPrograma: data.empresaPrograma || data.ctxPrograma || '',
+        empresaPrograma: data.empresaPrograma || data.ctxPrograma || data.sector || '',
         formaPago: data.formaPago || '',
         acuerdoPago: data.acuerdoPago || data.opAcuerdoPago || '',
         fechaComprobante: formatDate(data.fechaComprobante),
         numeroComprobante: data.numeroComprobante || '',
-        entidadNombre: data.entidadNombre || '',
+        proveedor: data.entidadNombre || '',
+        razonSocial: data.entidadNombre || '',
         entidadCuit: data.entidadCuit || '',
         neto: data.neto?.toString() || '',
         observaciones: data.observaciones || '',
-      });
+      };
+      setForm(newForm);
       setLoading(false);
     })();
   }, [comprobanteId]);
 
   const handleChange = (field: keyof typeof form, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      // Si cambia formaPago a "Efectivo (Contado)", limpiar acuerdoPago
+      if (field === 'formaPago' && value === 'Efectivo (Contado)') {
+        next.acuerdoPago = '';
+      }
+      return next;
+    });
   };
 
   const handleGuardar = async (nuevoEstado: EstadoPago) => {
@@ -113,7 +111,7 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
         id: comprobante.id,
         facturaEmitidaA: form.facturaEmitidaA || undefined,
         empresa: form.empresa || undefined,
-        entidadNombre: form.entidadNombre,
+        entidadNombre: form.razonSocial,
         entidadCuit: form.entidadCuit || undefined,
         formaPago: form.formaPago as FormaPago || undefined,
         acuerdoPago: form.acuerdoPago || undefined,
@@ -155,12 +153,13 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
     );
   }
 
-  if (!comprobante) return null;
+   if (!comprobante) return null;
 
-  const locked = isComprobanteLocked(comprobante.estadoPago);
-  const isCerrado = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
+   const locked = isComprobanteLocked(comprobante.estadoPago);
+   const isCerrado = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
+   const shouldShowAcuerdoPago = form.formaPago !== 'Efectivo (Contado)' && form.formaPago !== '';
 
-  // Build context card data
+   // Build context card data
   const contextItems = buildContextItems(comprobante);
 
   const inputClass = cn(
@@ -180,20 +179,21 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
   );
 
   return (
-    <div className="pb-24">
-      <div className="max-w-[620px] mx-auto py-8 space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
-            Revisión de gasto
-          </h1>
-          <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
-            Revisá la información del gasto antes de avanzar con la facturación. Verificá que los datos sean correctos y estén completos.
-          </p>
-        </div>
+    <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="space-y-6 sm:space-y-8 pb-24">
+          {/* Header */}
+          <div>
+            <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
+              Revisión de gasto
+            </h1>
+            <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
+              Revisá la información del gasto antes de avanzar con la facturación. Verificá que los datos sean correctos y estén completos.
+            </p>
+          </div>
 
-        {/* Context Card */}
-        {contextItems.length > 0 && (
+          {/* Context Card */}
+          {contextItems.length > 0 && (
           <div className={cn(
             'rounded-lg border p-6',
             isDark ? 'border-gray-800 bg-[#141414]' : 'border-gray-200 bg-white',
@@ -257,35 +257,28 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
               </div>
             </div>
 
-            {/* Row 2: Forma de pago, Acuerdo de pago */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Forma de pago <span className="text-red-500">*</span>
-                </Label>
-                <Select value={form.formaPago} onValueChange={(v) => handleChange('formaPago', v)} disabled={locked}>
-                  <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {FORMA_PAGO_OPTIONS.map((fp) => (
-                      <SelectItem key={fp} value={fp}>{FORMA_PAGO_LABELS[fp]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Acuerdo de pago
-                </Label>
-                <Select value={form.acuerdoPago} onValueChange={(v) => handleChange('acuerdoPago', v)} disabled={locked}>
-                  <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {ACUERDO_PAGO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+             {/* Row 2: Forma de pago, Acuerdo de pago */}
+             <div className="grid grid-cols-2 gap-4">
+               <FormSelect
+                 label="Forma de pago"
+                 value={form.formaPago}
+                 onChange={(v) => handleChange('formaPago', v)}
+                 options={FORMAS_PAGO_OPTIONS}
+                 required
+                 disabled={locked}
+                 isDark={isDark}
+               />
+               {shouldShowAcuerdoPago && (
+                 <FormSelect
+                   label="Acuerdo de pago"
+                   value={form.acuerdoPago}
+                   onChange={(v) => handleChange('acuerdoPago', v)}
+                   options={ACUERDOS_PAGO_OPTIONS}
+                   disabled={locked}
+                   isDark={isDark}
+                 />
+               )}
+             </div>
 
             {/* Row 3: Fecha comprobante, N° comprobante */}
             <div className="grid grid-cols-2 gap-4">
@@ -309,32 +302,23 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
               </div>
             </div>
 
-            {/* Row 4: Razón Social, Proveedor */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Razón Social <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={form.entidadNombre}
-                  onChange={(e) => handleChange('entidadNombre', e.target.value)}
-                  disabled={locked}
-                  placeholder="Buscar por nombre o cuit"
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Proveedor
-                </Label>
-                <Input
-                  value={form.entidadCuit}
-                  disabled
-                  placeholder="Se autocompleta automáticamente"
-                  className={cn(inputClass, 'opacity-60 cursor-not-allowed')}
-                />
-              </div>
-            </div>
+            {/* Row 4: ProveedorSelector */}
+            <ProveedorSelector
+              value={{
+                proveedor: form.proveedor,
+                razonSocial: form.razonSocial,
+              }}
+              onChange={(selection) => {
+                setForm(prev => ({
+                  ...prev,
+                  proveedor: selection.proveedor,
+                  razonSocial: selection.razonSocial,
+                }));
+              }}
+              disabled={locked}
+              allowCreate={false}
+              required={true}
+            />
 
             {/* Row 5: Neto (half width) */}
             <div className="grid grid-cols-2 gap-4">
@@ -442,6 +426,7 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
               Volver
             </Button>
           )}
+        </div>
         </div>
       </div>
     </div>

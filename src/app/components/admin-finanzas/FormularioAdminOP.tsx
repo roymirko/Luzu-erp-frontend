@@ -153,19 +153,21 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
   };
 
   return (
-    <div className="max-w-[620px] mx-auto pb-28 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
-          Orden de Publicidad: {orden.ordenPublicidad}
-        </h1>
-        <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
-          Revisá la información de la OP antes de avanzar con la facturación. Verificá que los datos sean correctos y estén completos.
-        </p>
-      </div>
+    <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="space-y-6 sm:space-y-8 pb-24">
+          {/* Header */}
+          <div>
+            <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
+              Orden de Publicidad: {orden.ordenPublicidad}
+            </h1>
+            <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
+              Revisá la información de la OP antes de avanzar con la facturación. Verificá que los datos sean correctos y estén completos.
+            </p>
+          </div>
 
-      {/* Context card */}
-      <div className={cn('rounded-lg border p-4', grayBg)}>
+          {/* Context card */}
+          <div className={cn('rounded-lg border p-4', grayBg)}>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className={cn('text-xs', isDark ? 'text-gray-400' : 'text-gray-500')}>Responsable</Label>
@@ -178,12 +180,12 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
             <p className={cn('text-sm font-medium', isDark ? 'text-white' : 'text-gray-900')}>
               {orden.fecha || orden.createdAt.toLocaleDateString('es-AR')}
             </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Form card — all readonly */}
-      <div className={cn('rounded-lg border p-5 space-y-4', cardBg)}>
+        {/* Form card — all readonly */}
+        <div className={cn('rounded-lg border p-5 space-y-4', cardBg)}>
         {/* Row: OP, Total Venta, Mes servicio */}
         <div className="grid grid-cols-3 gap-3">
           <ReadonlyField label="Orden de Publicidad *" value={orden.ordenPublicidad} isDark={isDark} />
@@ -228,10 +230,13 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
           Carga de importes
         </h2>
 
-        {/* Acuerdo de Pago */}
-        <ReadonlyField label="Acuerdo de Pago" value={orden.acuerdoPago} isDark={isDark} />
+         {/* Forma de Pago y Acuerdo de Pago */}
+         <div className="grid grid-cols-2 gap-4">
+           <ReadonlyField label="Forma de Pago" value={orden.formaPago} isDark={isDark} />
+           <ReadonlyField label="Acuerdo de Pago" value={orden.acuerdoPago} isDark={isDark} />
+         </div>
 
-        {/* Items */}
+         {/* Items */}
         {orden.items.map((item, idx) => (
           <ItemCard key={item.id} item={item} index={idx} isDark={isDark} />
         ))}
@@ -361,49 +366,51 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
           </div>
         </div>
       )}
+        </div>
 
-      {/* Sticky footer */}
-      <div className={cn(
-        'fixed bottom-0 left-0 right-0 border-t px-6 py-3 flex items-center justify-end gap-3 z-40',
-        isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
-      )}>
-        {isPendiente ? (
-          <>
-            {!hasGastos ? (
+        {/* Sticky footer */}
+        <div className={cn(
+          'fixed bottom-0 left-0 right-0 border-t px-6 py-3 flex items-center justify-end gap-3 z-40',
+          isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-gray-200'
+        )}>
+          {isPendiente ? (
+            <>
+              {!hasGastos ? (
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowCommentForm('rechazo'); setComentarios(''); }}
+                  disabled={saving || showCommentForm === 'rechazo'}
+                  className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                  <XCircle className="h-4 w-4 mr-1.5" />
+                  Rechazar OP
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowCommentForm('solicitar'); setComentarios(''); }}
+                  disabled={saving || showCommentForm === 'solicitar'}
+                >
+                  <MessageSquare className="h-4 w-4 mr-1.5" />
+                  Solicitar información
+                </Button>
+              )}
               <Button
-                variant="outline"
-                onClick={() => { setShowCommentForm('rechazo'); setComentarios(''); }}
-                disabled={saving || showCommentForm === 'rechazo'}
-                className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                onClick={handleAprobar}
+                disabled={saving}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
-                <XCircle className="h-4 w-4 mr-1.5" />
-                Rechazar OP
+                <CheckCircle className="h-4 w-4 mr-1.5" />
+                Aprobar OP
               </Button>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={() => { setShowCommentForm('solicitar'); setComentarios(''); }}
-                disabled={saving || showCommentForm === 'solicitar'}
-              >
-                <MessageSquare className="h-4 w-4 mr-1.5" />
-                Solicitar información
-              </Button>
-            )}
-            <Button
-              onClick={handleAprobar}
-              disabled={saving}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <CheckCircle className="h-4 w-4 mr-1.5" />
-              Aprobar OP
+            </>
+          ) : (
+            <Button variant="outline" onClick={onClose}>
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Volver
             </Button>
-          </>
-        ) : (
-          <Button variant="outline" onClick={onClose}>
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Volver
-          </Button>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -174,13 +174,13 @@ export function CargaDatosSection(props: CargaDatosSectionProps) {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormInput
-          label="Sub rubro"
-          value={subRubro}
-          disabled
-          isDark={isDark}
-        />
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <FormInput
+           label="Subrubro"
+           value={subRubro}
+           disabled
+           isDark={isDark}
+         />
         <FormInput
           label="Nombre de la campaña"
           value={nombreCampana}

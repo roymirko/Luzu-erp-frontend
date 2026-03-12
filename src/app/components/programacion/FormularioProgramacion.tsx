@@ -100,6 +100,7 @@ export function FormularioProgramacion({
   // Section 2: Carga de importes - shared proveedor for all gastos
   const [razonSocial, setRazonSocial] = useState("");
   const [proveedor, setProveedor] = useState("");
+  const [entidadCuit, setEntidadCuit] = useState("");
 
   // Section 2: Gastos (repeatable)
   const [gastos, setGastos] = useState<GastoItem[]>([
@@ -157,6 +158,7 @@ export function FormularioProgramacion({
       setNombreCampana(firstGasto.programa || "");
       setRazonSocial(firstGasto.razonSocial || "");
       setProveedor(firstGasto.proveedor || "");
+      setEntidadCuit(firstGasto.entidadCuit || "");
 
       // Map ALL gastos from this formulario and track their IDs
       const loadedGastos = formularioGastos.map((g) => ({
@@ -188,14 +190,10 @@ export function FormularioProgramacion({
     return newErrors;
   }, [subrubro]);
 
-   const validateSingleGasto = useCallback(
+    const validateSingleGasto = useCallback(
     (g: GastoItem, index: number): string | null => {
       if (!g.formaPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar una forma de pago`;
-      }
-      
-      if (!proveedor?.trim() || !razonSocial?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar proveedor`;
       }
       
       if (g.formaPago === 'Efectivo (Contado)') {
@@ -205,16 +203,10 @@ export function FormularioProgramacion({
         return null;
       }
       
-      if (!g.facturaEmitidaA?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar "Factura emitida a"`;
-      }
-      if (!g.empresa?.trim()) {
-        return `Gasto #${index + 1}: Debe seleccionar una empresa`;
-      }
       if (!g.empresaPrograma?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar Empresa/Programa`;
       }
-      if (g.formaPago !== 'Efectivo (Contado)' && !g.acuerdoPago?.trim()) {
+      if (!g.acuerdoPago?.trim()) {
         return `Gasto #${index + 1}: Debe seleccionar un acuerdo de pago`;
       }
       if (!g.neto || g.neto <= 0) {
@@ -259,9 +251,14 @@ export function FormularioProgramacion({
   const handleProveedorChange = (data: {
     proveedor: string;
     razonSocial: string;
+    proveedorId?: string | null;
+    proveedorData?: any;
   }) => {
     setProveedor(data.proveedor);
     setRazonSocial(data.razonSocial);
+    if (data.proveedorData?.cuit) {
+      setEntidadCuit(data.proveedorData.cuit);
+    }
   };
 
   const removeGastoItem = (id: string) => {
@@ -347,12 +344,6 @@ export function FormularioProgramacion({
 
   // Save a single gasto to the database
   const handleSaveGasto = async (gasto: GastoItem, index: number): Promise<boolean> => {
-    // Validate proveedor and razonSocial (shared fields)
-    if (!proveedor || !razonSocial) {
-      toast.error('Debe seleccionar un proveedor antes de guardar');
-      return false;
-    }
-
     const isExisting = loadedGastoIdsRef.current.has(gasto.id);
     console.log('[FormProgramacion] Guardando gasto individual:', gasto.id, 'isExisting:', isExisting);
 
@@ -391,6 +382,7 @@ export function FormularioProgramacion({
         const result = await addGastoToFormulario(existingGasto.formularioId, {
           proveedor,
           razonSocial,
+          entidadCuit,
           neto: gasto.neto,
           empresa: gasto.empresa,
           observaciones: gasto.observaciones,
@@ -774,6 +766,7 @@ export function FormularioProgramacion({
               onChange={handleProveedorChange}
               disabled={isFormularioCerrado}
               allowCreate={!isFormularioCerrado}
+              required={false}
             />
 
             {/* Gastos Items */}

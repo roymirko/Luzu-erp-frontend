@@ -13,6 +13,7 @@ export interface Gasto {
   // Core comprobante fields
   proveedor: string;
   razonSocial: string;
+  entidadCuit?: string;
   tipoFactura?: string;
   numeroFactura?: string;
   fechaFactura?: string;
@@ -104,6 +105,7 @@ export interface CreateGastoInput {
   // Core
   proveedor: string;
   razonSocial?: string;
+  entidadCuit?: string;
   tipoFactura?: string;
   numeroFactura?: string;
   fechaFactura?: string;

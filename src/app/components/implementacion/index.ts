@@ -19,9 +19,11 @@ export interface BloqueImporte {
   fechaComprobante: string;
   proveedor: string;
   razonSocial: string;
+  cuit?: string;
   condicionPago: string;
   numeroComprobante: string;
   formaPago: string;
+  acuerdoPago?: string;
   neto: string;
   observaciones: string;
   documentoAdjunto?: string;

@@ -45,9 +45,6 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
   const isCategoriaDisabled = !unidadNegocio || unidadNegocio !== 'Media';
   const categoriasDisponibles = CATEGORIAS_POR_UNIDAD[unidadNegocio] || [];
   
-  // Razón social es obligatoria solo si formaPago NO es "Efectivo (Contado)"
-  const isRazonSocialRequired = formaPago && formaPago !== 'Efectivo (Contado)';
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
@@ -127,13 +124,13 @@ export function ConfiguracionSection(props: ConfiguracionSectionProps) {
         </div>
       </div>
 
-      <div className="md:col-span-2">
-        <ProveedorSelector
-          value={proveedorValue}
-          onChange={onProveedorChange}
-          required={isRazonSocialRequired}
-        />
-      </div>
+       <div className="md:col-span-2">
+         <ProveedorSelector
+           value={proveedorValue}
+           onChange={onProveedorChange}
+           required={false}
+         />
+       </div>
     </div>
   );
 }

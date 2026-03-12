@@ -137,10 +137,6 @@ export function validateCreate(input: CreateOrdenPublicidadInput): OrdenPublicid
   if (!input.unidadNegocio?.trim()) {
     errors.push({ field: 'unidadNegocio', message: 'La unidad de negocio es requerida' });
   }
-  // razonSocial solo es requerido si forma de pago NO es Efectivo
-  if (input.formaPago !== 'Efectivo (Contado)' && !input.razonSocial?.trim()) {
-    errors.push({ field: 'razonSocial', message: 'La razón social es requerida' });
-  }
   if (!input.nombreCampana?.trim()) {
     errors.push({ field: 'nombreCampana', message: 'El nombre de campaña es requerido' });
   }

@@ -26,24 +26,17 @@ import type {
 import type { OrdenPublicidad } from '@/app/types/comercial';
 import {
   ESTADO_PAGO_LABELS,
-  FORMA_PAGO_LABELS,
   isComprobanteLocked,
 } from '@/app/types/comprobantes';
+import {
+  FORMAS_PAGO_OPTIONS,
+  ACUERDOS_PAGO_OPTIONS,
+} from '@/app/utils/implementacionConstants';
 
 interface FormularioAdminIngresoProps {
   comprobanteId: string;
   onClose: () => void;
 }
-
-const FORMA_PAGO_OPTIONS: FormaPago[] = ['transferencia', 'cheque', 'efectivo', 'tarjeta', 'otro'];
-
-const ACUERDO_PAGO_OPTIONS = [
-  { value: '0', label: 'Contado' },
-  { value: '30', label: '30 días' },
-  { value: '60', label: '60 días' },
-  { value: '90', label: '90 días' },
-  { value: '120', label: '120 días' },
-];
 
 function formatDate(date: Date | undefined): string {
   if (!date) return '';
@@ -138,12 +131,24 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
   }, [comprobanteId]);
 
   const handleChange = (field: keyof typeof form, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      // Si cambia formaPago a "Efectivo (Contado)", limpiar acuerdoPago
+      if (field === 'formaPago' && value === 'Efectivo (Contado)') {
+        next.acuerdoPago = '';
+      }
+      return next;
+    });
   };
 
   const handleOpSelect = (op: OrdenPublicidad | null) => {
     setSelectedOp(op);
-    setForm(prev => ({ ...prev, ordenPublicidadIdIngreso: op?.id || '' }));
+    setForm(prev => ({
+      ...prev,
+      ordenPublicidadIdIngreso: op?.id || '',
+      formaPago: op?.formaPago || '',
+      acuerdoPago: op?.acuerdoPago || '',
+    }));
   };
 
   const totalACobrar = useMemo(() => {
@@ -217,6 +222,7 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
 
   const locked = isComprobanteLocked(comprobante.estadoPago);
   const isCerrado = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
+  const shouldShowAcuerdoPago = form.formaPago !== 'Efectivo (Contado)' && form.formaPago !== '';
 
   const inputClass = cn(
     'h-9 text-sm',
@@ -248,20 +254,21 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
   }
 
   return (
-    <div className="pb-24">
-      <div className="max-w-[620px] mx-auto py-8 space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
-            Revisión de ingreso
-          </h1>
-          <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
-            Revisá la información del ingreso antes de avanzar. Verificá que los datos sean correctos y estén completos.
-          </p>
-        </div>
+    <div className={cn('min-h-screen py-4 sm:py-6', isDark ? 'bg-transparent' : 'bg-white')}>
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="space-y-6 sm:space-y-8 pb-24">
+          {/* Header */}
+          <div>
+            <h1 className={cn('text-2xl font-bold', isDark ? 'text-white' : 'text-gray-900')}>
+              Revisión de ingreso
+            </h1>
+            <p className={cn('text-sm mt-1', isDark ? 'text-gray-400' : 'text-gray-500')}>
+              Revisá la información del ingreso antes de avanzar. Verificá que los datos sean correctos y estén completos.
+            </p>
+          </div>
 
-        {/* OP Selector */}
-        <div className={cn(
+          {/* OP Selector */}
+          <div className={cn(
           'rounded-lg border p-6',
           isDark ? 'border-gray-800 bg-[#141414]' : 'border-gray-200 bg-white',
         )}>
@@ -271,10 +278,10 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
             </Label>
             <OrdenPublicidadSelector value={form.ordenPublicidadIdIngreso} onChange={handleOpSelect} disabled={locked} />
           </div>
-        </div>
+          </div>
 
-        {/* Context Card (from OP) */}
-        {contextItems.length > 0 && (
+          {/* Context Card (from OP) */}
+          {contextItems.length > 0 && (
           <div className={cn(
             'rounded-lg border p-6',
             isDark ? 'border-gray-800 bg-[#141414]' : 'border-gray-200 bg-white',
@@ -346,25 +353,27 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
                 <Select value={form.formaPago} onValueChange={(v) => handleChange('formaPago', v)} disabled={locked}>
                   <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    {FORMA_PAGO_OPTIONS.map((fp) => (
-                      <SelectItem key={fp} value={fp}>{FORMA_PAGO_LABELS[fp]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Acuerdo de pago
-                </Label>
-                <Select value={form.acuerdoPago} onValueChange={(v) => handleChange('acuerdoPago', v)} disabled={locked}>
-                  <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {ACUERDO_PAGO_OPTIONS.map((opt) => (
+                    {FORMAS_PAGO_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              {shouldShowAcuerdoPago && (
+                <div className="space-y-1.5">
+                  <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
+                    Acuerdo de pago
+                  </Label>
+                  <Select value={form.acuerdoPago} onValueChange={(v) => handleChange('acuerdoPago', v)} disabled={locked}>
+                    <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                    <SelectContent>
+                      {ACUERDOS_PAGO_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Row 3: Fecha comprobante, N° comprobante, Fecha vencimiento */}
@@ -581,6 +590,7 @@ export function FormularioAdminIngreso({ comprobanteId, onClose }: FormularioAdm
               Volver
             </Button>
           )}
+        </div>
         </div>
       </div>
     </div>

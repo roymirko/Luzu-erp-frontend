@@ -58,6 +58,7 @@ function gastoToBloqueImporte(gasto: GastoTecnica): BloqueImporte {
     condicionPago: gasto.condicionPago || '30',
     numeroComprobante: gasto.numeroFactura || '',
     formaPago: gasto.formaPago || '',
+    acuerdoPago: gasto.acuerdoPago || '',
     neto: String(gasto.neto),
     observaciones: gasto.observaciones || '',
     documentoAdjunto: gasto.adjuntos?.[0],
@@ -75,6 +76,8 @@ function bloqueToCreateInput(
     unidadNegocio?: string;
     categoriaNegocio?: string;
     nombreCampana?: string;
+    acuerdoPago?: string;
+    empresaPrograma?: string;
   }
 ): CreateGastoTecnicaInput {
   return {
@@ -97,6 +100,8 @@ function bloqueToCreateInput(
     unidadNegocio: shared.unidadNegocio,
     categoriaNegocio: shared.categoriaNegocio,
     nombreCampana: shared.nombreCampana,
+    acuerdoPago: bloque.acuerdoPago || shared.acuerdoPago,
+    empresaPrograma: shared.empresaPrograma,
   };
 }
 
@@ -183,6 +188,8 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       marca: formulario.marca || '',
       mesServicio: formulario.mesServicio || '',
       formaPago: formulario.formaPago || '',
+      facturaEmitidaA: formulario.facturaEmitidaA || '',
+      empresa: formulario.empresa || '',
     };
   }, [formId, itemId, formularios, getGastosByItemOrdenId]);
 
@@ -318,9 +325,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       const isTarjeta = imp.formaPago === 'Tarjeta de crédito' || imp.formaPago === 'Tarjeta de débito';
 
       if (!isEfectivo) {
-        if (!imp.facturaEmitidaA) importeErrors.facturaEmitidaA = 'Debe seleccionar a quién se emite la factura';
-        if (!imp.empresa) importeErrors.empresa = 'Debe seleccionar una empresa';
-        
         // Validación cruzada: Si hay uno, debe estar el otro
         const tieneNumero = imp.numeroComprobante && imp.numeroComprobante.trim() !== '';
         const tieneFecha = imp.fechaComprobante && imp.fechaComprobante.trim() !== '';
@@ -333,9 +337,6 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
         }
       }
       if (!imp.empresaPgm) importeErrors.empresaPgm = 'Requerido';
-      if (!isEfectivo && (!imp.proveedor || !imp.razonSocial)) {
-        importeErrors.proveedor = 'Debe seleccionar proveedor y razón social';
-      }
       if (!imp.formaPago) importeErrors.formaPago = 'Requerido';
       if (!isEfectivo && !isTarjeta && !imp.condicionPago) {
         importeErrors.condicionPago = 'Requerido';
@@ -485,23 +486,25 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
     const isExisting = loadedGastoIdsRef.current.has(importe.id);
 
     try {
-      if (isExisting) {
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
+       if (isExisting) {
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: ordenPublicidadData?.acuerdoPago,
+           empresaPrograma: importe.empresaPgm,
+         });
 
         if (success) {
           toast.success(`Gasto #${index + 1} actualizado`);
@@ -511,13 +514,15 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
           return false;
         }
       } else {
-        const input: CreateGastoTecnicaInput = bloqueToCreateInput(importe, {
-          ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
-          defaultItemOrdenPublicidadId: itemId,
-          rubro: TECNICA_DEFAULTS.rubro,
-          subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
-          ...(isStandalone ? { unidadNegocio, categoriaNegocio, nombreCampana } : {}),
-        });
+         const input: CreateGastoTecnicaInput = bloqueToCreateInput(importe, {
+           ordenPublicidadId: resolveOrdenId(importe.itemOrdenPublicidadId),
+           defaultItemOrdenPublicidadId: itemId,
+           rubro: TECNICA_DEFAULTS.rubro,
+           subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
+           ...(isStandalone ? { unidadNegocio, categoriaNegocio, nombreCampana } : {}),
+           acuerdoPago: ordenPublicidadData?.acuerdoPago,
+           empresaPrograma: importe.empresaPgm,
+         });
 
         const created = await addGasto(input);
         if (created) {
@@ -562,6 +567,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
         defaultItemOrdenPublicidadId: itemId,
         rubro: TECNICA_DEFAULTS.rubro,
         subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
+        acuerdoPago: ordenPublicidadData?.acuerdoPago,
         ...(isStandalone ? {
           unidadNegocio,
           categoriaNegocio,
@@ -579,24 +585,25 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       let hasError = false;
 
       for (const importe of importesToUpdate) {
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
-        if (success) {
-          updateCount++;
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: importe.acuerdoPago,
+         });
+         if (success) {
+           updateCount++;
         } else {
           hasError = true;
         }
@@ -661,63 +668,55 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="space-y-6 sm:space-y-8">
           <FormHeader
-            isDark={isDark}
-            title="Información de campaña"
-            subtitle="Detalle de la orden y registro de importes de técnica"
-            isCerrado={isCerrado}
-            estadoLabel={estadoOP}
-          />
+             isDark={isDark}
+             title={isStandalone ? 'Cargar Datos' : 'Información de campaña'}
+             subtitle={isStandalone ? 'Complete la información del nuevo formulario de Técnica' : 'Detalle de la orden y registro de importes de técnica'}
+             isCerrado={isCerrado}
+             estadoLabel={estadoOP}
+           />
 
-          {isStandalone ? (
-            <div className={cn(
-              'rounded-lg border p-6 space-y-4',
-              isDark ? 'bg-[#141414] border-gray-800' : 'bg-gray-50 border-gray-200'
-            )}>
-              <h2 className={cn('text-lg font-semibold', isDark ? 'text-white' : 'text-gray-900')}>
-                Datos de la campaña
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormSelect
-                  label="Unidad de negocio"
-                  value={unidadNegocio}
-                  onChange={setUnidadNegocio}
-                  options={UNIDADES_NEGOCIO_OPTIONS}
-                  isDark={isDark}
-                />
-                <FormSelect
-                  label="Categoría de negocio"
-                  value={categoriaNegocio}
-                  onChange={setCategoriaNegocio}
-                  options={CATEGORIAS_NEGOCIO_OPTIONS}
-                  isDark={isDark}
-                />
-                <FormInput
-                  label="Rubro de gasto"
-                  value={TECNICA_DEFAULTS.rubro}
-                  disabled
-                  isDark={isDark}
-                />
-                <FormSelect
-                  label="Sub rubro"
-                  value={subRubro}
-                  onChange={setSubRubro}
-                  options={SUBRUBROS_TECNICA_OPTIONS}
-                  required
-                  isDark={isDark}
-                  error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
-                />
-                <div className="sm:col-span-2">
-                  <FormInput
-                    label="Proyecto"
-                    value={nombreCampana}
-                    onChange={setNombreCampana}
+            {isStandalone ? (
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <FormSelect
+                   label="Unidad de negocio"
+                   value={unidadNegocio}
+                   onChange={setUnidadNegocio}
+                   options={UNIDADES_NEGOCIO_OPTIONS}
+                   isDark={isDark}
+                 />
+                 <FormSelect
+                   label="Categoría de negocio"
+                   value={categoriaNegocio}
+                   onChange={setCategoriaNegocio}
+                   options={CATEGORIAS_NEGOCIO_OPTIONS}
+                   isDark={isDark}
+                 />
+                 <FormInput
+                   label="Rubro de gasto"
+                   value={TECNICA_DEFAULTS.rubro}
+                   disabled
+                   isDark={isDark}
+                 />
+                 <FormSelect
+                    label="Subrubro"
+                    value={subRubro}
+                    onChange={setSubRubro}
+                    options={SUBRUBROS_TECNICA_OPTIONS}
                     required
                     isDark={isDark}
-                    error={hasAttemptedSubmit ? errors.cargaDatos.nombreCampana : undefined}
-                  />
-                </div>
-              </div>
-            </div>
+                    error={hasAttemptedSubmit ? errors.cargaDatos.subRubro : undefined}
+                 />
+                 <div className="sm:col-span-2">
+                   <FormInput
+                     label="Proyecto"
+                     value={nombreCampana}
+                     onChange={setNombreCampana}
+                     required
+                     isDark={isDark}
+                     error={hasAttemptedSubmit ? errors.cargaDatos.nombreCampana : undefined}
+                   />
+                 </div>
+               </div>
           ) : (
             <CampaignInfoCard
               isDark={isDark}
@@ -748,17 +747,20 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
             existingGastoIds={existingGastoIds}
             estadoOP={estadoOP}
             ordenFormaPago={ordenPublicidadData?.formaPago}
+            inheritedFacturaEmitidaA={ordenPublicidadData?.facturaEmitidaA}
+            inheritedEmpresa={ordenPublicidadData?.empresa}
+            inheritedFormaPago={ordenPublicidadData?.formaPago}
+            blockInheritedFields={ordenPublicidadData?.formaPago === 'Efectivo (Contado)'}
           />
 
-          {!isStandalone && (
-            <ResumenPresupuestario
-              isDark={isDark}
-              asignado={asignado}
-              ejecutado={totalEjecutado}
-              disponible={disponible}
-              excedido={excedido}
-            />
-          )}
+          <ResumenPresupuestario
+            isDark={isDark}
+            asignado={asignado}
+            ejecutado={totalEjecutado}
+            disponible={disponible}
+            excedido={excedido}
+            isStandalone={isStandalone}
+          />
 
           <FormFooter saving={saving} onCancel={onClose} onSave={handleGuardar} />
         </div>

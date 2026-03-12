@@ -7,15 +7,66 @@ interface ResumenPresupuestarioProps {
   ejecutado: number;
   disponible: number;
   excedido: boolean;
+  isStandalone?: boolean;
 }
 
 export function ResumenPresupuestario(props: ResumenPresupuestarioProps) {
-  const { isDark, asignado, ejecutado, disponible, excedido } = props;
+  const { isDark, asignado, ejecutado, disponible, excedido, isStandalone } = props;
 
   const calcPercentage = (value: number) => {
     return asignado > 0 ? `${Math.round((value / asignado) * 100)}%` : '0%';
   };
 
+  // For standalone, show only total gasto card
+  if (isStandalone) {
+    return (
+      <div
+        className={cn(
+          'p-6 rounded-[14px] border',
+          isDark ? 'bg-[#141414] border-gray-800' : 'bg-white border-[#e5e7eb]'
+        )}
+      >
+        <h2
+          className={cn(
+            'text-xl font-medium mb-6',
+            isDark ? 'text-white' : 'text-[#101828]'
+          )}
+        >
+          Resumen
+        </h2>
+
+        <div className="flex justify-center">
+          <div
+            className={cn(
+              'rounded-[10px] border px-4 py-4 flex flex-col items-center gap-1 min-w-[162px]',
+              isDark
+                ? 'bg-[#1e1e1e] border-gray-800'
+                : 'bg-[#f3f5ff] border-[#e5e7eb]'
+            )}
+          >
+            <span
+              className={cn(
+                'text-xs font-normal text-center',
+                isDark ? 'text-gray-400' : 'text-[#4a5565]'
+              )}
+            >
+              Total del gasto
+            </span>
+            <span
+              className={cn(
+                'text-lg font-bold text-center',
+                isDark ? 'text-white' : 'text-[#101828]'
+              )}
+            >
+              {formatCurrency(ejecutado)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For non-standalone, show 3 cards
   const cards = [
     {
       label: 'Asignado',
