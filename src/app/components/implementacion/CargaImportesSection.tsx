@@ -51,7 +51,7 @@ function toGastoData(importe: BloqueImporte): GastoData {
     fechaComprobante: importe.fechaComprobante,
     razonSocial: importe.razonSocial,
     proveedor: importe.proveedor,
-    acuerdoPago: importe.condicionPago,
+    acuerdoPago: importe.acuerdoPago,
     numeroComprobante: importe.numeroComprobante,
     formaPago: importe.formaPago,
     neto: importe.neto,
@@ -63,7 +63,7 @@ function toGastoData(importe: BloqueImporte): GastoData {
 function mapFieldName(field: keyof GastoData): keyof BloqueImporte {
   const fieldMap: Partial<Record<keyof GastoData, keyof BloqueImporte>> = {
     empresaPrograma: 'empresaPgm',
-    acuerdoPago: 'condicionPago',
+    acuerdoPago: 'acuerdoPago',
   };
   return fieldMap[field] || (field as keyof BloqueImporte);
 }

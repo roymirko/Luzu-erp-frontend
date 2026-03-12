@@ -89,7 +89,7 @@ function bloqueToCreateInput(
     condicionPago: bloque.condicionPago,
     formaPago: bloque.formaPago,
     numeroFactura: bloque.numeroComprobante || undefined,
-    acuerdoPago: shared.acuerdoPago,
+    acuerdoPago: bloque.acuerdoPago || shared.acuerdoPago,
     empresaPrograma: shared.empresaPrograma,
   };
 }
@@ -455,25 +455,26 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
     try {
       if (isExisting) {
         // Update existing gasto
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: importe.acuerdoPago,
+         });
 
-        if (success) {
-          toast.success(`Gasto #${index + 1} actualizado`);
+         if (success) {
+           toast.success(`Gasto #${index + 1} actualizado`);
           return true;
         } else {
           toast.error(`Error al actualizar gasto #${index + 1}`);
@@ -556,24 +557,25 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
 
       // Update existing gastos
       for (const importe of importesToUpdate) {
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
-        if (success) {
-          updateCount++;
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: importe.acuerdoPago,
+         });
+         if (success) {
+           updateCount++;
         } else {
           hasError = true;
         }

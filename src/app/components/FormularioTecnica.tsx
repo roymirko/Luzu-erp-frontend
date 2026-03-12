@@ -100,7 +100,7 @@ function bloqueToCreateInput(
     unidadNegocio: shared.unidadNegocio,
     categoriaNegocio: shared.categoriaNegocio,
     nombreCampana: shared.nombreCampana,
-    acuerdoPago: shared.acuerdoPago,
+    acuerdoPago: bloque.acuerdoPago || shared.acuerdoPago,
     empresaPrograma: shared.empresaPrograma,
   };
 }
@@ -585,24 +585,25 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
       let hasError = false;
 
       for (const importe of importesToUpdate) {
-        const success = await updateGasto({
-          id: importe.id,
-          proveedor: importe.proveedor,
-          razonSocial: importe.razonSocial,
-          fechaFactura: importe.fechaComprobante,
-          neto: parseFloat(importe.neto) || 0,
-          empresa: importe.empresa,
-          conceptoGasto: importe.observaciones || '',
-          observaciones: importe.observaciones,
-          facturaEmitidaA: importe.facturaEmitidaA,
-          sector: importe.empresaPgm,
-          condicionPago: importe.condicionPago,
-          formaPago: importe.formaPago,
-          numeroFactura: importe.numeroComprobante || undefined,
-          itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
-        });
-        if (success) {
-          updateCount++;
+         const success = await updateGasto({
+           id: importe.id,
+           proveedor: importe.proveedor,
+           razonSocial: importe.razonSocial,
+           fechaFactura: importe.fechaComprobante,
+           neto: parseFloat(importe.neto) || 0,
+           empresa: importe.empresa,
+           conceptoGasto: importe.observaciones || '',
+           observaciones: importe.observaciones,
+           facturaEmitidaA: importe.facturaEmitidaA,
+           sector: importe.empresaPgm,
+           condicionPago: importe.condicionPago,
+           formaPago: importe.formaPago,
+           numeroFactura: importe.numeroComprobante || undefined,
+           itemOrdenPublicidadId: importe.itemOrdenPublicidadId,
+           acuerdoPago: importe.acuerdoPago,
+         });
+         if (success) {
+           updateCount++;
         } else {
           hasError = true;
         }
