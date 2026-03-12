@@ -4,13 +4,7 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/app/components/ui/select';
+import { FormSelect } from '@/app/components/ui/form-select';
 import { FormDatePicker } from '@/app/components/ui/form-date-picker';
 import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
@@ -262,37 +256,28 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
               </div>
             </div>
 
-            {/* Row 2: Forma de pago, Acuerdo de pago */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Forma de pago <span className="text-red-500">*</span>
-                </Label>
-                <Select value={form.formaPago} onValueChange={(v) => handleChange('formaPago', v)} disabled={locked}>
-                  <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {FORMAS_PAGO_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {shouldShowAcuerdoPago && (
-                <div className="space-y-1.5">
-                  <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                    Acuerdo de pago
-                  </Label>
-                  <Select value={form.acuerdoPago} onValueChange={(v) => handleChange('acuerdoPago', v)} disabled={locked}>
-                    <SelectTrigger className={selectClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                    <SelectContent>
-                      {ACUERDOS_PAGO_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
+             {/* Row 2: Forma de pago, Acuerdo de pago */}
+             <div className="grid grid-cols-2 gap-4">
+               <FormSelect
+                 label="Forma de pago"
+                 value={form.formaPago}
+                 onChange={(v) => handleChange('formaPago', v)}
+                 options={FORMAS_PAGO_OPTIONS}
+                 required
+                 disabled={locked}
+                 isDark={isDark}
+               />
+               {shouldShowAcuerdoPago && (
+                 <FormSelect
+                   label="Acuerdo de pago"
+                   value={form.acuerdoPago}
+                   onChange={(v) => handleChange('acuerdoPago', v)}
+                   options={ACUERDOS_PAGO_OPTIONS}
+                   disabled={locked}
+                   isDark={isDark}
+                 />
+               )}
+             </div>
 
             {/* Row 3: Fecha comprobante, N° comprobante */}
             <div className="grid grid-cols-2 gap-4">
