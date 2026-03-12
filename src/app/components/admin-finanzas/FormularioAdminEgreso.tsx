@@ -72,7 +72,7 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
         return;
       }
       setComprobante(data);
-      setForm({
+      const newForm = {
         facturaEmitidaA: data.facturaEmitidaA || data.entidadNombre || '',
         empresa: data.empresa || '',
         empresaPrograma: data.empresaPrograma || data.ctxPrograma || data.sector || '',
@@ -85,7 +85,8 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
         entidadCuit: data.entidadCuit || '',
         neto: data.neto?.toString() || '',
         observaciones: data.observaciones || '',
-      });
+      };
+      setForm(newForm);
       setLoading(false);
     })();
   }, [comprobanteId]);
@@ -152,13 +153,13 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
     );
   }
 
-  if (!comprobante) return null;
+   if (!comprobante) return null;
 
-  const locked = isComprobanteLocked(comprobante.estadoPago);
-  const isCerrado = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
-  const shouldShowAcuerdoPago = form.formaPago !== 'Efectivo (Contado)' && form.formaPago !== '';
+   const locked = isComprobanteLocked(comprobante.estadoPago);
+   const isCerrado = comprobante.estadoPago === 'rechazado' || comprobante.estadoPago === 'pagado';
+   const shouldShowAcuerdoPago = form.formaPago !== 'Efectivo (Contado)' && form.formaPago !== '';
 
-  // Build context card data
+   // Build context card data
   const contextItems = buildContextItems(comprobante);
 
   const inputClass = cn(
