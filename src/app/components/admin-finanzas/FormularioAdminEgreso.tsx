@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { cn } from '@/app/components/ui/utils';
 import { useTheme } from '@/app/contexts/ThemeContext';
 import { CheckCircle, AlertCircle, CreditCard, ArrowLeft, Paperclip } from 'lucide-react';
+import { ProveedorSelector } from '@/app/components/ProveedorSelector';
 import * as comprobantesService from '@/app/services/comprobantesService';
 import type {
   ComprobanteWithContext,
@@ -60,7 +61,8 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
     acuerdoPago: '',
     fechaComprobante: '',
     numeroComprobante: '',
-    entidadNombre: '',
+    proveedor: '',
+    razonSocial: '',
     entidadCuit: '',
     neto: '',
     observaciones: '',
@@ -79,12 +81,13 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
       setForm({
         facturaEmitidaA: data.facturaEmitidaA || data.entidadNombre || '',
         empresa: data.empresa || '',
-        empresaPrograma: data.empresaPrograma || data.ctxPrograma || '',
+        empresaPrograma: data.empresaPrograma || data.ctxPrograma || data.sector || '',
         formaPago: data.formaPago || '',
         acuerdoPago: data.acuerdoPago || data.opAcuerdoPago || '',
         fechaComprobante: formatDate(data.fechaComprobante),
         numeroComprobante: data.numeroComprobante || '',
-        entidadNombre: data.entidadNombre || '',
+        proveedor: data.entidadNombre || '',
+        razonSocial: data.entidadNombre || '',
         entidadCuit: data.entidadCuit || '',
         neto: data.neto?.toString() || '',
         observaciones: data.observaciones || '',
@@ -113,7 +116,7 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
         id: comprobante.id,
         facturaEmitidaA: form.facturaEmitidaA || undefined,
         empresa: form.empresa || undefined,
-        entidadNombre: form.entidadNombre,
+        entidadNombre: form.razonSocial,
         entidadCuit: form.entidadCuit || undefined,
         formaPago: form.formaPago as FormaPago || undefined,
         acuerdoPago: form.acuerdoPago || undefined,
@@ -313,32 +316,23 @@ export function FormularioAdminEgreso({ comprobanteId, onClose }: FormularioAdmi
               </div>
             </div>
 
-            {/* Row 4: Razón Social, Proveedor */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Razón Social <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={form.entidadNombre}
-                  onChange={(e) => handleChange('entidadNombre', e.target.value)}
-                  disabled={locked}
-                  placeholder="Buscar por nombre o cuit"
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className={cn('text-xs font-medium', isDark ? 'text-gray-400' : 'text-gray-700')}>
-                  Proveedor
-                </Label>
-                <Input
-                  value={form.entidadCuit}
-                  disabled
-                  placeholder="Se autocompleta automáticamente"
-                  className={cn(inputClass, 'opacity-60 cursor-not-allowed')}
-                />
-              </div>
-            </div>
+            {/* Row 4: ProveedorSelector */}
+            <ProveedorSelector
+              value={{
+                proveedor: form.proveedor,
+                razonSocial: form.razonSocial,
+              }}
+              onChange={(selection) => {
+                setForm(prev => ({
+                  ...prev,
+                  proveedor: selection.proveedor,
+                  razonSocial: selection.razonSocial,
+                }));
+              }}
+              disabled={locked}
+              allowCreate={false}
+              required={true}
+            />
 
             {/* Row 5: Neto (half width) */}
             <div className="grid grid-cols-2 gap-4">
