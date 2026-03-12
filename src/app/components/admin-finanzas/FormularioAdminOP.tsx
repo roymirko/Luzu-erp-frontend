@@ -230,11 +230,11 @@ export function FormularioAdminOP({ ordenId, onClose }: FormularioAdminOPProps) 
           Carga de importes
         </h2>
 
-         {/* Acuerdo de Pago */}
-         <ReadonlyField label="Acuerdo de Pago" value={orden.acuerdoPago} isDark={isDark} />
-
-         {/* Forma de Pago */}
-         <ReadonlyField label="Forma de Pago" value={orden.formaPago} isDark={isDark} />
+         {/* Forma de Pago y Acuerdo de Pago */}
+         <div className="grid grid-cols-2 gap-4">
+           <ReadonlyField label="Forma de Pago" value={orden.formaPago} isDark={isDark} />
+           <ReadonlyField label="Acuerdo de Pago" value={orden.acuerdoPago} isDark={isDark} />
+         </div>
 
          {/* Items */}
         {orden.items.map((item, idx) => (

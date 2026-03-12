@@ -127,10 +127,10 @@ DECLARE
 BEGIN
   INSERT INTO public.ordenes_publicidad (
     fecha, mes_servicio, responsable, orden_publicidad, total_venta,
-    unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, acuerdo_pago
+    unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, forma_pago, acuerdo_pago
   ) VALUES (
     '2024-01-15', '2024-01', 'Gabriela Riero', 'OP-2024-001', '150000',
-    'Media', 'Bebidas', 'Coca Cola Argentina', 'Coca Cola LA', 'Coca Cola', 'Verano 2024', 'Bebidas', 'factura', '30'
+    'Media', 'Bebidas', 'Coca Cola Argentina', 'Coca Cola LA', 'Coca Cola', 'Verano 2024', 'Bebidas', 'factura', 'Transferencia (Adelantado)', '30'
   ) RETURNING id INTO v_orden1;
   INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica)
   VALUES
@@ -138,63 +138,63 @@ BEGIN
     (v_orden1, 'Antes Que Nadie', '50000', '8000', '4000', '1500'),
     (v_orden1, 'Se Fue Larga', '50000', '7000', '3000', '1000');
 
-   INSERT INTO public.ordenes_publicidad (
-     fecha, mes_servicio, responsable, orden_publicidad, total_venta,
-     unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, acuerdo_pago
-   ) VALUES (
-     '2024-01-20', '2024-01', 'Gabriela Riero', 'OP-2024-002', '80000',
-     'Digital', 'Telecomunicaciones', 'Telefónica de Argentina', 'Movistar ARG', 'Movistar', 'Conectados', 'Telecomunicaciones', 'factura', '45'
-   ) RETURNING id INTO v_orden2;
+    INSERT INTO public.ordenes_publicidad (
+      fecha, mes_servicio, responsable, orden_publicidad, total_venta,
+      unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, forma_pago, acuerdo_pago
+    ) VALUES (
+      '2024-01-20', '2024-01', 'Gabriela Riero', 'OP-2024-002', '80000',
+      'Digital', 'Telecomunicaciones', 'Telefónica de Argentina', 'Movistar ARG', 'Movistar', 'Conectados', 'Telecomunicaciones', 'factura', 'Tarjeta de crédito', '45'
+    ) RETURNING id INTO v_orden2;
   INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica)
   VALUES
     (v_orden2, 'Nadie Dice Nada', '40000', '6000', '3000', '1000'),
     (v_orden2, 'Patria y Familia', '40000', '5000', '2500', '800');
 
-   INSERT INTO public.ordenes_publicidad (
-     fecha, mes_servicio, responsable, orden_publicidad, total_venta,
-     unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, acuerdo_pago
-   ) VALUES (
-     '2024-02-01', '2024-02', 'Gabriela Riero', 'OP-2024-003', '200000',
-     'Media', 'E-commerce', 'Mercado Libre', 'MercadoPago ARG', 'MercadoPago', 'Cashback', 'E-commerce', 'factura', '30'
-   ) RETURNING id INTO v_orden3;
+    INSERT INTO public.ordenes_publicidad (
+      fecha, mes_servicio, responsable, orden_publicidad, total_venta,
+      unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, forma_pago, acuerdo_pago
+    ) VALUES (
+      '2024-02-01', '2024-02', 'Gabriela Riero', 'OP-2024-003', '200000',
+      'Media', 'E-commerce', 'Mercado Libre', 'MercadoPago ARG', 'MercadoPago', 'Cashback', 'E-commerce', 'factura', 'e check', '30'
+    ) RETURNING id INTO v_orden3;
   INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica)
   VALUES
     (v_orden3, 'Nadie Dice Nada', '80000', '15000', '8000', '3000'),
     (v_orden3, 'La Novela', '60000', '10000', '5000', '2000'),
     (v_orden3, 'Algo de Música', '60000', '10000', '5000', '2000');
 
-   INSERT INTO public.ordenes_publicidad (
-     fecha, mes_servicio, responsable, orden_publicidad, total_venta,
-     unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, acuerdo_pago
-   ) VALUES (
-     '2024-02-10', '2024-02', 'Gabriela Riero', 'OP-2024-004', '120000',
-     'Streaming', 'Energía', 'YPF S.A.', 'YPF ARG', 'YPF', 'Energía Argentina', 'Energía', 'factura', '60'
-   ) RETURNING id INTO v_orden4;
+    INSERT INTO public.ordenes_publicidad (
+      fecha, mes_servicio, responsable, orden_publicidad, total_venta,
+      unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, forma_pago, acuerdo_pago
+    ) VALUES (
+      '2024-02-10', '2024-02', 'Gabriela Riero', 'OP-2024-004', '120000',
+      'Streaming', 'Energía', 'YPF S.A.', 'YPF ARG', 'YPF', 'Energía Argentina', 'Energía', 'factura', 'Efectivo (Contado)', '60'
+    ) RETURNING id INTO v_orden4;
   INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica)
   VALUES
     (v_orden4, 'Antes Que Nadie', '60000', '9000', '4000', '1500'),
     (v_orden4, 'Se Fue Larga', '60000', '9000', '4000', '1500');
 
-   INSERT INTO public.ordenes_publicidad (
-     fecha, mes_servicio, responsable, orden_publicidad, total_venta,
-     unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, acuerdo_pago
-   ) VALUES (
-     '2024-03-01', '2024-03', 'Gabriela Riero', 'OP-2024-005', '180000',
-     'Media', 'Bebidas', 'Cervecería Quilmes', 'Quilmes ARG', 'Quilmes', 'Amigos', 'Bebidas', 'factura', '30'
-   ) RETURNING id INTO v_orden5;
+    INSERT INTO public.ordenes_publicidad (
+      fecha, mes_servicio, responsable, orden_publicidad, total_venta,
+      unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, forma_pago, acuerdo_pago
+    ) VALUES (
+      '2024-03-01', '2024-03', 'Gabriela Riero', 'OP-2024-005', '180000',
+      'Media', 'Bebidas', 'Cervecería Quilmes', 'Quilmes ARG', 'Quilmes', 'Amigos', 'Bebidas', 'factura', 'Débito automático', '30'
+    ) RETURNING id INTO v_orden5;
   INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica)
   VALUES
     (v_orden5, 'Nadie Dice Nada', '70000', '12000', '6000', '2500'),
     (v_orden5, 'Patria y Familia', '55000', '8000', '4000', '1500'),
     (v_orden5, 'La Novela', '55000', '8000', '4000', '1500');
 
-   INSERT INTO public.ordenes_publicidad (
-     fecha, mes_servicio, responsable, orden_publicidad, total_venta,
-     unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, acuerdo_pago
-   ) VALUES (
-     '2024-03-15', '2024-03', 'Gabriela Riero', 'OP-2024-006', '90000',
-     'Digital', 'Servicios Financieros', 'Banco Galicia', 'Galicia ARG', 'Galicia', 'Digital', 'Servicios Financieros', 'factura', '45'
-   ) RETURNING id INTO v_orden6;
+    INSERT INTO public.ordenes_publicidad (
+      fecha, mes_servicio, responsable, orden_publicidad, total_venta,
+      unidad_negocio, categoria_negocio, razon_social, empresa_agencia, marca, nombre_campana, categoria, tipo_importe, forma_pago, acuerdo_pago
+    ) VALUES (
+      '2024-03-15', '2024-03', 'Gabriela Riero', 'OP-2024-006', '90000',
+      'Digital', 'Servicios Financieros', 'Banco Galicia', 'Galicia ARG', 'Galicia', 'Digital', 'Servicios Financieros', 'factura', 'Tarjeta de débito', '45'
+    ) RETURNING id INTO v_orden6;
   INSERT INTO public.items_orden_publicidad (orden_publicidad_id, programa, monto, implementacion, talentos, tecnica)
   VALUES
     (v_orden6, 'Algo de Música', '45000', '7000', '3500', '1200'),
