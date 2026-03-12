@@ -51,6 +51,7 @@ function gastoToBloqueImporte(gasto: GastoImplementacion): BloqueImporte {
     condicionPago: gasto.condicionPago || '30',
     numeroComprobante: gasto.numeroFactura || '',
     formaPago: gasto.formaPago || '',
+    acuerdoPago: gasto.acuerdoPago || '',
     neto: String(gasto.neto),
     observaciones: gasto.observaciones || '',
     documentoAdjunto: gasto.adjuntos?.[0],
@@ -533,6 +534,7 @@ export function FormularioImplementacion({ gastoId, formId, itemId, onClose }: F
         defaultItemOrdenPublicidadId: itemId,
         rubro: IMPLEMENTACION_DEFAULTS.rubro,
         subRubro: IMPLEMENTACION_DEFAULTS.subRubro,
+        acuerdoPago: ordenPublicidadData?.acuerdoPago,
       };
 
       console.log('[Implementacion] Guardando con sharedFields:', sharedFields);

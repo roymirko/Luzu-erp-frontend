@@ -58,6 +58,7 @@ function gastoToBloqueImporte(gasto: GastoTecnica): BloqueImporte {
     condicionPago: gasto.condicionPago || '30',
     numeroComprobante: gasto.numeroFactura || '',
     formaPago: gasto.formaPago || '',
+    acuerdoPago: gasto.acuerdoPago || '',
     neto: String(gasto.neto),
     observaciones: gasto.observaciones || '',
     documentoAdjunto: gasto.adjuntos?.[0],
@@ -566,6 +567,7 @@ export function FormularioTecnica({ gastoId, formId, itemId, onClose }: Formular
         defaultItemOrdenPublicidadId: itemId,
         rubro: TECNICA_DEFAULTS.rubro,
         subRubro: isStandalone ? subRubro : TECNICA_DEFAULTS.subRubro,
+        acuerdoPago: ordenPublicidadData?.acuerdoPago,
         ...(isStandalone ? {
           unidadNegocio,
           categoriaNegocio,

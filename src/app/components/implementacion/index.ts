@@ -23,6 +23,7 @@ export interface BloqueImporte {
   condicionPago: string;
   numeroComprobante: string;
   formaPago: string;
+  acuerdoPago?: string;
   neto: string;
   observaciones: string;
   documentoAdjunto?: string;

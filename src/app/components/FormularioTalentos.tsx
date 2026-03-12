@@ -58,6 +58,7 @@ function gastoToBloqueImporte(gasto: GastoTalentos): BloqueImporte {
     condicionPago: gasto.condicionPago || '30',
     numeroComprobante: gasto.numeroFactura || '',
     formaPago: gasto.formaPago || '',
+    acuerdoPago: gasto.acuerdoPago || '',
     neto: String(gasto.neto),
     observaciones: gasto.observaciones || '',
     documentoAdjunto: gasto.adjuntos?.[0],
@@ -555,6 +556,7 @@ export function FormularioTalentos({ gastoId, formId, itemId, onClose }: Formula
         nombreCampana: isStandalone ? nombreCampana : undefined,
         unidadNegocio: isStandalone ? unidadNegocio : undefined,
         categoriaNegocio: isStandalone ? categoriaNegocio : undefined,
+        acuerdoPago: ordenPublicidadData?.acuerdoPago,
       };
 
       const loadedIds = loadedGastoIdsRef.current;
